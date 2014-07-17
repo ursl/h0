@@ -17,7 +17,7 @@ LIBS          = $(ROOTLIBS)
 GLIBS         = $(filter-out -lz, $(ROOTGLIBS)) -lTMVA -lRooFitCore -lRooFit -lRooStats
 
 EXTHEADERS    = -I../util
-LIBPATH       = `pwd`/lib
+LIBPATH       = $(shell pwd)/lib
 
 READER = anaH.o ExRootTreeReader.o runH.o
 ANA = plotHpt.o 
@@ -50,11 +50,11 @@ prep:
 
 # -- library
 lib: $(addprefix obj/,$(ANA) $(READER) $(DICTFILES)) 
-	$(CXX) $(SOFLAGS) $(GLIBS) $(addprefix obj/,$(ANA) $(READER) $(DICTFILES)) $(EXTLIBS) -o lib/libh0.so 
+	$(CXX) $(SOFLAGS) $(GLIBS) $(addprefix obj/,$(ANA) $(READER) $(DICTFILES)) $(LIBPATH)/libDelphes.so $(LIBPATH)/libutil.so -o lib/libh0.so 
 
 # -- binaries
 bin: lib/libh0.so obj/runH.o 
-	$(LD) $(LDFLAGS) -o bin/runH $(GLIBS) obj/runH.o -L$(LIBPATH) -lh0 -lDelphes -lutil
+	$(LD) $(LDFLAGS) -o bin/runH $(GLIBS) obj/runH.o $(LIBPATH)/libh0.so $(LIBPATH)/libDelphes.so $(LIBPATH)/libutil.so
 
 # -- other stuff
 obj/ExRootTreeReader.o: 
