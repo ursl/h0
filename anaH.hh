@@ -12,7 +12,7 @@
 #include <TTree.h>
 #include <TClonesArray.h>
 
-#include "ExRootTreeReader.h"
+#include "ExRootTreeReader.hh"
 #include "DelphesClasses.h"
 
 #include "redTreeData.hh"

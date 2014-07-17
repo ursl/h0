@@ -1,20 +1,30 @@
+# required ENV variables: 
+# DELPHES
+
 ROOTCINT      = $(ROOTSYS)/bin/rootcint
 ROOTCFLAGS    = $(shell $(ROOTSYS)/bin/root-config --cflags)
 ROOTLIBS      = $(shell $(ROOTSYS)/bin/root-config --libs)
 ROOTGLIBS     = $(shell $(ROOTSYS)/bin/root-config --glibs)
 
-CXX           = g++
-CXXFLAGS      = $(ROOTCFLAGS) -g -Wall -fPIC
+#CXXFLAGS      = -g -O3 -Wall -fPIC -pipe -Wuninitialized
+CXXFLAGS      = -g -O0 -Wall -fPIC -pipe -Wuninitialized -O 
+LD            = $(CXX)
+LDFLAGS       = -g 
+SOFLAGS       = -g -shared
 
-LD            = g++
-LDFLAGS       = -g
-SOFLAGS       = -shared
-
-GLIBS         = $(filter-out -lz, $(ROOTGLIBS))
-GLIBS         += -lMinuit -lRooFitCore -lRooFit -lRooStats
+CXXFLAGS     += $(ROOTCFLAGS)
+LIBS          = $(ROOTLIBS) 
+GLIBS         = $(filter-out -lz, $(ROOTGLIBS)) -lTMVA -lRooFitCore -lRooFit -lRooStats
 
 EXTHEADERS    = -I../util
-EXTLIBS       = lib/libutil.so
+LIBPATH       = `pwd`/lib
+
+READER = anaH.o ExRootTreeReader.o runH.o
+ANA = plotHpt.o 
+
+DICTFILES = ${ANA:.o=Dict.o}
+DICTHEADERS = ${ANA:.o=Dict.h}
+
 
 # -- Default rules
 $(addprefix obj/,%.o) : %.cc 
@@ -26,32 +36,29 @@ $(addprefix obj/,%.o) : %.cc
 %Dict.cc : %.hh
 	$(ROOTCINT) -f $@ -c $(EXTHEADERS) $< 
 
-ANA = plotHpt.o # anaH.o 
-
-DICTFILES = ${ANA:.o=Dict.o}
-DICTHEADERS = ${ANA:.o=Dict.h}
-
 
 # ================================================================================
-all: dir links $(addprefix obj/,$(ANA) $(DICTFILES)) 
-# --------------------------------------------------
-	$(CXX) $(SOFLAGS) $(GLIBS) $(addprefix obj/,$(ANA) $(DICTFILES)) $(EXTLIBS) -o lib/libh0.so 
+all: prep lib bin
+# -----------------------------------------------------------------------
 
-
-# -- create directories if not yet existing
-dir:
+# -- preparatory setup
+prep:
 	mkdir -p obj bin lib
-
-# -- create links if not yet existing
-links:
 	cd lib && ln -f -s ../../util/lib/libutil.so && cd - 
+	ln -f -s  $(DELPHES)/classes
+	cd lib && ln -f -s $(DELPHES)/libDelphes.so && cd - 
 
-# ======================================================================
-# -- Executables
-# ======================================================================
+# -- library
+lib: $(addprefix obj/,$(ANA) $(READER) $(DICTFILES)) 
+	$(CXX) $(SOFLAGS) $(GLIBS) $(addprefix obj/,$(ANA) $(READER) $(DICTFILES)) $(EXTLIBS) -o lib/libh0.so 
+
+# -- binaries
+bin: lib/libh0.so obj/runH.o 
+	$(LD) $(LDFLAGS) -o bin/runH $(GLIBS) obj/runH.o -L$(LIBPATH) -lh0 -lDelphes -lutil
+
 
 clean:
-	rm -f $(addprefix obj/,$(ANA) $(DICTFILES)) 
+	rm -f $(addprefix obj/,$(ANA) $(READER) $(DICTFILES)) 
 	rm -f $(DICTHEADERS) 
 	rm -f bin/runH
 	rm -f lib/*

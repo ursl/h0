@@ -2,7 +2,7 @@
 
 #include <TProfile.h>
 
-#include "/shome/ursl/macros/FsxUtil/util.hh"
+#include "util.hh"
 
 using namespace std;
 
@@ -41,8 +41,6 @@ void anaH::endAnalysis() {
 void anaH::eventProcessing() {
 
   initVariables();
-
-  fW8 = getEvent(0)->Weight;
 
 //   cout << "w8: " <<  getEvent(0)->Weight 
 //        << " processid: " << getEvent(0)->ProcessID
