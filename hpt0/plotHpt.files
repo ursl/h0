@@ -1,0 +1,2 @@
+type=mc,sherpa,1    xsec=0.05   file=/scratch/ursl/h/csherpa_130.root 
+type=mc,mcatnlo,5   xsec=49.50  file=/scratch/ursl/h/cmcanlo_155.root

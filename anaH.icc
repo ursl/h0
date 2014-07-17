@@ -1,0 +1,98 @@
+// ======================================================================
+// -- This file contains general setup stuff 
+// ======================================================================
+// ----------------------------------------------------------------------
+anaH::anaH(TChain *chain) {
+  cout << "==> anaH: constructor..." << endl;
+  if (chain == 0) {
+    cout << "You need to pass a chain!" << endl;
+  }
+  fpChain = chain; 
+  init();
+}
+
+// ----------------------------------------------------------------------
+void anaH::init() {
+  cout << "==> anaH: init ..." << endl;
+  fTR         = new ExRootTreeReader(fpChain);
+  fNentries   = fTR->GetEntries();
+  fbParticles = fTR->UseBranch("Particle");
+  fbJets      = fTR->UseBranch("Jet");
+  fbPhotons   = fTR->UseBranch("Photon");
+  fbTracks    = fTR->UseBranch("Track");
+  fbPFtracks  = fTR->UseBranch("EFlowTrack");
+  fbPFtowers  = fTR->UseBranch("EFlowTower");
+  fbElectrons = fTR->UseBranch("Electron");
+  fbMuons     = fTR->UseBranch("Muon");
+  fbEvent     = fTR->UseBranch("Event");
+
+  initVariables();
+}
+
+// ----------------------------------------------------------------------
+anaH::~anaH() {
+  cout << "==> anaH: destructor ..." << endl;
+  if (!fpChain) return;
+  delete fTR;
+}
+
+// ----------------------------------------------------------------------
+void anaH::openHistFile(string filename) {
+  fpHistFile = new TFile(filename.c_str(), "RECREATE");
+  fpHistFile->cd();			   
+  cout << "==> anaH: Opened " << fpHistFile->GetName() << endl;
+}
+
+// ----------------------------------------------------------------------
+void anaH::closeHistFile() {
+  cout << "==> anaH: Writing " << fpHistFile->GetName() << endl;
+  fpHistFile->cd();
+  fpHistFile->Write();
+  fpHistFile->Close();
+  delete fpHistFile;
+
+}
+
+// ----------------------------------------------------------------------
+int anaH::loop(int nevents, int start) {
+  int maxEvents(0);
+
+  cout << "==> anaH: Chain has a total of " << fNentries << " events" << endl;
+ 
+  // -- Setup for restricted running (not yet foolproof, i.e. bugfree)
+  if (nevents < 0) {
+    maxEvents = fNentries;
+  } else {
+    cout << "==> anaH: Running over " << nevents << " events" << endl;
+    maxEvents = nevents;
+  }
+  if (start < 0) {
+    start = 0; 
+  } else {
+    cout << "==> anaH: Starting at event " << start << endl;
+    if (maxEvents >  fNentries) {
+      cout << "==> anaH: Requested to run until event " << maxEvents << ", but will run only to end of chain at ";
+      maxEvents = fNentries;
+      cout << maxEvents << endl;
+    } else {
+      cout << "==> anaH: Requested to run until event " << maxEvents << endl;
+    }
+  }
+
+
+  // -- The main loop
+  int step(50000); 
+  if (maxEvents < 1000000) step = 10000; 
+  if (maxEvents < 100000)  step = 1000; 
+  if (maxEvents < 10000)   step = 500; 
+  if (maxEvents < 1000)    step = 100; 
+
+  for (int jEvent = start; jEvent < maxEvents; ++jEvent) {
+    if (jEvent%step == 0) cout << Form(" .. Event %8d", jEvent) << endl;
+    fTR->ReadEntry(jEvent); 
+    eventProcessing(); 
+  }
+  return 0;
+
+}
+
