@@ -45,7 +45,8 @@ public :
 
 
   // -- Main analysis methods 
-  void makeAll();
+  void makeAll(int bitmask = 0);
+  void treeAnalysis(); 
   void toy1(int nsg = 60, int nbg = 150); 
 
   void overlayAll();
@@ -55,7 +56,7 @@ public :
   void bookHist(std::string name); 
   TTree* getTree(std::string ds); 
   void setupTree(TTree *t); 
-  void loopOverTree(TTree *t, std::string ds, int nevts = -1, int nstart = 0); 
+  void loopOverTree(TTree *t, int nevts = -1, int nstart = 0); 
   void candAnalysis(); 
   void loopFunction(); 
 
@@ -72,8 +73,12 @@ private:
   std::string fDirectory, fSetup, fSuffix;   
 
   int    NBINS; 
-  double fPTLO, fPTHI; 
-  double fMGGLO, fMGGHI; 
+  double GETA;
+  double G0ISO, G1ISO; 
+  double G0PT, G1PT; 
+  double PTLO, PTHI; 
+  double MGGLO, MGGHI; 
+
   double fLumi, fSg0Xs, fSg1Xs, fBgXs, fBgRf, fSgBF;
 
   bool fGoodCand; 
@@ -92,6 +97,8 @@ private:
 
   // -- datasets (files and associated information)
   std::map<std::string, dataset*> fDS; 
+  // -- current dataset for analysis
+  std::string fCds; 
 
   // -- Display utilities
   int fFont; 

@@ -47,19 +47,24 @@ plotHpt::plotHpt(string dir,  string files, string setup): fWorkspace("w") {
 
   NBINS = 50; 
 
-  fPTLO  = 300.; 
-  fPTHI  = 999.;
+  // -- Photon cuts
+  GETA = 2.5; 
 
-  fMGGLO = 110.;
-  fMGGHI = 135.;
+  G0ISO = 0.2;
+  G1ISO = 0.2;
 
-  fMGGLO = 100.;
-  fMGGHI = 150.;
+  G0PT = 100;
+  G1PT = 25;
+
+  // -- DIPHOTON cuts
+  PTLO  = 300.; 
+  PTHI  = 999.;
+
+  MGGLO = 100.;
+  MGGHI = 150.;
 
   c0 = (TCanvas*)gROOT->FindObject("c0"); 
   if (!c0) c0 = new TCanvas("c0","--c0--",0,0,656,700);
-
-  bookHist("0"); 
 
 }
 
@@ -72,19 +77,57 @@ plotHpt::~plotHpt() {
 
 // ----------------------------------------------------------------------
 void plotHpt::bookHist(string name) {
-  TH1D *h1(0); 
-  h1 = new TH1D(Form("hMass_%s", name.c_str()), Form("hMass_%s", name.c_str()), NBINS, fMGGLO, fMGGHI);
-  fHists.insert(make_pair(Form("hMass_%s", name.c_str()), h1)); 
+  fHists.insert(make_pair(Form("m_%s", name.c_str()), 
+			  new TH1D(Form("m_%s", name.c_str()), Form("m_%s", name.c_str()), NBINS, MGGLO, MGGHI))); 
+
+  fHists.insert(make_pair(Form("pt_%s", name.c_str()), 
+			  new TH1D(Form("pt_%s", name.c_str()), Form("pt_%s", name.c_str()), 100, 0, 1000.))); 
+
+  fHists.insert(make_pair(Form("g0pt_%s", name.c_str()), 
+			  new TH1D(Form("g0pt_%s", name.c_str()), Form("g0pt_%s", name.c_str()), 100, 0., 300.))); 
+
+  fHists.insert(make_pair(Form("g1pt_%s", name.c_str()), 
+			  new TH1D(Form("g1pt_%s", name.c_str()), Form("g1pt_%s", name.c_str()), 100, 0., 300.))); 
+
+  fHists.insert(make_pair(Form("g0iso_%s", name.c_str()), 
+			  new TH1D(Form("g0iso_%s", name.c_str()), Form("g0iso_%s", name.c_str()), 100, 0., 1.))); 
+
+  fHists.insert(make_pair(Form("g1iso_%s", name.c_str()), 
+			  new TH1D(Form("g1iso_%s", name.c_str()), Form("g1iso_%s", name.c_str()), 100, 0., 1.))); 
+
 
 }
 
 
 // ----------------------------------------------------------------------
-void plotHpt::makeAll() {
-  toy1(); 
+void plotHpt::makeAll(int bitmask) {
+  if (bitmask & 0x1) treeAnalysis();
+  if (bitmask & 0x2) toy1(); 
 }
 
 
+// ----------------------------------------------------------------------
+void plotHpt::treeAnalysis() {
+
+  string ds("sherpa");
+  fCds = ds; 
+  bookHist(ds); 
+  TTree *t = getTree(ds); 
+  setupTree(t); 
+  loopOverTree(t); 
+
+  ds = "mcatnlo5"; 
+  fCds = ds; 
+  bookHist(ds); 
+  t = getTree(ds); 
+  setupTree(t);
+  loopOverTree(t); 
+
+
+  fHists["m_sherpa"]->Draw(); 
+  fHists["m_mcatnlo5"]->Draw("same"); 
+
+}
 
 // ----------------------------------------------------------------------
 void plotHpt::toy1(int nsg, int nbg) {
@@ -370,21 +413,34 @@ void plotHpt::overlay(string f1, string h1name, string f2, string h2name, bool l
 // ----------------------------------------------------------------------
 void plotHpt::candAnalysis() {
   
-  fGoodCand = false; 
-  if (fb.m > 100 && fb.m < 150) fGoodCand = true; 
+  fGoodCand = true; 
+  if (fb.m < 100 && fb.m > 150) fGoodCand = false; 
+  if (fb.pt < 250) fGoodCand = false; 
+  if (TMath::Abs(fb.eta) > GETA) fGoodCand = false; 
+  if (fb.g0pt < G0PT) fGoodCand = false; 
+  if (fb.g1pt < G1PT) fGoodCand = false; 
+  if (fb.g0iso > G0ISO) fGoodCand = false; 
+  if (fb.g1iso > G1ISO) fGoodCand = false; 
 
 }
 
 // ----------------------------------------------------------------------
 void plotHpt::loopFunction() {
+  char cds[100];
+  sprintf(cds, "%s", fCds.c_str());
   if (fGoodCand) { 
-    fHists["hMass_0"]->Fill(fb.m); 
+    fHists[Form("m_%s", cds)]->Fill(fb.m); 
+    fHists[Form("pt_%s", cds)]->Fill(fb.pt); 
+    fHists[Form("g0pt_%s", cds)]->Fill(fb.g0pt); 
+    fHists[Form("g1pt_%s", cds)]->Fill(fb.g1pt); 
+    fHists[Form("g0iso_%s", cds)]->Fill(fb.g0iso); 
+    fHists[Form("g1iso_%s", cds)]->Fill(fb.g1iso); 
   }
 }
 
 
 // ----------------------------------------------------------------------
-void plotHpt::loopOverTree(TTree *t, string ds, int nevts, int nstart) {
+void plotHpt::loopOverTree(TTree *t, int nevts, int nstart) {
   int nentries = Int_t(t->GetEntries());
   int nbegin(0), nend(nentries); 
   if (nevts > 0 && nentries > nevts) {
@@ -411,8 +467,9 @@ void plotHpt::loopOverTree(TTree *t, string ds, int nevts, int nstart) {
   if (nentries < 10000)    step = 1000; 
   if (nentries < 1000)     step = 100; 
   step = 500000; 
-  cout << "==> plotHpt::loopOverTree> looping with " << nentries << " entries" 
-       << " in file " << t->GetDirectory()->GetName() 
+  cout << "==> plotHpt::loopOverTree> loop over dataset " << fCds << " in file " 
+       << t->GetDirectory()->GetName() 
+       << " with " << nentries << " entries" 
        << endl;
 
   // -- the real loop starts here
