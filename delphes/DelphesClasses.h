@@ -35,7 +35,7 @@ public:
   Long64_t Number; // event number
 
   Float_t ReadTime;
-  Float_t ProcTime;  
+  Float_t ProcTime;
 
   ClassDef(Event, 1)
 };
@@ -74,7 +74,7 @@ class HepMCEvent: public Event
 public:
 
   Int_t ProcessID; // unique signal process id | signal_process_id()
-  Int_t MPI; // number of multi parton interactions | mpi () 
+  Int_t MPI; // number of multi parton interactions | mpi ()
 
   Float_t Weight; // weight for the event
 
@@ -83,7 +83,7 @@ public:
   Float_t AlphaQCD; // QCD coupling, see hep-ph/0109068 | alphaQCD()
 
   Int_t ID1; // flavour code of first parton | pdf_info()->id1()
-  Int_t ID2; // flavour code of second parton | pdf_info()->id2()     
+  Int_t ID2; // flavour code of second parton | pdf_info()->id2()
 
   Float_t X1; // fraction of beam momentum carried by first parton ("beam side") | pdf_info()->x1()
   Float_t X2; // fraction of beam momentum carried by second parton ("target side") | pdf_info()->x2()
@@ -105,7 +105,6 @@ public:
 
   Int_t Status; // particle status | hepevt.isthep[number]
   Int_t IsPU; // 0 or 1 for particles from pile-up interactions
-  
 
   Int_t M1; // particle 1st mother | hepevt.jmohep[number][0] - 1
   Int_t M2; // particle 2nd mother | hepevt.jmohep[number][1] - 1
@@ -135,10 +134,23 @@ public:
 
   static CompBase *fgCompare; //!
   const CompBase *GetCompare() const { return fgCompare; }
-  
+
   TLorentzVector P4();
 
   ClassDef(GenParticle, 1)
+};
+
+//---------------------------------------------------------------------------
+
+class Vertex: public TObject
+{
+public:
+  Float_t T; // vertex position (t component)
+  Float_t X; // vertex position (x component)
+  Float_t Y; // vertex position (y component)
+  Float_t Z; // vertex position (z component)
+
+  ClassDef(Vertex, 1)
 };
 
 //---------------------------------------------------------------------------
@@ -147,7 +159,10 @@ class MissingET: public TObject
 {
 public:
   Float_t MET; // mising transverse energy
+  Float_t Eta; // mising energy pseudorapidity
   Float_t Phi; // mising energy azimuthal angle
+
+  TLorentzVector P4();
 
   ClassDef(MissingET, 1)
 };
@@ -168,6 +183,7 @@ class Rho: public TObject
 {
 public:
   Float_t Rho; // rho energy density
+  Float_t Edges[2]; // pseudorapidity range edges
 
   ClassDef(Rho, 1)
 };
@@ -193,7 +209,9 @@ public:
   Float_t Phi; // photon azimuthal angle
 
   Float_t E; // photon energy
-  
+
+  Float_t T; //particle arrival time of flight
+
   Float_t EhadOverEem; // ratio of the hadronic versus electromagnetic energy deposited in the calorimeter
 
   TRefArray Particles; // references to generated particles
@@ -215,6 +233,8 @@ public:
   Float_t PT; // electron transverse momentum
   Float_t Eta; // electron pseudorapidity
   Float_t Phi; // electron azimuthal angle
+
+  Float_t T; //particle arrival time of flight
 
   Int_t Charge; // electron charge
 
@@ -240,6 +260,8 @@ public:
   Float_t Eta; // muon pseudorapidity
   Float_t Phi; // muon azimuthal angle
 
+  Float_t T; //particle arrival time of flight
+
   Int_t Charge; // muon charge
 
   TRef Particle; // reference to generated particle
@@ -262,6 +284,8 @@ public:
   Float_t Eta; // jet pseudorapidity
   Float_t Phi; // jet azimuthal angle
 
+  Float_t T; //particle arrival time of flight
+
   Float_t Mass; // jet invariant mass
 
   Float_t DeltaEta;  // jet radius in pseudorapidity
@@ -273,6 +297,20 @@ public:
   Int_t Charge; // tau charge
 
   Float_t EhadOverEem; // ratio of the hadronic versus electromagnetic energy deposited in the calorimeter
+
+  Int_t    NCharged; // number of charged constituents 
+  Int_t    NNeutrals; // number of neutral constituents 
+  Float_t  Beta; // (sum pt of charged pile-up constituents)/(sum pt of charged constituents) 
+  Float_t  BetaStar; // (sum pt of charged constituents coming from hard interaction)/(sum pt of charged constituents) 
+  Float_t  MeanSqDeltaR; // average distance (squared) between constituent and jet weighted by pt (squared) of constituent
+  Float_t  PTD; // average pt between constituent and jet weighted by pt of constituent
+  Float_t  FracPt[5]; // (sum pt of constituents within a ring 0.1*i < DeltaR < 0.1*(i+1))/(sum pt of constituents) 
+
+  Float_t Tau1; // 1-subjettiness
+  Float_t Tau2; // 2-subjettiness
+  Float_t Tau3; // 3-subjettiness
+  Float_t Tau4; // 4-subjettiness
+  Float_t Tau5; // 5-subjettiness
 
   TRefArray Constituents; // references to constituents
   TRefArray Particles; // references to generated particles
@@ -287,9 +325,9 @@ public:
 
 //---------------------------------------------------------------------------
 
-class Track: public SortableObject 
+class Track: public SortableObject
 {
-public:  
+public:
   Int_t PID; // HEP ID number
 
   Int_t Charge; // track charge
@@ -305,10 +343,18 @@ public:
   Float_t X; // track vertex position (x component)
   Float_t Y; // track vertex position (y component)
   Float_t Z; // track vertex position (z component)
+  Float_t T; // track vertex position (z component)
 
   Float_t XOuter; // track position (x component) at the tracker edge
   Float_t YOuter; // track position (y component) at the tracker edge
   Float_t ZOuter; // track position (z component) at the tracker edge
+  Float_t TOuter; // track position (z component) at the tracker edge
+
+  Float_t Dxy;     // track signed transverse impact parameter
+  Float_t SDxy;    // signed error on the track signed transverse impact parameter
+  Float_t Xd;      // X coordinate of point of closest approach to vertex
+  Float_t Yd;      // Y coordinate of point of closest approach to vertex
+  Float_t Zd;      // Z coordinate of point of closest approach to vertex
 
   TRef Particle; // reference to generated particle
 
@@ -317,12 +363,12 @@ public:
 
   TLorentzVector P4();
 
-  ClassDef(Track, 1)
+  ClassDef(Track, 2)
 };
 
 //---------------------------------------------------------------------------
 
-class Tower: public SortableObject 
+class Tower: public SortableObject
 {
 public:
   Float_t ET; // calorimeter tower transverse energy
@@ -330,6 +376,8 @@ public:
   Float_t Phi; // calorimeter tower azimuthal angle
 
   Float_t E; // calorimeter tower energy
+
+  Float_t T; //particle arrival time of flight
 
   Float_t Eem; // calorimeter tower electromagnetic energy
   Float_t Ehad; // calorimeter tower hadronic energy
@@ -348,7 +396,31 @@ public:
 
 //---------------------------------------------------------------------------
 
-class Candidate: public SortableObject 
+class HectorHit: public SortableObject
+{
+public:
+  Float_t E; // reconstructed energy [GeV]
+
+  Float_t Tx; // angle of the momentum in the horizontal (x,z) plane [urad]
+  Float_t Ty; // angle of the momentum in the verical (y,z) plane [urad]
+
+  Float_t T; // time of flight to the detector [s]
+
+  Float_t X; // horizontal distance to the beam [um]
+  Float_t Y; // vertical distance to the beam [um]
+  Float_t S; // distance to the interaction point [m]
+
+  TRef Particle; // reference to generated particle
+
+  static CompBase *fgCompare; //!
+  const CompBase *GetCompare() const { return fgCompare; }
+
+  ClassDef(HectorHit, 1)
+};
+
+//---------------------------------------------------------------------------
+
+class Candidate: public SortableObject
 {
   friend class DelphesFactory;
 
@@ -363,10 +435,10 @@ public:
   Int_t Charge;
 
   Float_t Mass;
-  
+
   Int_t IsPU;
   Int_t IsConstituent;
-  
+
   UInt_t BTag;
   UInt_t TauTag;
 
@@ -379,6 +451,26 @@ public:
 
   TLorentzVector Momentum, Position, Area;
 
+  Float_t  Dxy;
+  Float_t  SDxy;
+  Float_t  Xd;
+  Float_t  Yd;
+  Float_t  Zd;
+
+  // PileUpJetID variables
+
+  Int_t    NCharged;
+  Int_t    NNeutrals;
+  Float_t  Beta;
+  Float_t  BetaStar;
+  Float_t  MeanSqDeltaR;
+  Float_t  PTD;
+  Float_t  FracPt[5];
+
+  // N-subjettiness variables
+
+  Float_t Tau[5];
+
   static CompBase *fgCompare; //!
   const CompBase *GetCompare() const { return fgCompare; }
 
@@ -389,15 +481,15 @@ public:
 
   virtual void Copy(TObject &object) const;
   virtual TObject *Clone(const char *newname = "") const;
-  virtual void Clear(Option_t* option = ""); 
+  virtual void Clear(Option_t* option = "");
 
 private:
   DelphesFactory *fFactory; //!
   TObjArray *fArray; //!
-  
+
   void SetFactory(DelphesFactory *factory) { fFactory = factory; }
 
-  ClassDef(Candidate, 1)
+  ClassDef(Candidate, 2)
 };
 
 #endif // DelphesClasses_h
