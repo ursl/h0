@@ -45,7 +45,7 @@ all: prep lib bin
 prep:
 	mkdir -p obj bin lib
 	cd lib && ln -f -s ../../util/lib/libutil.so && cd - 
-	ln -f -s  $(DELPHES)/classes
+	cd delphes && ln -f -s  $(DELPHES)/classes && cd - 
 	cd lib && ln -f -s $(DELPHES)/libDelphes.so && cd - 
 
 # -- library
@@ -56,9 +56,14 @@ lib: $(addprefix obj/,$(ANA) $(READER) $(DICTFILES))
 bin: lib/libh0.so obj/runH.o 
 	$(LD) $(LDFLAGS) -o bin/runH $(GLIBS) obj/runH.o -L$(LIBPATH) -lh0 -lDelphes -lutil
 
+# -- other stuff
+obj/ExRootTreeReader.o: 
+	$(CXX) $(CXXFLAGS) $(EXTHEADERS) -c delphes/ExRootTreeReader.cc -o $@
+
 
 clean:
 	rm -f $(addprefix obj/,$(ANA) $(READER) $(DICTFILES)) 
 	rm -f $(DICTHEADERS) 
+	rm -f delphes/classes
 	rm -f bin/runH
 	rm -f lib/*

@@ -12,8 +12,8 @@
 #include <TTree.h>
 #include <TClonesArray.h>
 
-#include "ExRootTreeReader.hh"
-#include "DelphesClasses.h"
+#include "delphes/ExRootTreeReader.hh"
+#include "delphes/DelphesClasses.h"
 
 #include "redTreeData.hh"
 
