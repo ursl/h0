@@ -1,0 +1,84 @@
+#!/usr/bin/env perl
+#
+# ----------------------------------------------------------------------
+# History   2013/10/21 first shot
+#           2014/06/17 fixed shortcomings which I don't understand (grep problems ...)
+#
+# Send all questions, wishes and complaints to the 
+#
+# Author    Urs Langenegger <urs.langenegger@psi.ch>
+# ----------------------------------------------------------------------
+use lib '/shome/ursl/perl/modules/Tie-IxHash-1.23/lib';
+use Tie::IxHash;
+
+use Getopt::Std;
+getopts('do:r:');
+
+
+# -- more definitions
+my $user  = $ENV{'USER'};
+
+my $crash = ""; 
+
+my $srmcmd  = "lcg-cp  -b -D srmv2";
+my $dcap    = "dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat";
+my $srm     = "srm://t3se01.psi.ch:8443/srm/managerv2\\?SFN=/pnfs/psi.ch/cms/trivcat/store";
+my $rootdir = "h/ana/v2";
+if ($opt_r) {
+    $rootdir = $opt_r; 
+}
+my $storage = "$srm/user/$user/$rootdir";
+
+if (!$opt_o) {
+    $opt_o = "."; 
+}
+
+
+# ----------------------------------------------------------------------
+# -- The hash shall not change the order of its elements
+tie %jobs, "Tie::IxHash";
+
+%jobs = (
+    "mcatnlo_150" => "cmcanlo_150", 
+    "mcatnlo_151" => "cmcanlo_151", 
+    "mcatnlo_155" => "cmcanlo_155", 
+    "sherpa" => "csherpa_130"
+);
+
+my @lines;
+print "srmLs -x $storage -c -p root \n";
+@lines = `srmLs -x $storage -c -p root `;
+@lines = grep(s/\n//, @lines); 
+for $i (@lines) {
+    print "lines $i\n";
+}
+
+
+foreach $j (keys %jobs) {
+    $output = "$jobs{$j}".".root";
+    print "merging $jobs{$j} into $opt_o/$output\n";
+    $frag = $jobs{$j};
+    @rootfiles = grep{$_ =~ $frag} @lines; 
+    @rootfiles = grep{$_ =~ /\.root/} @rootfiles; 
+    #    @rootfiles = grep(s/\n//, @rootfiles); 
+    for $i (@rootfiles) {
+	print "-> $i\n";
+    }
+
+    if ($#rootfiles == 0) {
+	@rootfiles = grep(s/.*$user\/$rootdir\///, @rootfiles); 
+	if ($opt_d) {
+	    print "$srmcmd $storage/$rootfiles[0] $opt_o/$output \n";
+	} else {
+	    system("$srmcmd $storage/$rootfiles[0] $opt_o/$output");
+	}	    
+    } elsif ($#rootfiles > 0) {
+	@rootfiles = grep(s/.*\/trivcat/$dcap/, @rootfiles); 
+	@rootfiles = sort @rootfiles; 
+	
+	if (-e "$opt_o/$output") {unlink("$opt_o/$output"); }
+	system("hadd $opt_o/$output @rootfiles");
+    }
+    
+}
+
