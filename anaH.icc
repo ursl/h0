@@ -17,11 +17,11 @@ void anaH::init() {
   fTR         = new ExRootTreeReader(fpChain);
   fNentries   = fTR->GetEntries();
   fbParticles = fTR->UseBranch("Particle");
-  fbJets      = fTR->UseBranch("Jet");
   fbPhotons   = fTR->UseBranch("Photon");
   fbTracks    = fTR->UseBranch("Track");
   fbPFtracks  = fTR->UseBranch("EFlowTrack");
-  fbPFtowers  = fTR->UseBranch("EFlowTower");
+  fbPFphotons = fTR->UseBranch("EFlowPhoton");
+  fbPFneutralh= fTR->UseBranch("EFlowNeutralHadron");
   fbElectrons = fTR->UseBranch("Electron");
   fbMuons     = fTR->UseBranch("Muon");
   fbEvent     = fTR->UseBranch("Event");
