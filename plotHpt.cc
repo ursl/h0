@@ -36,6 +36,17 @@ using namespace RooStats;
 // ----------------------------------------------------------------------
 plotHpt::plotHpt(string dir,  string files, string setup): plotClass(dir, files, setup), fWorkspace("w") {
   loadFiles(files);
+
+  NBINS = 50;  
+  GETA = 2.5;
+  G0ISO = G1ISO = 0.2; 
+  G0PT = 100.;
+  G1PT = 40.;
+  PTLO = 300.;
+  PTHI = 999.;
+  MGGLO = 100.;
+  MGGHI = 150.;
+
 }
 
 
