@@ -34,38 +34,8 @@ using namespace RooFit;
 using namespace RooStats; 
 
 // ----------------------------------------------------------------------
-plotHpt::plotHpt(string dir,  string files, string setup): fWorkspace("w") {
-
-  fDirectory = dir; 
-
+plotHpt::plotHpt(string dir,  string files, string setup): plotClass(dir, files, setup), fWorkspace("w") {
   loadFiles(files);
-
-  delete gRandom;
-  gRandom = (TRandom*) new TRandom3;
-
-  fEpsilon = 0.00001; 
-
-  NBINS = 50; 
-
-  // -- Photon cuts
-  GETA = 2.5; 
-
-  G0ISO = 0.2;
-  G1ISO = 0.2;
-
-  G0PT = 100;
-  G1PT = 25;
-
-  // -- DIPHOTON cuts
-  PTLO  = 300.; 
-  PTHI  = 999.;
-
-  MGGLO = 100.;
-  MGGHI = 150.;
-
-  c0 = (TCanvas*)gROOT->FindObject("c0"); 
-  if (!c0) c0 = new TCanvas("c0","--c0--",0,0,656,700);
-
 }
 
 
@@ -235,7 +205,7 @@ void plotHpt::loadFiles(string afiles) {
 	ds->fBf   = 2.28E-03;
 	ds->fLumi = nevt/ds->fXsec/ds->fBf;
 	ds->fName = "MC@NLO " + sdecay; 
-	ds->fFillstyle = 3356; 
+	ds->fFillStyle = 3356; 
 	ds->fSize = 1; 
 	ds->fWidth = 2; 
 	fDS.insert(make_pair(sname, ds)); 
@@ -257,7 +227,7 @@ void plotHpt::loadFiles(string afiles) {
 	ds->fBf   = 1.;
 	ds->fLumi = nevt/ds->fXsec/ds->fBf;
 	ds->fName = "SHERPA " + sdecay; 
-	ds->fFillstyle = 3365; 
+	ds->fFillStyle = 3365; 
 	ds->fSize = 1; 
 	ds->fWidth = 2; 
 	fDS.insert(make_pair(sname, ds)); 
@@ -275,84 +245,32 @@ void plotHpt::loadFiles(string afiles) {
 }
 
 
-// ----------------------------------------------------------------------
-TFile* plotHpt::loadFile(string file) {
-  TFile *f = TFile::Open(file.c_str());
-  return f; 
-}
 
+// // ----------------------------------------------------------------------
+// void plotHpt::normHist(TH1D *h, double integral, string type) {
+//   double scale(1.); 
+//   if (TMath::Abs(integral - 1.) < fEpsilon) {
+//     // -- normalize to 1
+//     scale = (h->GetSumOfWeights() > 0 ? integral/h->GetSumOfWeights() : 1.); 
+//   } else if (TMath::Abs(integral + 1.) < fEpsilon) {
+//     // -- normalize to xsec*bf
+//     //    n = xsec * L
+//     //    "integral" over histogram should be xsec
 
-
-// ----------------------------------------------------------------------
-void plotHpt::replaceAll(string &sInput, const string &oldString, const string &newString) {
-  string::size_type foundpos = sInput.find(oldString);
-  while (foundpos != string::npos)  {
-    sInput.replace(sInput.begin() + foundpos, sInput.begin() + foundpos + oldString.length(), newString);
-    foundpos = sInput.find(oldString);
-  }
-}
-
-// ----------------------------------------------------------------------
-void plotHpt::newLegend(double x1, double y1, double x2, double y2, string title) {
-  if (legg) delete legg;
-  legg = new TLegend(x1, y1, x2, y2, title.c_str());
-  legg->SetFillStyle(0); 
-  legg->SetBorderSize(0); 
-  legg->SetTextSize(0.04);  
-  legg->SetFillColor(0); 
-  legg->SetTextFont(42); 
-}
-
-// ----------------------------------------------------------------------
-void plotHpt::makeCanvas(int i) {
-  if (i & 16) { 
-    c5 = new TCanvas("c5", "c5", 210,   0, 800, 1000);
-    c5->ToggleEventStatus();
-  }
-  if (i & 8) { 
-    c4 = new TCanvas("c4", "c4", 210,   0, 800, 600);
-    c4->ToggleEventStatus();
-  }
-  if (i & 4) {
-    c3 = new TCanvas("c3", "c3", 200,  20, 800, 800);
-    c3->ToggleEventStatus();
-  }
-  if (i & 1) {
-    //    c1 = new TCanvas("c1", "c1", 20,  60, 1200, 400);
-    c1 = new TCanvas("c1", "c1", 20,  60, 1000, 400);
-    c1->ToggleEventStatus();
-  }
-  if (i & 2) { 
-    c2 = new TCanvas("c2", "c2", 300, 200, 400, 800);
-    c2->ToggleEventStatus();
-  }
-}
-
-// ----------------------------------------------------------------------
-void plotHpt::normHist(TH1D *h, double integral, string type) {
-  double scale(1.); 
-  if (TMath::Abs(integral - 1.) < fEpsilon) {
-    // -- normalize to 1
-    scale = (h->GetSumOfWeights() > 0 ? integral/h->GetSumOfWeights() : 1.); 
-  } else if (TMath::Abs(integral + 1.) < fEpsilon) {
-    // -- normalize to xsec*bf
-    //    n = xsec * L
-    //    "integral" over histogram should be xsec
-
-    scale = (h->GetSumOfWeights() > 0 ? fDS[type]->fXsec*fDS[type]->fBf/h->Integral() : 1.); 
-    setTitles(h, h->GetXaxis()->GetTitle(), "pb");
-  } else {
-    scale = 1.;
-  }
-  double c(0.), e(0.); 
-  for (int i = 0; i <= h->GetNbinsX(); ++i) {
-    c = h->GetBinContent(i); 
-    e = h->GetBinError(i); 
-    h->SetBinContent(i, c*scale);
-    h->SetBinError(i, e*scale);
-  }
+//     scale = (h->GetSumOfWeights() > 0 ? fDS[type]->fXsec*fDS[type]->fBf/h->Integral() : 1.); 
+//     setTitles(h, h->GetXaxis()->GetTitle(), "pb");
+//   } else {
+//     scale = 1.;
+//   }
+//   double c(0.), e(0.); 
+//   for (int i = 0; i <= h->GetNbinsX(); ++i) {
+//     c = h->GetBinContent(i); 
+//     e = h->GetBinError(i); 
+//     h->SetBinContent(i, c*scale);
+//     h->SetBinError(i, e*scale);
+//   }
   
-}
+// }
 
 
 // ----------------------------------------------------------------------
@@ -365,54 +283,7 @@ void plotHpt::overlayAll() {
 }
 
 // ----------------------------------------------------------------------
-void plotHpt::overlay(TH1D* h1, string f1, TH1D* h2, string f2, bool legend) {
-
-  bool log(false); 
-  if (string::npos != string(h1->GetName()).find("H1pt")) log = true;
-  if (string::npos != string(h1->GetName()).find("Hrpt")) log = true;
-
-  normHist(h1, -1., f1); 
-  normHist(h2, -1., f2); 
-
-  double hmax(h1->GetMaximum()); 
-  if (h2->GetMaximum() > hmax) hmax = 1.2*h2->GetMaximum(); 
-  if (log) {
-    gPad->SetLogy(1); 
-    hmax *= 2.;
-  }
-  h1->SetMaximum(hmax); 
-  h1->DrawCopy("e"); 
-  h2->DrawCopy("histsame");
-  cout << "overlay(" << f1 << ", " << h1->GetName() << ", " << f2 << ", " << h2->GetName() 
-       << ") legend = " << legend << " log: " << log 
-       << endl;
-  
-  if (legend) {
-    newLegend(0.40, 0.75, 0.7, 0.85); 
-    legg->AddEntry(h1, fDS[f1]->fName.c_str(), "p"); 
-    legg->AddEntry(h2, fDS[f2]->fName.c_str(), "l"); 
-    legg->Draw();
-    cout << "  drawing legend" << endl;
-  }
-
-
-}
-
-
-// ----------------------------------------------------------------------
-void plotHpt::overlay(string f1, string h1name, string f2, string h2name, bool legend) {
-
-  TH1D *h1 = fDS[f1]->getHist(Form("%s", h1name.c_str())); 
-  TH1D *h2 = fDS[f2]->getHist(Form("%s", h2name.c_str())); 
-
-  overlay(h1, f1, h2, f2, legend); 
-
-}
-
-
-// ----------------------------------------------------------------------
 void plotHpt::candAnalysis() {
-  
   fGoodCand = true; 
   if (fb.m < 100 && fb.m > 150) fGoodCand = false; 
   if (fb.pt < 250) fGoodCand = false; 
@@ -514,11 +385,3 @@ void plotHpt::setupTree(TTree *t) {
   t->SetBranchAddress("gg1iso", &fb.gg1iso);
 }
 
-
-// ----------------------------------------------------------------------
-TTree* plotHpt::getTree(string ds) {
-  TTree *t(0);
-  cout << "retrieve tree events for dataset " << ds << " from file " << fDS[ds]->fF->GetName() << endl;
-  t = (TTree*)fDS[ds]->fF->Get("events"); 
-  return t; 
-}
