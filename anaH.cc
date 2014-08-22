@@ -558,8 +558,8 @@ double anaH::iso(Photon *gamma, double radius, double ptmin) {
   Tower *t; 
   TLorentzVector p4; 
   TLorentzVector g4 = gamma->P4(); 
-  for (int i = 0; i < fbPFtowers->GetEntries(); ++i) {
-    t = (Tower*)fbPFtowers->At(i);
+  for (int i = 0; i < fbPFphotons->GetEntries(); ++i) {
+    t = (Tower*)fbPFphotons->At(i);
     p4 = t->P4(); 
     if (p4.Pt() < ptmin) continue;
     if (t->Particles.At(0) == gamma->Particles.At(0)) {

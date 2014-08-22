@@ -12,8 +12,8 @@
 #include <TTree.h>
 #include <TClonesArray.h>
 
-#include "delphes/ExRootTreeReader.hh"
-#include "delphes/DelphesClasses.h"
+#include "external/ExRootAnalysis/ExRootTreeReader.h"
+#include "classes/DelphesClasses.h"
 
 #include "redTreeData.hh"
 
@@ -71,7 +71,8 @@ public:
     *fbJets,
     *fbPhotons,  
     *fbTracks,
-    *fbPFtowers, 
+    *fbPFneutralh, 
+    *fbPFphotons, 
     *fbPFtracks, 
     *fbElectrons,
     *fbMuons;
