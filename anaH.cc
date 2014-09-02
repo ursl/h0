@@ -189,9 +189,12 @@ void anaH::ggAnalysis() {
 
     fG0Iso = iso(pG0, 0.5, 0.5);
     fG1Iso = iso(pG1, 0.5, 0.5);
-    //     cout << "==============> built H candidate with m = " << fp4H.M() 
-    // 	 << " photons: " << fG0->PT << " " << fp4G0.Pt() << " .. " << fG1->PT << " " << fp4G1.Pt() 
-    // 	 << endl;
+    if (0) {
+      cout << "==============> built H candidate with m = " << fp4H.M() 
+	   << " photons: " << fG0->PT << " " << fp4G0.Pt() << " .. " << fG1->PT << " " << fp4G1.Pt() 
+	//	   << " with # references " << pG0->Particles.GetEntriesFast() << "/" << pG1->Particles.GetEntriesFast()
+	   << endl;
+    }
   }
 }
 
@@ -558,6 +561,20 @@ double anaH::iso(Photon *gamma, double radius, double ptmin) {
   Tower *t; 
   TLorentzVector p4; 
   TLorentzVector g4 = gamma->P4(); 
+  for (int i = 0; i < fbPFneutralh->GetEntries(); ++i) {
+    t = (Tower*)fbPFneutralh->At(i);
+    p4 = t->P4(); 
+    if (p4.Pt() < ptmin) continue;
+    if (t->Particles.At(0) == gamma->Particles.At(0)) {
+      //      cout << " tower: " << t->ET << " " << t->Eta << endl;
+    } else {
+      if (g4.DeltaR(p4) < radius) {
+	et += t->ET; 
+      }
+    }
+  }
+
+
   for (int i = 0; i < fbPFphotons->GetEntries(); ++i) {
     t = (Tower*)fbPFphotons->At(i);
     p4 = t->P4(); 

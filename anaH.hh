@@ -70,10 +70,9 @@ public:
     *fbEvent,
     *fbJets,
     *fbPhotons,  
-    *fbTracks,
+    *fbPFtracks,
     *fbPFneutralh, 
     *fbPFphotons, 
-    *fbPFtracks, 
     *fbElectrons,
     *fbMuons;
 
