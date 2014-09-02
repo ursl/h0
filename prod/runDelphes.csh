@@ -4,7 +4,8 @@ setenv JOB
 setenv DECAY
 setenv FILE1 $JOB-$DECAY.root
 setenv STORAGE1
-setenv HEPMCBASE "srm://t3se01.psi.ch:8443/srm/managerv2?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/strebeli/ggHyy/store/mcanlo_150"
+setenv MCATNLO 155
+setenv HEPMCBASE "srm://t3se01.psi.ch:8443/srm/managerv2?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/strebeli/ggHyy/store/mcanlo_$MCATNLO"
 
 
 setenv SRMCP
@@ -47,7 +48,7 @@ tar zxf $JOB.tar.gz
 echo "--> running DELPHES"
 date
 cd ./delphes
-lcg-cp -b -D srmv2 "$HEPMCBASE"/$JOB-mcanlo_150/$JOB-MC.hepmc file:///`pwd`/$JOB-MC.hepmc
+lcg-cp -b -D srmv2 "$HEPMCBASE"/$JOB-mcanlo_$MCATNLO/$JOB-MC.hepmc file:///`pwd`/$JOB-MC.hepmc
 
 ./DelphesHepMC ./delphes_card_CMS.tcl $JOB-delphes.root ./$JOB-MC.hepmc
 ls -l 
