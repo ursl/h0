@@ -183,8 +183,15 @@ void anaH::ggAnalysis() {
   fNRecoPhotons = nphotons;
 
   if (2 == nphotons) {
+    // -- sort them according to pT!
+    if (pG0->PT < pG1->PT) {
+      pG = pG0; 
+      pG0 = pG1; 
+      pG1 = pG; 
+    }
     fp4G0.SetPtEtaPhiM(pG0->PT, pG0->Eta, pG0->Phi, 0);
     fp4G1.SetPtEtaPhiM(pG1->PT, pG1->Eta, pG1->Phi, 0);
+
     fp4H = fp4G0 + fp4G1; 
 
     fG0Iso = iso(pG0, 0.3, 0.5);
