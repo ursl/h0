@@ -187,8 +187,8 @@ void anaH::ggAnalysis() {
     fp4G1.SetPtEtaPhiM(pG1->PT, pG1->Eta, pG1->Phi, 0);
     fp4H = fp4G0 + fp4G1; 
 
-    fG0Iso = iso(pG0, 0.5, 0.5);
-    fG1Iso = iso(pG1, 0.5, 0.5);
+    fG0Iso = iso(pG0, 0.3, 0.5);
+    fG1Iso = iso(pG1, 0.3, 0.5);
     if (0) {
       cout << "==============> built H candidate with m = " << fp4H.M() 
 	   << " photons: " << fG0->PT << " " << fp4G0.Pt() << " .. " << fG1->PT << " " << fp4G1.Pt() 
