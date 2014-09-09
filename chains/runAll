@@ -14,11 +14,11 @@ use Getopt::Std;
 getopts('t:');
 
 
-system("run -c ../runH.csh -t $opt_t -m batch -q short.q -x 'bin/runH' -r 'STORAGE1 srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/h/ana/v3/sherpa' csherpa_131_chain-??"); 
+system("run -c ../runH.csh -t $opt_t -m batch -q short.q -x 'bin/runH' -r 'STORAGE1 srm://t3se01.psi.ch:8443/srm/managerv2\\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/h/ana/v3/sherpa' csherpa_131_chain-??"); 
 
-system("run -c ../runH.csh -t $opt_t -m batch -q short.q -x 'bin/runH' -r 'STORAGE1 srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/h/ana/v3/mcatnlo_150' cmcatnlo_150_chain-??"); 
+system("run -c ../runH.csh -t $opt_t -m batch -q short.q -x 'bin/runH' -r 'STORAGE1 srm://t3se01.psi.ch:8443/srm/managerv2\\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/h/ana/v3/mcatnlo_150' cmcatnlo_150_chain-??"); 
 
-system("run -c ../runH.csh -t $opt_t -m batch -q short.q -x 'bin/runH' -r 'STORAGE1 srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/h/ana/v3/mcatnlo_151' cmcatnlo_151_chain-??"); 
+system("run -c ../runH.csh -t $opt_t -m batch -q short.q -x 'bin/runH' -r 'STORAGE1 srm://t3se01.psi.ch:8443/srm/managerv2\\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/h/ana/v3/mcatnlo_151' cmcatnlo_151_chain-??"); 
 
-system("run -c ../runH.csh -t $opt_t -m batch -q short.q -x 'bin/runH' -r 'STORAGE1 srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/h/ana/v3/mcatnlo_155' cmcatnlo_155_chain-??"); 
+system("run -c ../runH.csh -t $opt_t -m batch -q short.q -x 'bin/runH' -r 'STORAGE1 srm://t3se01.psi.ch:8443/srm/managerv2\\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/h/ana/v3/mcatnlo_155' cmcatnlo_155_chain-??"); 
 
