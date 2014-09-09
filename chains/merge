@@ -23,7 +23,7 @@ my $crash = "";
 my $srmcmd  = "lcg-cp  -b -D srmv2";
 my $dcap    = "dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat";
 my $srm     = "srm://t3se01.psi.ch:8443/srm/managerv2\\?SFN=/pnfs/psi.ch/cms/trivcat/store";
-my $rootdir = "h/ana/v2";
+my $rootdir = "h/ana/v3";
 if ($opt_r) {
     $rootdir = $opt_r; 
 }
@@ -39,10 +39,10 @@ if (!$opt_o) {
 tie %jobs, "Tie::IxHash";
 
 %jobs = (
-    "mcatnlo_150" => "cmcanlo_150", 
-    "mcatnlo_151" => "cmcanlo_151", 
-    "mcatnlo_155" => "cmcanlo_155", 
-    "sherpa" => "csherpa_130"
+    "mcatnlo_150" => "cmcatnlo_150_chain", 
+    "mcatnlo_151" => "cmcatnlo_151_chain", 
+    "mcatnlo_155" => "cmcatnlo_155_chain", 
+    "sherpa" => "csherpa_131_chain"
 );
 
 my @lines;

@@ -38,7 +38,7 @@ setenv LD_LIBRARY_PATH /swshare/cms/slc5_amd64_gcc462/external/gcc/4.6.2/lib64:/
 setenv LD_LIBRARY_PATH /swshare/emi-wn-2.5.1-1_v1/emi-wn/usr/lib64:${LD_LIBRARY_PATH}
 source $VO_CMS_SW_DIR/cmsset_default.csh
 
-setenv ROOTSYS /shome/naegelic/root
+setenv ROOTSYS /shome/ursl/root
 setenv LD_LIBRARY_PATH ${ROOTSYS}/lib:/shome/ursl/macros/lib:${LD_LIBRARY_PATH}
 setenv PATH ${ROOTSYS}/bin:${PATH}
 
