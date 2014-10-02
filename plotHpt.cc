@@ -40,12 +40,20 @@ plotHpt::plotHpt(string dir,  string files, string setup): plotClass(dir, files,
   NBINS = 50;  
   GETA = 2.5;
   G0ISO = G1ISO = 0.2; 
+  G0ISOR = 0.005; 
+  G1ISOR = 0.010; 
   G0PT = 100.;
   G1PT = 40.;
-  PTLO = 300.;
+  PTLO = 200.;
   PTHI = 999.;
   MGGLO = 100.;
   MGGHI = 150.;
+
+  fLumi = 1000.;
+
+  // test
+  G0PT = 140.;
+  G1PT = 100.;
 
 }
 
@@ -57,25 +65,62 @@ plotHpt::~plotHpt() {
 
 
 // ----------------------------------------------------------------------
-void plotHpt::bookHist(string name) {
-  fHists.insert(make_pair(Form("m_%s", name.c_str()), 
-			  new TH1D(Form("m_%s", name.c_str()), Form("m_%s", name.c_str()), NBINS, MGGLO, MGGHI))); 
+void plotHpt::bookHist(string name, string cuts) {
+  char hist[200], thist[200], ahist[200];
 
-  fHists.insert(make_pair(Form("pt_%s", name.c_str()), 
-			  new TH1D(Form("pt_%s", name.c_str()), Form("pt_%s", name.c_str()), 100, 0, 1000.))); 
+  sprintf(hist, "%s_%s_%s", "m", name.c_str(), cuts.c_str());
+  sprintf(thist, "%s", "m");
+  sprintf(ahist, "%s", "m_{#gamma#gamma} [GeV]"); 
+  fHists.insert(make_pair(hist, new TH1D(hist, thist, NBINS+20, MGGLO-10, MGGHI+10))); 
+  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
 
-  fHists.insert(make_pair(Form("g0pt_%s", name.c_str()), 
-			  new TH1D(Form("g0pt_%s", name.c_str()), Form("g0pt_%s", name.c_str()), 100, 0., 300.))); 
+  sprintf(hist, "%s_%s_%s", "pt", name.c_str(), cuts.c_str());
+  sprintf(thist, "%s", "pt");
+  sprintf(ahist, "%s", "pt_{#gamma#gamma} [GeV]"); 
+  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0, 1000.))); 
+  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  
+  sprintf(hist, "%s_%s_%s", "eta", name.c_str(), cuts.c_str());
+  sprintf(thist, "%s", "eta");
+  sprintf(ahist, "%s", "eta_{#gamma#gamma}"); 
+  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, -5., 5.))); 
+  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  
+  sprintf(hist, "%s_%s_%s", "g0pt", name.c_str(), cuts.c_str());
+  sprintf(thist, "%s", "g0pt");
+  sprintf(ahist, "%s", "pt_{#gamma0} [GeV]"); 
+  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 800.))); 
+  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
 
-  fHists.insert(make_pair(Form("g1pt_%s", name.c_str()), 
-			  new TH1D(Form("g1pt_%s", name.c_str()), Form("g1pt_%s", name.c_str()), 100, 0., 300.))); 
+  sprintf(hist, "%s_%s_%s", "g1pt", name.c_str(), cuts.c_str());
+  sprintf(thist, "%s", "g1pt");
+  sprintf(ahist, "%s", "pt_{#gamma1} [GeV]"); 
+  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 300.))); 
+  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
 
-  fHists.insert(make_pair(Form("g0iso_%s", name.c_str()), 
-			  new TH1D(Form("g0iso_%s", name.c_str()), Form("g0iso_%s", name.c_str()), 100, 0., 1.))); 
+  sprintf(hist, "%s_%s_%s", "g0iso", name.c_str(), cuts.c_str());
+  sprintf(thist, "%s", "g0iso");
+  sprintf(ahist, "%s", "I_{#gamma0}"); 
+  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 2.))); 
+  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
 
-  fHists.insert(make_pair(Form("g1iso_%s", name.c_str()), 
-			  new TH1D(Form("g1iso_%s", name.c_str()), Form("g1iso_%s", name.c_str()), 100, 0., 1.))); 
+  sprintf(hist, "%s_%s_%s", "g1iso", name.c_str(), cuts.c_str());
+  sprintf(thist, "%s", "g1iso");
+  sprintf(ahist, "%s", "I_{#gamma1}"); 
+  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 2.))); 
+  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
 
+  sprintf(hist, "%s_%s_%s", "g0isor", name.c_str(), cuts.c_str());
+  sprintf(thist, "%s", "g0isor");
+  sprintf(ahist, "%s", "I_{#gamma0}^{rel}"); 
+  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 0.006))); 
+  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+
+  sprintf(hist, "%s_%s_%s", "g1isor", name.c_str(), cuts.c_str());
+  sprintf(thist, "%s", "g1isor");
+  sprintf(ahist, "%s", "I_{#gamma1}^{rel}"); 
+  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 0.012))); 
+  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
 
 }
 
@@ -92,21 +137,58 @@ void plotHpt::treeAnalysis() {
 
   string ds("sherpa");
   fCds = ds; 
-  bookHist(ds); 
+  bookHist(ds, "nocut"); 
+  bookHist(ds, "goodcand"); 
+  bookHist(ds, "highpt"); 
   TTree *t = getTree(ds); 
   setupTree(t); 
-  loopOverTree(t); 
+  loopOverTree(t, 1); 
 
   ds = "mcatnlo5"; 
   fCds = ds; 
-  bookHist(ds); 
+  bookHist(ds, "nocut"); 
+  bookHist(ds, "goodcand"); 
+  bookHist(ds, "highpt"); 
   t = getTree(ds); 
   setupTree(t);
-  loopOverTree(t); 
+  loopOverTree(t, 1); 
 
+  gStyle->SetOptStat(0); 
+  string what("m"); 
+  int ipad(1); 
+  zone(2,3);
+  int OTYPE = LUMI;
+  overlay(fHists[Form("%s_sherpa_goodcand", what.c_str())], "sherpa", 
+	  fHists[Form("%s_mcatnlo5_goodcand", what.c_str())], "mcatnlo5", OTYPE, false, true); 
 
-  fHists["m_sherpa"]->Draw(); 
-  fHists["m_mcatnlo5"]->Draw("same"); 
+  ++ipad;
+  c0->cd(ipad);
+  what = "pt"; 
+  overlay(fHists[Form("%s_sherpa_goodcand", what.c_str())], "sherpa", 
+	  fHists[Form("%s_mcatnlo5_goodcand", what.c_str())], "mcatnlo5", OTYPE, true, true); 
+
+  TH1D * h = (TH1D*)fHists[Form("%s_mcatnlo5", what.c_str())];
+  tl->DrawLatex(0.5, 0.70, Form("total:  %.1e", h->Integral())); 
+  tl->DrawLatex(0.5, 0.60, Form("pt>300: %.1e", h->Integral(h->FindBin(300.), h->FindBin(1000.)))); 
+
+  ++ipad;
+  c0->cd(ipad);
+  what = "eta"; 
+  overlay(fHists[Form("%s_sherpa_goodcand", what.c_str())], "sherpa", 
+	  fHists[Form("%s_mcatnlo5_goodcand", what.c_str())], "mcatnlo5", OTYPE, false, true); 
+
+  ++ipad;
+  c0->cd(ipad);
+  what = "g0pt"; 
+  overlay(fHists[Form("%s_sherpa_goodcand", what.c_str())], "sherpa", 
+	  fHists[Form("%s_mcatnlo5_goodcand", what.c_str())], "mcatnlo5", OTYPE, true, true); 
+
+  ++ipad;
+  c0->cd(ipad);
+  what = "g1pt"; 
+  overlay(fHists[Form("%s_sherpa_goodcand", what.c_str())], "sherpa", 
+	  fHists[Form("%s_mcatnlo5_goodcand", what.c_str())], "mcatnlo5", OTYPE, true, true); 
+
 
 }
 
@@ -214,7 +296,7 @@ void plotHpt::loadFiles(string afiles) {
 	ds->fF = pF; 
 	ds->fXsec = atof(sxsec.c_str());
 	ds->fBf   = 2.28E-03;
-	ds->fLumi = nevt/ds->fXsec/ds->fBf;
+	ds->fLumi = nevt/ds->fXsec/ds->fBf/1000.;
 	ds->fName = "MC@NLO " + sdecay; 
 	ds->fFillStyle = 3356; 
 	ds->fSize = 1; 
@@ -225,18 +307,16 @@ void plotHpt::loadFiles(string afiles) {
 
       if (string::npos != stype.find("sherpa")) {
 	dataset *ds = new dataset(); 
-	if (string::npos != stype.find("1")) {
-	  sname = "sherpa";
-	  sdecay = "#gamma #gamma";
-	  ds->fColor = kRed; 
-	  ds->fLcolor = kRed; 
-	  ds->fFcolor = kRed; 
-	  ds->fSymbol = 27; 
-	} 
+	sname = "sherpa";
+	sdecay = "#gamma #gamma";
+	ds->fColor = kRed; 
+	ds->fLcolor = kRed; 
+	ds->fFcolor = kRed; 
+	ds->fSymbol = 27; 
 	ds->fF = pF; 
 	ds->fXsec = atof(sxsec.c_str());
 	ds->fBf   = 1.;
-	ds->fLumi = nevt/ds->fXsec/ds->fBf;
+	ds->fLumi = nevt/ds->fXsec/ds->fBf/1000.;
 	ds->fName = "SHERPA " + sdecay; 
 	ds->fFillStyle = 3365; 
 	ds->fSize = 1; 
@@ -246,83 +326,62 @@ void plotHpt::loadFiles(string afiles) {
 
       // mb ub nb pb fb 
       cout << "opened MC file "  << sfile  << " as " << sname << " (" << stype << ") with xsec = " << sxsec
-	   << " equivalent lumi = " << fDS[sname]->fLumi/1000. << "/fb"
+	   << " equivalent lumi = " << fDS[sname]->fLumi << "/fb"
+	   << " (Nevts = " << nevt << ")"
 	   << endl;
 
     }
   }
-  
-
 }
-
-
-
-// // ----------------------------------------------------------------------
-// void plotHpt::normHist(TH1D *h, double integral, string type) {
-//   double scale(1.); 
-//   if (TMath::Abs(integral - 1.) < fEpsilon) {
-//     // -- normalize to 1
-//     scale = (h->GetSumOfWeights() > 0 ? integral/h->GetSumOfWeights() : 1.); 
-//   } else if (TMath::Abs(integral + 1.) < fEpsilon) {
-//     // -- normalize to xsec*bf
-//     //    n = xsec * L
-//     //    "integral" over histogram should be xsec
-
-//     scale = (h->GetSumOfWeights() > 0 ? fDS[type]->fXsec*fDS[type]->fBf/h->Integral() : 1.); 
-//     setTitles(h, h->GetXaxis()->GetTitle(), "pb");
-//   } else {
-//     scale = 1.;
-//   }
-//   double c(0.), e(0.); 
-//   for (int i = 0; i <= h->GetNbinsX(); ++i) {
-//     c = h->GetBinContent(i); 
-//     e = h->GetBinError(i); 
-//     h->SetBinContent(i, c*scale);
-//     h->SetBinError(i, e*scale);
-//   }
-  
-// }
 
 
 // ----------------------------------------------------------------------
 void plotHpt::overlayAll() {
-
   // -- simple overlays
   c0->cd(1); 
   overlay("mcatnlo5", "H1pt", "sherpa", "H1pt"); 
-
 }
+
 
 // ----------------------------------------------------------------------
 void plotHpt::candAnalysis() {
   fGoodCand = true; 
-  if (fb.m < 100 && fb.m > 150) fGoodCand = false; 
-  if (fb.pt < 250) fGoodCand = false; 
-  if (TMath::Abs(fb.eta) > GETA) fGoodCand = false; 
+  if (fb.m < MGGLO) fGoodCand = false; 
+  if (fb.m > MGGHI) fGoodCand = false; 
+  if (fb.pt < PTLO) fGoodCand = false; 
+  if (TMath::Abs(fb.g0eta) > GETA) fGoodCand = false; 
+  if (TMath::Abs(fb.g1eta) > GETA) fGoodCand = false; 
   if (fb.g0pt < G0PT) fGoodCand = false; 
   if (fb.g1pt < G1PT) fGoodCand = false; 
+
+  //   if (fb.g0iso/fb.g0pt > G0ISOR) fGoodCand = false; 
+  //   if (fb.g1iso/fb.g1pt > G1ISOR) fGoodCand = false; 
+
   if (fb.g0iso > G0ISO) fGoodCand = false; 
   if (fb.g1iso > G1ISO) fGoodCand = false; 
 
 }
 
 // ----------------------------------------------------------------------
-void plotHpt::loopFunction() {
+void plotHpt::loopFunction1() {
   char cds[100];
   sprintf(cds, "%s", fCds.c_str());
   if (fGoodCand) { 
-    fHists[Form("m_%s", cds)]->Fill(fb.m); 
-    fHists[Form("pt_%s", cds)]->Fill(fb.pt); 
-    fHists[Form("g0pt_%s", cds)]->Fill(fb.g0pt); 
-    fHists[Form("g1pt_%s", cds)]->Fill(fb.g1pt); 
-    fHists[Form("g0iso_%s", cds)]->Fill(fb.g0iso); 
-    fHists[Form("g1iso_%s", cds)]->Fill(fb.g1iso); 
+    fHists[Form("m_%s_goodcand", cds)]->Fill(fb.m); 
+    fHists[Form("pt_%s_goodcand", cds)]->Fill(fb.pt); 
+    fHists[Form("eta_%s_goodcand", cds)]->Fill(fb.eta); 
+    fHists[Form("g0pt_%s_goodcand", cds)]->Fill(fb.g0pt); 
+    fHists[Form("g1pt_%s_goodcand", cds)]->Fill(fb.g1pt); 
+    fHists[Form("g0iso_%s_goodcand", cds)]->Fill(fb.g0iso); 
+    fHists[Form("g1iso_%s_goodcand", cds)]->Fill(fb.g1iso); 
+    fHists[Form("g0isor_%s_goodcand", cds)]->Fill(fb.g0iso/fb.g0pt); 
+    fHists[Form("g1isor_%s_goodcand", cds)]->Fill(fb.g1iso/fb.g1pt); 
   }
 }
 
 
 // ----------------------------------------------------------------------
-void plotHpt::loopOverTree(TTree *t, int nevts, int nstart) {
+void plotHpt::loopOverTree(TTree *t, int ifunc, int nevts, int nstart) {
   int nentries = Int_t(t->GetEntries());
   int nbegin(0), nend(nentries); 
   if (nevts > 0 && nentries > nevts) {
@@ -354,13 +413,18 @@ void plotHpt::loopOverTree(TTree *t, int nevts, int nstart) {
        << " with " << nentries << " entries" 
        << endl;
 
+  // -- setup loopfunction through pointer to member functions
+  //    (this is the reason why this function is NOT in plotClass!)
+  void (plotHpt::*pF)(void);
+  if (ifunc == 1) pF = &plotHpt::loopFunction1;
+
   // -- the real loop starts here
   for (int jentry = nbegin; jentry < nend; jentry++) {
     t->GetEntry(jentry);
     if (jentry%step == 0) cout << Form(" .. evt = %d", jentry) << endl;
-    
+   
     candAnalysis();
-    loopFunction();
+    (this->*pF)();
   }
 
 }

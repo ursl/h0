@@ -25,17 +25,18 @@ public :
 
   virtual void   overlayAll();
 
-  virtual void   bookHist(std::string name); 
+  virtual void   bookHist(std::string name, std::string cuts); 
   virtual void   setupTree(TTree *t); 
-  virtual void   loopOverTree(TTree *t, int nevts = -1, int nstart = 0); 
+  virtual void   loopOverTree(TTree *t, int ifunc, int nevts = -1, int nstart = 0); 
   void           candAnalysis(); 
-  void           loopFunction(); 
+  void           loopFunction1(); 
 
 private: 
 
   int    NBINS; 
   double GETA;
   double G0ISO, G1ISO; 
+  double G0ISOR, G1ISOR; 
   double G0PT, G1PT; 
   double PTLO, PTHI; 
   double MGGLO, MGGHI; 
