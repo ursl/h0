@@ -37,14 +37,14 @@ using namespace RooStats;
 plotHpt::plotHpt(string dir,  string files, string setup): plotClass(dir, files, setup), fWorkspace("w") {
   loadFiles(files);
 
-  NBINS = 50;  
+  NBINS = 25;  
   GETA = 2.5;
   G0ISO = G1ISO = 0.2; 
   G0ISOR = 0.005; 
   G1ISOR = 0.010; 
   G0PT = 100.;
   G1PT = 40.;
-  PTLO = 200.;
+  PTLO = 250.;
   PTHI = 999.;
   MGGLO = 100.;
   MGGHI = 150.;
@@ -54,6 +54,9 @@ plotHpt::plotHpt(string dir,  string files, string setup): plotClass(dir, files,
   // test
   G0PT = 140.;
   G1PT = 100.;
+
+  G0PT = 0.;
+  G1PT = 40.;
 
 }
 
@@ -68,10 +71,18 @@ plotHpt::~plotHpt() {
 void plotHpt::bookHist(string name, string cuts) {
   char hist[200], thist[200], ahist[200];
 
+  // -- gen pT for efficiency
+  sprintf(hist, "gen%s_%s_%s", "pt", name.c_str(), cuts.c_str());
+  sprintf(thist, "%s", "pt");
+  sprintf(ahist, "%s", "pt_{#gamma#gamma} [GeV]"); 
+  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0, 1000.))); 
+  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+
+  // -- reco overlays
   sprintf(hist, "%s_%s_%s", "m", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "m");
   sprintf(ahist, "%s", "m_{#gamma#gamma} [GeV]"); 
-  fHists.insert(make_pair(hist, new TH1D(hist, thist, NBINS+20, MGGLO-10, MGGHI+10))); 
+  fHists.insert(make_pair(hist, new TH1D(hist, thist, NBINS, MGGLO, MGGHI))); 
   setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
 
   sprintf(hist, "%s_%s_%s", "pt", name.c_str(), cuts.c_str());
@@ -133,61 +144,153 @@ void plotHpt::makeAll(int bitmask) {
 
 
 // ----------------------------------------------------------------------
-void plotHpt::treeAnalysis() {
-
+void plotHpt::treeAnalysis(int nevts) {
   string ds("sherpa");
   fCds = ds; 
-  bookHist(ds, "nocut"); 
   bookHist(ds, "goodcand"); 
-  bookHist(ds, "highpt"); 
+  bookHist(ds, "lopt"); 
+  bookHist(ds, "hipt"); 
   TTree *t = getTree(ds); 
   setupTree(t); 
-  loopOverTree(t, 1); 
+  loopOverTree(t, 1, nevts); 
+  
 
   ds = "mcatnlo5"; 
   fCds = ds; 
-  bookHist(ds, "nocut"); 
   bookHist(ds, "goodcand"); 
-  bookHist(ds, "highpt"); 
+  bookHist(ds, "lopt"); 
+  bookHist(ds, "hipt"); 
   t = getTree(ds); 
   setupTree(t);
-  loopOverTree(t, 1); 
+  loopOverTree(t, 1, nevts); 
+
+
+  ds = "mcatnlo0"; 
+  fCds = ds; 
+  bookHist(ds, "goodcand"); 
+  bookHist(ds, "lopt"); 
+  bookHist(ds, "hipt"); 
+  t = getTree(ds); 
+  setupTree(t);
+  loopOverTree(t, 1, nevts); 
+
+  ds = "mcatnlo1"; 
+  fCds = ds; 
+  bookHist(ds, "goodcand"); 
+  bookHist(ds, "lopt"); 
+  bookHist(ds, "hipt"); 
+  t = getTree(ds); 
+  setupTree(t);
+  loopOverTree(t, 1, nevts); 
+
+  map<string, TH1*>::iterator hit = fHists.begin();
+  map<string, TH1*>::iterator hite = fHists.end();
+  string h0name(""), h1name("");
+  TH1D *h1(0); 
+  for (; hit != hite; ++hit) {
+    h0name = hit->second->GetName(); 
+    if (string::npos == h0name.compare("mcatnlo0")) continue;
+    h1name = h0name;
+    replaceAll(h1name, "mcatnlo0", "mcatnlo1"); 
+    h1 = (TH1D*)fHists[h1name];
+    combMCAtNLOHist((TH1D*)hit->second, h1); 
+  }
+
+  makeCanvas(8);
+  zone(2,2, c4);
+  TH1D *h0 = (TH1D*)fHists["genpt_mcatnlo5_goodcand"]->DrawCopy();
+  c4->cd(2);
+  h1 = (TH1D*)fHists["pt_mcatnlo5_goodcand"]->DrawCopy();
+  c4->cd(3);
+  TH1D *heff = (TH1D*)h0->Clone("heff");
+  heff->Reset();
+  heff->Divide(h1, h0); 
+  heff->Draw();
+
 
   gStyle->SetOptStat(0); 
-  string what("m"); 
-  int ipad(1); 
-  zone(2,3);
+  string what("pt"); 
+  string sel("lopt");
+  int ipad(0); 
   int OTYPE = LUMI;
-  overlay(fHists[Form("%s_sherpa_goodcand", what.c_str())], "sherpa", 
-	  fHists[Form("%s_mcatnlo5_goodcand", what.c_str())], "mcatnlo5", OTYPE, false, true); 
+
+
+  zone(4,2);
+
+  ++ipad;
+  c0->cd(ipad);
+  what = "m"; 
+  sel = "hipt";
+  overlay(fHists[Form("%s_sherpa_%s", what.c_str(), sel.c_str())], "sherpa", 
+	  fHists[Form("%s_mcatnlo5_%s", what.c_str(), sel.c_str())], "mcatnlo5", 
+	  fHists[Form("%s_mcatnlo_%s", what.c_str(), sel.c_str())], "mcatnlo0", 
+	  OTYPE, false, true); 
 
   ++ipad;
   c0->cd(ipad);
   what = "pt"; 
-  overlay(fHists[Form("%s_sherpa_goodcand", what.c_str())], "sherpa", 
-	  fHists[Form("%s_mcatnlo5_goodcand", what.c_str())], "mcatnlo5", OTYPE, true, true); 
+  sel = "goodcand";
+  overlay(fHists[Form("%s_sherpa_%s", what.c_str(), sel.c_str())], "sherpa", 
+	  fHists[Form("%s_mcatnlo5_%s", what.c_str(), sel.c_str())], "mcatnlo5", 
+	  fHists[Form("%s_mcatnlo_%s", what.c_str(), sel.c_str())], "mcatnlo0", 
+	  OTYPE, true, true); 
 
-  TH1D * h = (TH1D*)fHists[Form("%s_mcatnlo5", what.c_str())];
-  tl->DrawLatex(0.5, 0.70, Form("total:  %.1e", h->Integral())); 
-  tl->DrawLatex(0.5, 0.60, Form("pt>300: %.1e", h->Integral(h->FindBin(300.), h->FindBin(1000.)))); 
+
+  ++ipad; 
+  c0->cd(ipad);
+  what = "pt"; 
+  sel = "lopt";
+  overlay(fHists[Form("%s_sherpa_%s", what.c_str(), sel.c_str())], "sherpa", 
+	  fHists[Form("%s_mcatnlo5_%s", what.c_str(), sel.c_str())], "mcatnlo5", 
+	  fHists[Form("%s_mcatnlo_%s", what.c_str(), sel.c_str())], "mcatnlo0", 
+	  OTYPE, false, true); 
 
   ++ipad;
   c0->cd(ipad);
-  what = "eta"; 
-  overlay(fHists[Form("%s_sherpa_goodcand", what.c_str())], "sherpa", 
-	  fHists[Form("%s_mcatnlo5_goodcand", what.c_str())], "mcatnlo5", OTYPE, false, true); 
+  what = "pt"; 
+  sel = "hipt";
+  overlay(fHists[Form("%s_sherpa_%s", what.c_str(), sel.c_str())], "sherpa", 
+	  fHists[Form("%s_mcatnlo5_%s", what.c_str(), sel.c_str())], "mcatnlo5", 
+	  fHists[Form("%s_mcatnlo_%s", what.c_str(), sel.c_str())], "mcatnlo0", 
+	  OTYPE, true, true); 
 
   ++ipad;
   c0->cd(ipad);
   what = "g0pt"; 
-  overlay(fHists[Form("%s_sherpa_goodcand", what.c_str())], "sherpa", 
-	  fHists[Form("%s_mcatnlo5_goodcand", what.c_str())], "mcatnlo5", OTYPE, true, true); 
+  sel = "lopt";
+  overlay(fHists[Form("%s_sherpa_%s", what.c_str(), sel.c_str())], "sherpa", 
+	  fHists[Form("%s_mcatnlo5_%s", what.c_str(), sel.c_str())], "mcatnlo5", 
+	  fHists[Form("%s_mcatnlo_%s", what.c_str(), sel.c_str())], "mcatnlo0", 
+	  OTYPE, true, true); 
+
+
+  ++ipad;
+  c0->cd(ipad);
+  what = "g0pt"; 
+  sel = "hipt";
+  overlay(fHists[Form("%s_sherpa_%s", what.c_str(), sel.c_str())], "sherpa", 
+	  fHists[Form("%s_mcatnlo5_%s", what.c_str(), sel.c_str())], "mcatnlo5", 
+	  fHists[Form("%s_mcatnlo_%s", what.c_str(), sel.c_str())], "mcatnlo0", 
+	  OTYPE, true, true); 
 
   ++ipad;
   c0->cd(ipad);
   what = "g1pt"; 
-  overlay(fHists[Form("%s_sherpa_goodcand", what.c_str())], "sherpa", 
-	  fHists[Form("%s_mcatnlo5_goodcand", what.c_str())], "mcatnlo5", OTYPE, true, true); 
+  sel = "lopt";
+  overlay(fHists[Form("%s_sherpa_%s", what.c_str(), sel.c_str())], "sherpa", 
+	  fHists[Form("%s_mcatnlo5_%s", what.c_str(), sel.c_str())], "mcatnlo5", 
+	  fHists[Form("%s_mcatnlo_%s", what.c_str(), sel.c_str())], "mcatnlo0", 
+	  OTYPE, true, true); 
+
+  ++ipad;
+  c0->cd(ipad);
+  what = "g1pt"; 
+  sel = "hipt";
+  overlay(fHists[Form("%s_sherpa_%s", what.c_str(), sel.c_str())], "sherpa", 
+	  fHists[Form("%s_mcatnlo5_%s", what.c_str(), sel.c_str())], "mcatnlo5", 
+	  fHists[Form("%s_mcatnlo_%s", what.c_str(), sel.c_str())], "mcatnlo0", 
+	  OTYPE, true, true); 
+
 
 
 }
@@ -348,7 +451,6 @@ void plotHpt::candAnalysis() {
   fGoodCand = true; 
   if (fb.m < MGGLO) fGoodCand = false; 
   if (fb.m > MGGHI) fGoodCand = false; 
-  if (fb.pt < PTLO) fGoodCand = false; 
   if (TMath::Abs(fb.g0eta) > GETA) fGoodCand = false; 
   if (TMath::Abs(fb.g1eta) > GETA) fGoodCand = false; 
   if (fb.g0pt < G0PT) fGoodCand = false; 
@@ -363,20 +465,46 @@ void plotHpt::candAnalysis() {
 }
 
 // ----------------------------------------------------------------------
+void plotHpt::loopFunction2() {
+}
+
+// ----------------------------------------------------------------------
 void plotHpt::loopFunction1() {
-  char cds[100];
+  char cds[100], cut[100];
+
   sprintf(cds, "%s", fCds.c_str());
+  
+  fHists[Form("genpt_%s_goodcand", cds)]->Fill(fb.gpt); 
+
   if (fGoodCand) { 
-    fHists[Form("m_%s_goodcand", cds)]->Fill(fb.m); 
     fHists[Form("pt_%s_goodcand", cds)]->Fill(fb.pt); 
-    fHists[Form("eta_%s_goodcand", cds)]->Fill(fb.eta); 
-    fHists[Form("g0pt_%s_goodcand", cds)]->Fill(fb.g0pt); 
-    fHists[Form("g1pt_%s_goodcand", cds)]->Fill(fb.g1pt); 
-    fHists[Form("g0iso_%s_goodcand", cds)]->Fill(fb.g0iso); 
-    fHists[Form("g1iso_%s_goodcand", cds)]->Fill(fb.g1iso); 
-    fHists[Form("g0isor_%s_goodcand", cds)]->Fill(fb.g0iso/fb.g0pt); 
-    fHists[Form("g1isor_%s_goodcand", cds)]->Fill(fb.g1iso/fb.g1pt); 
+    
+    if (fb.pt < 250) return;
+    if (fb.pt > 250 && fb.pt < 400) { 
+      sprintf(cut, "lopt"); 
+      fHists[Form("m_%s_%s", cds, cut)]->Fill(fb.m); 
+      fHists[Form("pt_%s_%s", cds, cut)]->Fill(fb.pt); 
+      fHists[Form("eta_%s_%s", cds, cut)]->Fill(fb.eta); 
+      fHists[Form("g0pt_%s_%s", cds, cut)]->Fill(fb.g0pt); 
+      fHists[Form("g1pt_%s_%s", cds, cut)]->Fill(fb.g1pt); 
+      fHists[Form("g0iso_%s_%s", cds, cut)]->Fill(fb.g0iso); 
+      fHists[Form("g1iso_%s_%s", cds, cut)]->Fill(fb.g1iso); 
+      fHists[Form("g0isor_%s_%s", cds, cut)]->Fill(fb.g0iso/fb.g0pt); 
+      fHists[Form("g1isor_%s_%s", cds, cut)]->Fill(fb.g1iso/fb.g1pt); 
+    } else {
+      sprintf(cut, "hipt"); 
+      fHists[Form("m_%s_%s", cds, cut)]->Fill(fb.m); 
+      fHists[Form("pt_%s_%s", cds, cut)]->Fill(fb.pt); 
+      fHists[Form("eta_%s_%s", cds, cut)]->Fill(fb.eta); 
+      fHists[Form("g0pt_%s_%s", cds, cut)]->Fill(fb.g0pt); 
+      fHists[Form("g1pt_%s_%s", cds, cut)]->Fill(fb.g1pt); 
+      fHists[Form("g0iso_%s_%s", cds, cut)]->Fill(fb.g0iso); 
+      fHists[Form("g1iso_%s_%s", cds, cut)]->Fill(fb.g1iso); 
+      fHists[Form("g0isor_%s_%s", cds, cut)]->Fill(fb.g0iso/fb.g0pt); 
+      fHists[Form("g1isor_%s_%s", cds, cut)]->Fill(fb.g1iso/fb.g1pt); 
+    }
   }
+
 }
 
 
@@ -417,6 +545,7 @@ void plotHpt::loopOverTree(TTree *t, int ifunc, int nevts, int nstart) {
   //    (this is the reason why this function is NOT in plotClass!)
   void (plotHpt::*pF)(void);
   if (ifunc == 1) pF = &plotHpt::loopFunction1;
+  if (ifunc == 2) pF = &plotHpt::loopFunction2;
 
   // -- the real loop starts here
   for (int jentry = nbegin; jentry < nend; jentry++) {
@@ -460,3 +589,19 @@ void plotHpt::setupTree(TTree *t) {
   t->SetBranchAddress("gg1iso", &fb.gg1iso);
 }
 
+
+
+// ----------------------------------------------------------------------
+void plotHpt::combMCAtNLOHist(TH1D *h0, TH1D *h1) {
+  double xs0(36.44), xs1(-2.37); 
+
+  string h1name = h0->GetName(); 
+  replaceAll(h1name, "mcatnlo0", "mcatnlo"); 
+
+  TH1D *h = (TH1D*)h0->Clone(h1name.c_str()); 
+  h->Reset();
+  h->Add(h0, h1, 1., xs1/xs0); 
+
+  fHists.insert(make_pair(h->GetName(), h)); 
+
+}

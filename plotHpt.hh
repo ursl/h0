@@ -19,7 +19,7 @@ public :
 
   // -- Main analysis methods 
   virtual void   makeAll(int bitmask = 0);
-  virtual void   treeAnalysis(); 
+  virtual void   treeAnalysis(int nevts = -1); 
 
   void           toy1(int nsg = 60, int nbg = 150); 
 
@@ -30,6 +30,9 @@ public :
   virtual void   loopOverTree(TTree *t, int ifunc, int nevts = -1, int nstart = 0); 
   void           candAnalysis(); 
   void           loopFunction1(); 
+  void           loopFunction2(); 
+
+  void           combMCAtNLOHist(TH1D *h0, TH1D *h1);
 
 private: 
 
