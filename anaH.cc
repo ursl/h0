@@ -43,6 +43,9 @@ void anaH::eventProcessing() {
   initVariables();
 
 //   cout << "w8: " <<  getEvent(0)->Weight 
+//        << " total events = " << fbEvent->GetSize()
+//        << endl;
+
 //        << " processid: " << getEvent(0)->ProcessID
 //        << " MPI: " << getEvent(0)->MPI
 //        << " X1: " << getEvent(0)->X1 
@@ -194,8 +197,12 @@ void anaH::ggAnalysis() {
 
     fp4H = fp4G0 + fp4G1; 
 
-    fG0Iso = iso(pG0, 0.3, 0.5);
-    fG1Iso = iso(pG1, 0.3, 0.5);
+    //     cout << "----------------------------------------------------------------------" << endl;
+    //     cout << "pG0 ET = " << pG0->PT << " eta = " << pG0->Eta << endl;
+    //     cout << "pG1 ET = " << pG1->PT << " eta = " << pG1->Eta << endl;
+
+    fG0Iso = iso(pG0, pG1, 0.3, 0.5);
+    fG1Iso = iso(pG1, pG0, 0.3, 0.5);
     if (0) {
       cout << "==============> built H candidate with m = " << fp4H.M() 
 	   << " photons: " << fG0->PT << " " << fp4G0.Pt() << " .. " << fG1->PT << " " << fp4G1.Pt() 
@@ -518,41 +525,41 @@ void anaH::fillRedTreeData(int type) {
 
   //  cout << "  fillRedTreeData: " << fW8 << endl;
 
-  if (fp4H.Pt() > 0.) {
+  if (fp4H.Pt() > 0.001) {
     fRtd.m   = fp4H.M(); 
     fRtd.pt  = fp4H.Pt(); 
     fRtd.eta = fp4H.Eta(); 
     fRtd.phi = fp4H.Phi(); 
   }
 
-  if (fp4G0.Pt() > 0.) {
+  if (fp4G0.Pt() > 0.001) {
     fRtd.g0pt  = fp4G0.Pt(); 
     fRtd.g0eta = fp4G0.Eta(); 
     fRtd.g0phi = fp4G0.Phi(); 
     fRtd.g0iso = fG0Iso; 
   }
 
-  if (fp4G1.Pt() > 0.) {
+  if (fp4G1.Pt() > 0.001) {
     fRtd.g1pt  = fp4G1.Pt(); 
     fRtd.g1eta = fp4G1.Eta(); 
     fRtd.g1phi = fp4G1.Phi(); 
     fRtd.g1iso = fG1Iso; 
   }
 
-  if (fp4genH1.Pt() > 0.) {
+  if (fp4genH1.Pt() > 0.001) {
     fRtd.gm   = fp4genH1.M(); 
     fRtd.gpt  = fp4genH1.Pt(); 
     fRtd.geta = fp4genH1.Eta(); 
     fRtd.gphi = fp4genH1.Phi(); 
   }
   
-  if (fp4genG0.Pt() > 0.) {
+  if (fp4genG0.Pt() > 0.001) {
     fRtd.gg0pt  = fp4genG0.Pt(); 
     fRtd.gg0eta = fp4genG0.Eta(); 
     fRtd.gg0phi = fp4genG0.Phi(); 
   }
 
-  if (fp4genG1.Pt() > 0.) {
+  if (fp4genG1.Pt() > 0.001) {
     fRtd.gg1pt  = fp4genG1.Pt(); 
     fRtd.gg1eta = fp4genG1.Eta(); 
     fRtd.gg1phi = fp4genG1.Phi(); 
@@ -561,7 +568,7 @@ void anaH::fillRedTreeData(int type) {
 }
 
 // ----------------------------------------------------------------------
-double anaH::iso(Photon *gamma, double radius, double ptmin) {
+double anaH::iso(Photon *gamma, Photon *gammaO, double radius, double ptmin) {
 
   double et(0.); 
   //  cout << "gamma: " << gamma->PT << " " << gamma->Eta << endl;
@@ -586,12 +593,17 @@ double anaH::iso(Photon *gamma, double radius, double ptmin) {
     t = (Tower*)fbPFphotons->At(i);
     p4 = t->P4(); 
     if (p4.Pt() < ptmin) continue;
+    // -- skip the other photon of the candidate
+    if (t->Particles.At(0) == gammaO->Particles.At(0)) {
+      //       cout << "skipping other ET = " << t->ET << " with eta = " << t->Eta << endl;
+      continue;
+    }
     if (t->Particles.At(0) == gamma->Particles.At(0)) {
-      //      cout << " tower: " << t->ET << " " << t->Eta << endl;
-    } else {
-      if (g4.DeltaR(p4) < radius) {
-	et += t->ET; 
-      }
+      //       cout << "skipping own tower: " << t->ET << " " << t->Eta << endl;
+      continue;
+    }
+    if (g4.DeltaR(p4) < radius) {
+      et += t->ET; 
     }
   }
 

@@ -55,7 +55,7 @@ public:
   virtual void printParticle(GenParticle *); 
   virtual void dumpDaughters(GenParticle *); 
 
-  double       iso(Photon *, double radius, double ptmin); 
+  double       iso(Photon *, Photon *, double radius, double ptmin); 
 
   GenParticle* getParticle(int i) {return (GenParticle*)fbParticles->At(i);}
   Photon*      getPhoton(int i) {return (Photon*)fbPhotons->At(i);}
