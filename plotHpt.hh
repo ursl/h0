@@ -7,6 +7,11 @@
 #include "dataset.hh"
 #include "redTreeData.hh"
 
+struct ptbins {
+  double peak, sigma;
+  double pt, ptlo, pthi;
+};
+
 // ----------------------------------------------------------------------
 class plotHpt: public plotClass {
 
@@ -14,25 +19,31 @@ public :
   plotHpt(std::string dir = "hpt0", std::string files = "plotHpt.files", std::string setup = "m");
   virtual        ~plotHpt();
 
-  virtual void   loadFiles(std::string afiles);
+  void   loadFiles(std::string afiles);
 
 
   // -- Main analysis methods 
-  virtual void   makeAll(int bitmask = 0);
-  virtual void   treeAnalysis(int nevts = -1); 
+  void   makeAll(int bitmask = 0);
+  void   treeAnalysis(int nevts = -1); 
+  void   optimizeCuts(string fname = "opt.root", double lumi = 1000., int nevts = -1);
+  void   optAnalysis(int mode = 1, std::string filename = "opt.root", std::string treename = "opt");
+  void   massResolution(std::string hname = "mpt_mcatnlo5_nopt");
 
-  void           toy1(int nsg = 60, int nbg = 150); 
+  void   toy1(int nsg = 60, int nbg = 150); 
+  void   validation(); 
 
-  virtual void   overlayAll();
+  void   overlayAll();
+  
 
-  virtual void   bookHist(std::string name, std::string cuts); 
-  virtual void   setupTree(TTree *t); 
-  virtual void   loopOverTree(TTree *t, int ifunc, int nevts = -1, int nstart = 0); 
-  void           candAnalysis(); 
-  void           loopFunction1(); 
-  void           loopFunction2(); 
+  void   bookHist(std::string name, std::string cuts); 
+  void   readHistograms();
+  void   setupTree(TTree *t); 
+  void   loopOverTree(TTree *t, int ifunc, int nevts = -1, int nstart = 0); 
+  void   candAnalysis(); 
+  void   loopFunction1(); 
+  void   loopFunction2(); 
 
-  void           combMCAtNLOHist(TH1D *h0, TH1D *h1);
+  TH1*   combMCAtNLOHist(TH1 *h0, TH1 *h1);
 
 private: 
 
@@ -41,12 +52,13 @@ private:
   double G0ISO, G1ISO; 
   double G0ISOR, G1ISOR; 
   double G0PT, G1PT; 
+  double PTNL, PTNH; 
   double PTLO, PTHI; 
   double MGGLO, MGGHI; 
 
   double fSg0Xs, fSg1Xs, fBgXs, fBgRf, fSgBF;
 
-  bool fGoodCand; 
+  bool fGoodCand, fGoodCandNoPtCuts; 
 
   TH1D *fHistSg0, *fHistSg1, *fHistBg; 
   TH2D *fHistBg2;
@@ -57,7 +69,12 @@ private:
 
   RooWorkspace fWorkspace; 
 
-  int             fOptMode; 
+  // -- optimization
+  int                   fOptMode; 
+  std::vector<selpoint> fSelPoints;
+
+  // -- pt bins
+  std::vector<ptbins>   fPtBins;
 
   // ----------------------------------------------------------------------
   ClassDef(plotHpt,1) 
