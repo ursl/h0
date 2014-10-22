@@ -42,7 +42,8 @@ tie %jobs, "Tie::IxHash";
     "mcatnlo_150" => "cmcatnlo_150_chain", 
     "mcatnlo_151" => "cmcatnlo_151_chain", 
     "mcatnlo_155" => "cmcatnlo_155_chain", 
-    "sherpa" => "csherpa_131_chain"
+    "sherpa_131" => "csherpa_131_chain",
+    "sherpa_132" => "csherpa_132_chain",
 );
 
 my @lines;
