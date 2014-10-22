@@ -29,11 +29,30 @@ public :
   void   optAnalysis(int mode = 1, std::string filename = "opt.root", std::string treename = "opt");
   void   massResolution(std::string hname = "mpt_mcatnlo5_nopt");
 
+  // toy1 is an UML implementation: 2d UML fit of Higgs signal against a gg background
+  //      - fixed m resolution
+  //      - pT is modeled with RooHistPdf
+  //      - no reference to normalization anywhere
   void   toy1(int nsg = 60, int nbg = 150); 
+
+  // toy2 is another UML implementation: 2d UML fit of Higgs signal against a gg background
+  //     - fixed m resolution
+  //     - pT is modeled with RooHistPdf
+  //     - extended UML
+  void   toy2(int nsg = 60, int nbg = 150); 
+
+  // toy3 is another UML implementation: 2d UML fit of Higgs signal against a gg background
+  //     - fixed m resolution
+  //     - pT is modeled with RooHistPdf
+  //     - extended UML
+  //  void   toy3(int nsg = 60, int nbg = 150); 
+
+  // validation produces the simple plots
+  //     - pT for various components
+  //     - mass for various selections
+  //     > all necessary plots are produced. This emulates overlayAll, in a sense...
   void   validation(); 
 
-  void   overlayAll();
-  
 
   void   bookHist(std::string name, std::string cuts); 
   void   readHistograms();

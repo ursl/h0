@@ -23,6 +23,7 @@
 #include "RooFitResult.h"
 #include "RooExponential.h"
 #include "RooChebychev.h"
+#include "RooPolynomial.h"
 #include "RooHistPdf.h"
 #include "RooKeysPdf.h"
 #include "RooDataHist.h"
@@ -592,14 +593,13 @@ void plotHpt::toy1(int nsg, int nbg) {
   // -- Signal
   RooRealVar m("m", "m", 100., 150.); 
   RooRealVar meanM("meanM", "meanM", 125., 100, 150);  
-  RooRealVar sigmaM("sigmaM", "sigmaM", 5, 0., 20.);  
+  RooRealVar sigmaM("sigmaM", "sigmaM", 5., 3., 10.);  
   RooGaussian sgM("sgM", "signal mass", m, meanM, sigmaM); 
 
   // -- Background
-  RooRealVar C0("C0", "coefficient #0", 0.086, -1., 1.); 
-  RooRealVar C1("C1", "coefficient #1", 0.006, -1., 1.); 
-  RooRealVar C2("C2", "coefficient #2", 0.008, -1., 1.); 
-  RooChebychev bgM("bgM", "background mass", m, RooArgList(C0, C1, C2)); 
+  RooRealVar C0("C0", "coefficient #0", 1.0, -1., 1.); 
+  RooRealVar C1("C1", "coefficient #1", 0.1, -1., 1.); 
+  RooPolynomial bgM("bgM", "background mass", m, RooArgList(C0, C1)); 
 
 
   // =====
@@ -623,10 +623,14 @@ void plotHpt::toy1(int nsg, int nbg) {
   RooDataHist hBgPt("hBgPt", "background histogram pT", pt, h1); 
   RooHistPdf bgHistPt("bgHistPt","background histogam pT", pt, hBgPt, 2) ;
 
-
-  
   // -- determine Chebychev coefficients
   if (0) {
+
+    // -- OLD Background
+    RooRealVar C0("C0", "coefficient #0", 0.086, -1., 1.); 
+    RooRealVar C1("C1", "coefficient #1", 0.006, -1., 1.); 
+    RooRealVar C2("C2", "coefficient #2", 0.008, -1., 1.); 
+    RooChebychev bgM("bgM", "background mass", m, RooArgList(C0, C1, C2)); 
 
     TH1D *h1 = (TH1D*)fHistFile->Get("m_sherpa_hipt");
     RooDataHist dataBg("data", "background mass distribution", m, h1);
@@ -643,14 +647,11 @@ void plotHpt::toy1(int nsg, int nbg) {
   RooRealVar fsig("fsig", "signal fraction", 0.25, 0., 1.) ;
 
   RooAddPdf modelM("modelM", "model for mass", RooArgList(sgM, bgM), fsig); 
-  //exponential BG:   RooAddPdf modelPt("modelPt", "model for pT", RooArgList(sgPt, bgPt), fsig) ;
   RooAddPdf modelPt("modelPt", "model for pT", RooArgList(sgHistPt, bgHistPt), fsig) ;
-
   RooProdPdf model("model", "complete model", RooArgSet(modelM, modelPt)); 
-
   
 
-  RooDataSet *data = model.generate(RooArgSet(m, pt), 10000);  
+  RooDataSet *data = model.generate(RooArgSet(m, pt), nsg+nbg);  
   model.fitTo(*data); 
   RooPlot *frameM = m.frame(); 
   data->plotOn(frameM);  
@@ -666,6 +667,85 @@ void plotHpt::toy1(int nsg, int nbg) {
   zone(1, 2);
   frameM->Draw();
   c0->cd(2);
+  gPad->SetLogy(1);
+  framePt->Draw();
+}
+
+
+// ----------------------------------------------------------------------
+void plotHpt::toy2(int nsg, int nbg) {
+
+  cout << "hello world" << endl;
+
+  // =======
+  // -- mass
+  // =======
+
+  RooRealVar fSg("fSg", "signal fraction", 0.25, 0., 1.) ;
+  RooRealVar nSg("nSg", "signal fraction", nsg, 0., 100*nsg);
+  RooRealVar nBg("nBg", "background fraction", nbg, 0., 100.*nbg);
+
+  // -- Signal
+  RooRealVar m("m", "m", 100., 150.); 
+  RooRealVar meanM("meanM", "meanM", 125., 100, 150);  
+  RooRealVar sigmaM("sigmaM", "sigmaM", 5., 3., 10.);  
+  RooGaussian sgM("sgM", "signal mass", m, meanM, sigmaM); 
+
+  // -- Background
+  RooRealVar C0("C0", "coefficient #0", 1.0, -1., 1.); 
+  RooRealVar C1("C1", "coefficient #1", 0.1, -1., 1.); 
+  RooPolynomial bgM("bgM", "background mass", m, RooArgList(C0, C1)); 
+
+
+  // =====
+  // -- pT
+  // =====
+
+  RooRealVar pt("pt", "pt", 0., 1000); 
+  RooRealVar tau("tau","tau", -0.01412, -10, -1.e-4); 
+  RooExponential sgPt("sgPt", "signal pT", pt, tau);   
+
+  RooRealVar bgTau("bgTau", "background tau", -0.019, -10, -1.e-4); 
+  RooExponential bgPt("bgPt", "background pT", pt, bgTau);   
+
+  TH1D *h1 = (TH1D*)fHistFile->Get("pt_mcatnlo_hipt")->Clone("h1");
+  RooDataHist hSgPt("hSgPt", "signal histogram pT", pt, h1); 
+  RooHistPdf sgHistPt("sgHistPt","signal histogam pT", pt, hSgPt, 2) ;
+
+  TH1D *h2 = (TH1D*)fHistFile->Get("pt_sherpa_hipt")->Clone("h2");
+  RooDataHist hBgPt("hBgPt", "background histogram pT", pt, h2); 
+  RooHistPdf bgHistPt("bgHistPt","background histogam pT", pt, hBgPt, 2) ;
+
+  RooAddPdf modelM("modelM", "model for mass", RooArgList(sgM, bgM), RooArgList(nSg, nBg)); 
+  RooAddPdf modelPt("modelPt", "model for pT", RooArgList(sgHistPt, bgHistPt), RooArgList(nSg, nBg));
+  RooProdPdf model("model", "complete model", RooArgSet(modelM, modelPt)); 
+  
+
+  RooDataSet *data = model.generate(RooArgSet(m, pt), nsg+nbg);  
+  model.fitTo(*data); 
+  RooPlot *frameM = m.frame(); 
+  data->plotOn(frameM);  
+  model.plotOn(frameM); 
+  model.plotOn(frameM, Components("bgM"), LineStyle(kDashed)) ;
+  
+  RooPlot *framePt = pt.frame();  
+  data->plotOn(framePt);  
+  model.plotOn(framePt); 
+  model.plotOn(framePt, Components("bgHistPt"), LineStyle(kDashed)) ;
+
+
+  zone(2, 2);
+  frameM->Draw();
+  c0->cd(2);
+  gPad->SetLogy(1);
+  h1->SetLineColor(kRed);
+  h2->SetLineColor(kBlue);
+  h1->Draw(); 
+  h2->Draw("same"); 
+  c0->cd(3);
+  gPad->SetLogy(0);
+  framePt->Draw();
+  c0->cd(4);
   gPad->SetLogy(1);
   framePt->Draw();
 }
@@ -771,15 +851,6 @@ void plotHpt::loadFiles(string afiles) {
     }
   }
 }
-
-
-// ----------------------------------------------------------------------
-void plotHpt::overlayAll() {
-  // -- simple overlays
-  c0->cd(1); 
-  overlay("mcatnlo5", "H1pt", "sherpa", "H1pt"); 
-}
-
 
 // ----------------------------------------------------------------------
 void plotHpt::candAnalysis() {
