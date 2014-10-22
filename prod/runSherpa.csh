@@ -29,6 +29,7 @@ echo "-> which srmcp"
 which srmcp
 
 pwd
+ls -l 
 date
 setenv ROOTSYS /shome/ursl/root
 setenv LD_LIBRARY_PATH ${ROOTSYS}/lib:${LD_LIBRARY_PATH}
@@ -40,6 +41,7 @@ printenv
 
 echo "--> Extract tar file"
 date
+ls -l 
 tar zxf $JOB.tar.gz
 /bin/cp /shome/ursl/h/prod/jobs/sherpa/dat/$JOB.dat .
 
@@ -51,6 +53,7 @@ ls -l
 echo "--> running DELPHES"
 date
 cd ./delphes
+cat ./delphes_card_CMS.tcl
 mv ../$JOB.hepmc .
 ./DelphesHepMC ./delphes_card_CMS.tcl $JOB.root ./$JOB.hepmc
 ls -l 
@@ -61,8 +64,8 @@ ls -l
 
 # several files possible if tree grows to big. copy them all
 
-echo "--> Save hepmc to SE: $STORAGE1/hepmc/$FILE1"
-echo "--> Save root  to SE: $STORAGE1/delphes/$FILE1"
+echo "--> Save hepmc to SE: $STORAGE1/hepmc"
+echo "--> Save root  to SE: $STORAGE1/delphes"
 echo $SRMCP 
 
 set FILES=`ls $JOB*.root`
