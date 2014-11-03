@@ -33,19 +33,23 @@ public :
   //      - fixed m resolution
   //      - pT is modeled with RooHistPdf
   //      - no reference to normalization anywhere
-  void   toy1(int nsg = 60, int nbg = 150); 
+  void   toy1(int nsg = 50, int nbg = 500); 
 
   // toy2 is another UML implementation: 2d UML fit of Higgs signal against a gg background
   //     - fixed m resolution
   //     - pT is modeled with RooHistPdf
   //     - extended UML
-  void   toy2(int nsg = 60, int nbg = 150); 
+  void   toy2(int nsg = 50, int nbg = 500); 
 
-  // toy3 is another UML implementation: 2d UML fit of Higgs signal against a gg background
-  //     - fixed m resolution
-  //     - pT is modeled with RooHistPdf
-  //     - extended UML
-  //  void   toy3(int nsg = 60, int nbg = 150); 
+  // toy3 is another UML implementation: 2d UML fit of contact Higgs signal against a gg+SM Higgs bg
+  //     - signal is     Higgs(mtop -> infty)
+  //     - background is diphoton + Higgs(mtop = 173.5GeV)
+  void   toy3(int nsg = 100, double nbgH = 50, double nbg = 450); 
+
+  // toy4 adds a sensitivity calculation
+  //     - signal is     Higgs(mtop -> infty)
+  //     - background is diphoton + Higgs(mtop = 173.5GeV)
+  void   toy4(int nsg = 100, double nbgH = 50, double nbg = 450); 
 
   // validation produces the simple plots
   //     - pT for various components
@@ -71,6 +75,7 @@ private:
   double G0ISO, G1ISO; 
   double G0ISOR, G1ISOR; 
   double G0PT, G1PT; 
+  double G0PTLO, G1PTLO; 
   double PTNL, PTNH; 
   double PTLO, PTHI; 
   double MGGLO, MGGHI; 
