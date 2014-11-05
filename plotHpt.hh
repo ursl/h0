@@ -25,7 +25,7 @@ public :
   // -- Main analysis methods 
   void   makeAll(int bitmask = 0);
   void   treeAnalysis(int nevts = -1); 
-  void   optimizeCuts(string fname = "opt.root", double lumi = 1000., int nevts = -1);
+  void   optimizeCuts(std::string fname = "opt.root", double lumi = 1000., int nevts = -1);
   void   optAnalysis(int mode = 1, std::string filename = "opt.root", std::string treename = "opt");
   void   massResolution(std::string hname = "mpt_mcatnlo5_nopt");
 
@@ -49,7 +49,7 @@ public :
   // toy4 adds a sensitivity calculation
   //     - signal is     Higgs(mtop -> infty)
   //     - background is diphoton + Higgs(mtop = 173.5GeV)
-  void   toy4(int nsg = 100, double nbgH = 50, double nbg = 450); 
+  void   toy4(double nsg0 = 50, double nsg1 = 100, double nbg = 450, int ntoy = 200); 
 
   // validation produces the simple plots
   //     - pT for various components

@@ -1018,7 +1018,9 @@ void plotHpt::toy3(int nsg0, double nsg1, double  nbg) {
 
 
 // ----------------------------------------------------------------------
-void plotHpt::toy4(int nsg0, double nsg1, double  nbg) {
+void plotHpt::toy4(double nsg0, double nsg1, double nbg, int ntoy) {
+
+  int NBINS(10); 
 
   // mass
   // ====
@@ -1089,7 +1091,8 @@ void plotHpt::toy4(int nsg0, double nsg1, double  nbg) {
 //   RooDataSet *data0 = model0.generate(RooArgSet(m, pt), nsg0 + nbg);  
 //   RooDataSet *data1 = model1.generate(RooArgSet(m, pt), nsg1 + nbg);  
 
-  RooDataSet *data0 = modelBg.generate(RooArgSet(m, pt), nbg);  
+  RooDataSet *bg0 = modelBg.generate(RooArgSet(m, pt), nbg);  
+  RooDataSet *data0 = new RooDataSet(*bg0); 
   RooDataSet *data1 = new RooDataSet(*data0); 
 
   RooDataSet *s0 = model0Sg.generate(RooArgSet(m, pt), nsg0);  
@@ -1099,24 +1102,27 @@ void plotHpt::toy4(int nsg0, double nsg1, double  nbg) {
 
   zone(2,2);
   
-  RooFitResult *resData0Model0 = model0.fitTo(*data0, Save()); 
+  RooFitResult *resData0Model0 = model0.fitTo(*data0, Minos(kTRUE), PrintLevel(-1), Save()); 
   RooPlot *f0M = m.frame(); 
   f0M->SetTitle("m(top) = 173.5 GeV");
-  data0->plotOn(f0M);  
+  data0->plotOn(f0M, Binning(NBINS));  
   model0.plotOn(f0M); 
   model0.plotOn(f0M, Components("bg0M"), LineStyle(kDashed)) ;
+  model0.paramOn(f0M, Layout(0.15, 0.85)) ;
   f0M->Draw();
 
   c0->cd(2);
   RooPlot *a = m.frame(); 
-  a->SetTitle("signal only for m(top) = 173.5 GeV");
-  s0->plotOn(a);  
+  a->SetTitle("signal (blue) and background (red) for m(top) = 173.5 GeV");
+  s0->plotOn(a, Binning(NBINS), LineColor(kBlue), MarkerColor(kBlue));  
+  bg0->plotOn(a, Binning(NBINS), LineColor(kRed), MarkerColor(kRed)); 
   a->Draw();
 
   c0->cd(4);
   RooPlot *a1 = m.frame(); 
-  a1->SetTitle("signal only for m(top) #rightarrow #infty");
-  s1->plotOn(a1);  
+  a1->SetTitle("signal (blue) and background (red) for m(top) #rightarrow #infty");
+  s1->plotOn(a1, Binning(NBINS), LineColor(kBlue), MarkerColor(kBlue));  
+  bg0->plotOn(a1, Binning(NBINS), LineColor(kRed), MarkerColor(kRed)); 
   a1->Draw();
   
   double bExpected     = sg0frac.getVal()*data0->numEntries();
@@ -1128,13 +1134,14 @@ void plotHpt::toy4(int nsg0, double nsg1, double  nbg) {
        << endl;
 
  
-  RooFitResult *resData1Model1 =  model1.fitTo(*data1, Save()); 
+  RooFitResult *resData1Model1 =  model1.fitTo(*data1, Minos(kTRUE), PrintLevel(-1), Save()); 
   RooPlot *g1M = m.frame(); 
   g1M->SetTitle("m(top) #rightarrow #infty");
-  data1->plotOn(g1M);  
+  data1->plotOn(g1M, Binning(NBINS));  
   model1.plotOn(g1M); 
   model1.plotOn(g1M, Components("bg1M"), LineStyle(kDashed)) ;
   c0->cd(3);
+  model1.paramOn(g1M, Layout(0.15, 0.85)) ;
   g1M->Draw();
   
   
@@ -1159,6 +1166,63 @@ void plotHpt::toy4(int nsg0, double nsg1, double  nbg) {
   double zExpWithTau = NumberCountingUtils::BinomialWithTauExpZ(sExpected, bExpected, tau);
   cout << "--> zExp(tau): " << zExpWithTau << endl;
 
+  // -- now setup toy loop
+  RooCmdArg fitargs; 
+  fitargs.addArg(Minos(kTRUE)); 
+  fitargs.addArg(PrintLevel(-1));
+  fitargs.addArg(PrintEvalErrors(-1));
+  fitargs.addArg(Verbose(kFALSE));
+  fitargs.addArg(Save()); 
+  TH1D *h1z = new TH1D("h1z", "significances", 40, 0., 4.); 
+  RooFitResult *fr0(0), *fr1(0); 
+  for (int imc = 0; imc < ntoy; ++imc) {
+    data0->reset();
+    data1->reset();
+    cout << "==> starting run " << imc << endl;
+    C0.setVal(bgc0);
+    bgTau.setVal(bgtau);
+
+    sg0Tau.setVal(sg0tau);
+    sg0frac.setVal(nsg0/nbg);
+
+    sg1Tau.setVal(sg1tau);
+    sg1frac.setVal(nsg1/nbg);
+
+    if (0) {
+      modelBg.Print("t");
+      model0Sg.Print("t");
+      model1Sg.Print("t");
+    }
+
+    bg0 = modelBg.generate(RooArgSet(m, pt), nbg);  
+    s0 = model0Sg.generate(RooArgSet(m, pt), nsg0);  
+    s1 = model1Sg.generate(RooArgSet(m, pt), nsg1);  
+    
+    data0->append(*bg0); 
+    data0->append(*s0); 
+
+    data1->append(*bg0); 
+    data1->append(*s1); 
+
+    fr0 = model0.fitTo(*data0, fitargs); 
+    fr1 = model1.fitTo(*data1, fitargs); 
+
+    bExpected     = sg0frac.getVal()*data0->numEntries();
+    bExpectedRelE = sg0frac.getError()/sg0frac.getVal();
+
+    sExpected     = sg1frac.getVal()*data1->numEntries();
+    sExpectedRelE = sg1frac.getError()/sg1frac.getVal();
+ 
+    zExp = NumberCountingUtils::BinomialExpZ(sExpected, bExpected, bExpectedRelE);
+    h1z->Fill(zExp); 
+    cout << Form("%3d zExp = %5.4f", imc, zExp) << endl;
+
+
+  }
+  makeCanvas(1); 
+  c1->cd();
+  h1z->Draw();
+  c1->SaveAs(Form("%s/toy4-%d-%d-%d-significance.pdf", fDirectory.c_str(), (int)nsg0, (int)nsg1, (int)nbg)); 
 }
 
 
