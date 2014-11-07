@@ -94,8 +94,8 @@ plotHpt::plotHpt(string dir,  string files, string setup): plotClass(dir, files,
   G0PT = 150.;
   G1PT =  70.;
   
-  G0PTLO = 100.; 
-  G1PTLO = 50.;
+  G0PTLO = 60.; 
+  G1PTLO = 40.;
 }
 
 
@@ -1867,11 +1867,11 @@ void plotHpt::allNumbers() {
   fHiggsMpeak = h1->GetFunction("gaus")->GetParameter(1);
 
   // -- printout single photon ET cuts
-  h1 = (TH1D*)fHists["g0pt_mcatnlo_lopt"]->Clone("h1");
+  h1 = (TH1D*)fHists["g0pt_mcatnlo_hipt"]->Clone("h1");
   g0pt = h1->GetBinLowEdge(h1->FindFirstBinAbove(1.));
   cout << "  Gamma0 pT > " << g0pt << endl;
   tl->SetTextColor(kBlack); tl->DrawLatex(0.16, 0.60, Form("pT(G0) > %4.0f", h1->GetBinLowEdge(h1->FindFirstBinAbove(1.)))); 
-  h1 = (TH1D*)fHists["g1pt_mcatnlo_lopt"]->Clone("h1");
+  h1 = (TH1D*)fHists["g1pt_mcatnlo_hipt"]->Clone("h1");
   g1pt = h1->GetBinLowEdge(h1->FindFirstBinAbove(1.)); 
   cout << "  Gamma1 pT > " << g1pt << endl;
   tl->SetTextColor(kBlack); tl->DrawLatex(0.16, 0.55, Form("pT(G1) > %4.0f", h1->GetBinLowEdge(h1->FindFirstBinAbove(1.)))); 
