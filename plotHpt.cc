@@ -2,10 +2,12 @@
 
 #include <fstream>
 #include <iostream>
+#include <sstream>
 
 #include "TROOT.h"
 #include "TStyle.h"
 #include "TMath.h"
+#include "TPad.h"
 #include "TRandom3.h"
 #include "TString.h"
 #include "TCanvas.h"
@@ -51,9 +53,28 @@ using namespace RooStats;
 plotHpt::plotHpt(string dir,  string files, string setup): plotClass(dir, files, setup), fWorkspace("w") {
   loadFiles(files);
 
-  fHistFile = TFile::Open(Form("%s/plotHpt.root", dir.c_str())); 
+  fNtoy = 200; 
 
-  NBINS = 25;  
+  if (setup == "") {
+    fHistFileName = Form("%s/plotHpt.root", dir.c_str()); 
+  } else {
+    fHistFileName = Form("%s/plotHpt-%s.root", dir.c_str(), setup.c_str()); 
+  }
+
+  fTexFileName = fHistFileName; 
+  replaceAll(fTexFileName, ".root", ".tex"); 
+  system(Form("/bin/rm -f %s", fTexFileName.c_str()));
+
+  fSg0 = fSg1 =  fBg = 
+    fNormSg0 = fNormSg0E = 
+    fHiggsMpeak =  fHiggsMres = 
+    fBgMp1 = fBgMp1E = 
+    fBgTau = fBgTauE = 
+    fSg0Tau = fSg0TauE = 
+    fSg1Tau = fSg1TauE = 
+    0.;
+  
+  NPTBINS = 10; 
   GETA = 2.5;
   G0ISO = G1ISO = 0.2; 
   G0ISOR = 0.005; 
@@ -61,14 +82,15 @@ plotHpt::plotHpt(string dir,  string files, string setup): plotClass(dir, files,
 
   PTNL = 150.;
   PTNH = 250.;
-  PTLO = 300.;
+  PTLO = 400.;
   PTHI = 10000.;
 
-  MGGLO = 100.;
-  MGGHI = 150.;
+  NBINS = 35;  
+  MGGLO = 90.;
+  MGGHI = 160.;
 
   fLumi = 1000.;
-
+  
   G0PT = 150.;
   G1PT =  70.;
   
@@ -86,6 +108,8 @@ plotHpt::~plotHpt() {
 // ----------------------------------------------------------------------
 void plotHpt::readHistograms() {
   fHists.clear();
+  cout << "readHistograms from " << fHistFileName << endl;
+  fHistFile = TFile::Open(fHistFileName.c_str()); 
 
   vector<string> ds;
   ds.push_back("sherpa");
@@ -121,6 +145,7 @@ void plotHpt::readHistograms() {
     }
   }
   
+//   fHistFile->Close();
 
 }
 
@@ -170,13 +195,13 @@ void plotHpt::bookHist(string name, string cuts) {
   sprintf(hist, "%s_%s_%s", "g0pt", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "g0pt");
   sprintf(ahist, "%s", "p_{T}(#gamma_{0}) [GeV]"); 
-  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 800.))); 
+  fHists.insert(make_pair(hist, new TH1D(hist, thist, 800, 0., 800.))); 
   setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
 
   sprintf(hist, "%s_%s_%s", "g1pt", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "g1pt");
   sprintf(ahist, "%s", "p_T(#gamma_{1}) [GeV]"); 
-  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 300.))); 
+  fHists.insert(make_pair(hist, new TH1D(hist, thist, 300, 0., 300.))); 
   setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
 
   sprintf(hist, "%s_%s_%s", "g0iso", name.c_str(), cuts.c_str());
@@ -208,7 +233,10 @@ void plotHpt::bookHist(string name, string cuts) {
 
 // ----------------------------------------------------------------------
 void plotHpt::makeAll(int bitmask) {
-  if (bitmask & 0x1) treeAnalysis();
+  if (bitmask & 0x1) {
+    treeAnalysis();
+    allNumbers(); 
+  }
   if (bitmask & 0x2) {
     optimizeCuts(); 
   }
@@ -225,9 +253,98 @@ void plotHpt::makeAll(int bitmask) {
 
 
 // ----------------------------------------------------------------------
-void plotHpt::treeAnalysis(int nevts) {
+void plotHpt::bgShape(int nevts) {
+  string ds("sherpa");
+  fCds = ds; 
+
+  char hist[200], thist[200];
+  sprintf(hist, "bgshape_default_m");
+  sprintf(thist, "bgshape default m");
+  fHists.insert(make_pair(hist, new TH1D(hist, thist, NBINS, MGGLO, MGGHI))); 
+  fHists[hist]->Sumw2();
+  sprintf(hist, "bgshape_default_pt");
+  sprintf(thist, "bgshape default pt");
+  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0, 1000.))); 
+  fHists[hist]->Sumw2();
+
+  for (int i = 0; i < NPTBINS; ++i) {
+    sprintf(hist, "%s_ptbin%d_m", "bgshape", i);
+    sprintf(thist, "ptbin %d m", i);
+    fHists.insert(make_pair(hist, new TH1D(hist, thist, NBINS, MGGLO, MGGHI))); 
+    fHists[hist]->Sumw2();
+    sprintf(hist, "%s_ptbin%d_pt", "bgshape", i);
+    sprintf(thist, "ptbin %d pt", i);
+    fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0, 1000.))); 
+    fHists[hist]->Sumw2();
+  }
   
-  TFile *f = TFile::Open(Form("%s/plotHpt.root", fDirectory.c_str()), "RECREATE"); 
+  
+  TTree *t = getTree(ds); 
+  setupTree(t); 
+  loopOverTree(t, 3, nevts); 
+
+  TH1D *h1 = new TH1D("h1", "", NPTBINS+1, 0., NPTBINS+1); 
+  
+  zone(1,2); 
+  fHists[Form("bgshape_default_m")]->Fit("pol1", "wl");
+  TF1 *f1 = fHists[Form("bgshape_default_m")]->GetFunction("pol1");
+  double defx = f1->GetParameter(1)/fHists[Form("bgshape_default_m")]->Integral();
+  double defxe = f1->GetParError(1)/fHists[Form("bgshape_default_m")]->Integral();
+  h1->SetBinContent(1, f1->GetParameter(1)/fHists[Form("bgshape_default_m")]->Integral()); 
+  h1->SetBinError(1, f1->GetParError(1)/fHists[Form("bgshape_default_m")]->Integral()); 
+  h1->GetXaxis()->SetBinLabel(1, "default");
+  c0->cd(2); 
+  fHists[Form("bgshape_default_pt")]->Draw(); 
+  c0->SaveAs(Form("%s/bgshape-default.pdf", fDirectory.c_str())); 
+  
+  
+  tl->SetNDC(kTRUE); 
+  TH1D *h0(0); 
+  for (int i = 0; i < 10; ++i) {
+    zone(1,3);
+    h0 = (TH1D*)fHists[Form("bgshape_ptbin%d_m", i)]->Clone("h0"); 
+    h0->Scale(1./h0->Integral()); 
+    fHists[Form("bgshape_ptbin%d_m", i)]->Fit("pol1", "l"); 
+    f1 = fHists[Form("bgshape_ptbin%d_m", i)]->GetFunction("pol1");
+    h1->SetBinContent(i+2, f1->GetParameter(1)/fHists[Form("bgshape_ptbin%d_m", i)]->Integral()); 
+    h1->SetBinError(i+2, f1->GetParError(1)/fHists[Form("bgshape_ptbin%d_m", i)]->Integral()); 
+    h1->GetXaxis()->SetBinLabel(i+2, Form("pt bin %d", i));
+    tl->DrawLatex(0.25, 0.8, Form("p1 = %8.7f +/- %8.7f", 
+				  f1->GetParameter(1)/fHists[Form("bgshape_ptbin%d_m", i)]->Integral(),  
+				  f1->GetParError(1)/fHists[Form("bgshape_ptbin%d_m", i)]->Integral())
+		  ); 
+    
+    c0->cd(2); 
+    h0->Fit("pol1"); 
+    tl->DrawLatex(0.25, 0.8, Form("p1 = %8.7f +/- %8.7f", 
+				  h0->GetFunction("pol1")->GetParameter(1), 
+				  h0->GetFunction("pol1")->GetParError(1))
+		  ); 
+
+    c0->cd(3);
+    fHists[Form("bgshape_ptbin%d_pt", i)]->Draw(); 
+    c0->SaveAs(Form("%s/bgshape-ptbin%d.pdf", fDirectory.c_str(), i)); 
+  }
+
+  zone(); 
+  h1->Fit("pol1", "r", "", h1->GetBinLowEdge(4), h1->GetBinLowEdge(h1->GetNbinsX()+1)); 
+  pl->SetLineColor(kBlue);
+  pl->SetLineStyle(kSolid);
+  pl->DrawLine(0., defx, NPTBINS+1, defx); 
+  pl->SetLineStyle(kDashed);
+  pl->DrawLine(0., defx+defxe, NPTBINS+1, defx+defxe); 
+  pl->SetLineStyle(kDashed);
+  pl->DrawLine(0., defx-defxe, NPTBINS+1, defx-defxe); 
+  
+  c0->SaveAs(Form("%s/bgshape-summary.pdf", fDirectory.c_str())); 
+
+}
+
+
+// ----------------------------------------------------------------------
+void plotHpt::treeAnalysis(int nevts) {
+
+  TFile *f = TFile::Open(fHistFileName.c_str(), "RECREATE"); 
   
   string ds("sherpa");
   fCds = ds; 
@@ -296,6 +413,7 @@ void plotHpt::treeAnalysis(int nevts) {
   f->Write();
   f->Close();
 
+
 }
 
 
@@ -306,6 +424,7 @@ void plotHpt::massResolution(string hname) {
   int NBINS(10);
   double aptbins[] = {0., 100., 150., 200., 250., 300., 350., 400., 600., 800., 1000.};
 
+  fHistFile = TFile::Open(fHistFileName.c_str()); 
   TH2D *hmpt = (TH2D*)fHistFile->Get(hname.c_str());
   double xmax(hmpt->GetXaxis()->GetXmax());
   TH1D *hmpeak = new TH1D("hmpeak", "", 10*NBINS, 0., xmax);   hmpeak->Sumw2();
@@ -361,7 +480,7 @@ void plotHpt::massResolution(string hname) {
   hmres->Fit("pol1");
   c0->SaveAs(Form("%s/massResolution-fit.pdf", fDirectory.c_str()));
 
-
+  fHistFile->Close();
 
 }
 
@@ -591,6 +710,8 @@ void plotHpt::optAnalysis(int mode, string filename, string treename) {
 // ----------------------------------------------------------------------
 void plotHpt::toy1(int nsg, int nbg) {
 
+  fHistFile = TFile::Open(fHistFileName.c_str()); 
+
   // =======
   // -- mass
   // =======
@@ -681,11 +802,15 @@ void plotHpt::toy1(int nsg, int nbg) {
   c0->cd(2);
   gPad->SetLogy(1);
   framePt->Draw();
+
+  fHistFile->Close();
 }
 
 
 // ----------------------------------------------------------------------
 void plotHpt::toy2(int nsg, int nbg) {
+
+  fHistFile = TFile::Open(fHistFileName.c_str()); 
 
   double ggSigma(5.0); 
 
@@ -773,11 +898,15 @@ void plotHpt::toy2(int nsg, int nbg) {
   c0->cd(4);
   gPad->SetLogy(1);
   framePt->Draw();
+
+  fHistFile->Close();
 }
 
 
 // ----------------------------------------------------------------------
 void plotHpt::toy3(int nsg0, double nsg1, double  nbg) {
+
+  fHistFile = TFile::Open(fHistFileName.c_str()); 
 
   // -- determine function parameters
   if (0) { 
@@ -1014,11 +1143,15 @@ void plotHpt::toy3(int nsg0, double nsg1, double  nbg) {
 
   c0->SaveAs("toy3-data1.pdf");
 
+  fHistFile->Close(); 
+
 }
 
 
 // ----------------------------------------------------------------------
 void plotHpt::toy4(double nsg0, double nsg1, double nbg, int ntoy) {
+
+  fHistFile = TFile::Open(fHistFileName.c_str()); 
 
   int NBINS(10); 
 
@@ -1029,14 +1162,14 @@ void plotHpt::toy4(double nsg0, double nsg1, double nbg, int ntoy) {
   RooRealVar m("m", "m", 100., 150., "GeV"); 
   RooRealVar sgP("sgP", "signal peak mass", 125., 100, 150);  
   sgP.setConstant(kTRUE);
-  RooRealVar sgS("sgS", "signal sigma mass", 10., 5., 15.);  
+  RooRealVar sgS("sgS", "signal sigma mass", fHiggsMres, 0., 15.);  
   sgS.setConstant(kTRUE);
   RooGaussian sg0M("sg0M", "signal mass", m, sgP, sgS); 
   RooGaussian sg1M("sg1M", "signal mass", m, sgP, sgS); 
 
   // -- Background
-  double bgc0  = 0.0245329;
-  double bgc0e = 0.00418385;  // derived from the normalized unscaled fit! 
+  double bgc0  = 0.0245329; // FIXME!!!
+  //  double bgc0e = 0.00418385;  // derived from the normalized unscaled fit! 
   RooRealVar C0("C0", "coefficient #0", bgc0, -1., 1.); 
   //  C0.setRange(bgc0 - bgc0e, bgc0 + bgc0e);
   //   double bgc1  = 0.0001231;
@@ -1050,23 +1183,30 @@ void plotHpt::toy4(double nsg0, double nsg1, double nbg, int ntoy) {
   // pT
   // ==
   RooRealVar pt("pt", "pt", 300., 1000., "GeV"); 
+  //  SM Higgs count:           17.2289 fitted exponential slope = -0.0108046+/-0.000305826
   // -- SM Higgs
-  double sg0tau  = -1.09325e-02; 
-  double sg0taue = 1.67445e-04;
+  //  double sg0tau  = -1.09325e-02; // FIXME!!!
+  double sg0tau = fSg0Tau; 
+  //  double sg0taue = 1.67445e-04;
+  double sg0taue = fSg0TauE;
   RooRealVar sg0Tau("sg0Tau", "signal 0 tau", sg0tau, -10., 10.); 
   sg0Tau.setRange(sg0tau - sg0taue, sg0tau + sg0taue); 
   RooExponential sg0Pt("sg0Pt", "signal 0 pT", pt, sg0Tau);   
 
+  //  Contact Higgs count:      45.3107 fitted exponential slope = -0.00707933+/-0.000137285
   // -- "contact" Higgs
-  double sg1tau  = -7.81368e-03; 
-  double sg1taue = 9.10171e-05;
+  //  double sg1tau  = -7.81368e-03; // FIXME!!!
+  double sg1tau = fSg1Tau; 
+  //  double sg1taue = 9.10171e-05;
+  double sg1taue = fSg1TauE;
   RooRealVar sg1Tau("sg1Tau", "signal 1 tau", sg1tau, -10., 10.); 
   sg1Tau.setRange(sg1tau - sg1taue, sg1tau + sg1taue); 
   RooExponential sg1Pt("sg1Pt", "signal 1 pT", pt, sg1Tau);   
 
-
-  double bgtau  = -1.26957e-02; 
-  double bgtaue = 1.55210e-04; 
+  //  SHERPA background:        168.859 fitted exponential slope = -0.0113285+/-0.000262761
+  //  double bgtau  = -1.26957e-02; // FIXME!!!
+  double bgtau = fBgTau; 
+  //  double bgtaue = 1.55210e-04; 
   RooRealVar bgTau("bgTau", "background gamma gamma tau", bgtau, -10., 10.); 
   RooExponential bg0Pt("bg0Pt", "background 0 gamma gamma pT", pt, bgTau);   
   RooExponential bg1Pt("bg1Pt", "background 1 gamma gamma pT", pt, bgTau);   
@@ -1100,9 +1240,11 @@ void plotHpt::toy4(double nsg0, double nsg1, double nbg, int ntoy) {
   data0->append(*s0); 
   data1->append(*s1); 
 
-  zone(2,2);
+
+  TVirtualPad *pad = gPad; 
+  makeCanvas(1); 
+  zone(2,2, c1);
   
-  RooFitResult *resData0Model0 = model0.fitTo(*data0, Minos(kTRUE), PrintLevel(-1), Save()); 
   RooPlot *f0M = m.frame(); 
   f0M->SetTitle("m(top) = 173.5 GeV");
   data0->plotOn(f0M, Binning(NBINS));  
@@ -1111,14 +1253,14 @@ void plotHpt::toy4(double nsg0, double nsg1, double nbg, int ntoy) {
   model0.paramOn(f0M, Layout(0.15, 0.85)) ;
   f0M->Draw();
 
-  c0->cd(2);
+  c1->cd(2);
   RooPlot *a = m.frame(); 
   a->SetTitle("signal (blue) and background (red) for m(top) = 173.5 GeV");
   s0->plotOn(a, Binning(NBINS), LineColor(kBlue), MarkerColor(kBlue));  
   bg0->plotOn(a, Binning(NBINS), LineColor(kRed), MarkerColor(kRed)); 
   a->Draw();
 
-  c0->cd(4);
+  c1->cd(4);
   RooPlot *a1 = m.frame(); 
   a1->SetTitle("signal (blue) and background (red) for m(top) #rightarrow #infty");
   s1->plotOn(a1, Binning(NBINS), LineColor(kBlue), MarkerColor(kBlue));  
@@ -1134,13 +1276,12 @@ void plotHpt::toy4(double nsg0, double nsg1, double nbg, int ntoy) {
        << endl;
 
  
-  RooFitResult *resData1Model1 =  model1.fitTo(*data1, Minos(kTRUE), PrintLevel(-1), Save()); 
   RooPlot *g1M = m.frame(); 
   g1M->SetTitle("m(top) #rightarrow #infty");
   data1->plotOn(g1M, Binning(NBINS));  
   model1.plotOn(g1M); 
   model1.plotOn(g1M, Components("bg1M"), LineStyle(kDashed)) ;
-  c0->cd(3);
+  c1->cd(3);
   model1.paramOn(g1M, Layout(0.15, 0.85)) ;
   g1M->Draw();
   
@@ -1168,14 +1309,22 @@ void plotHpt::toy4(double nsg0, double nsg1, double nbg, int ntoy) {
 
   // -- now setup toy loop
   RooCmdArg fitargs; 
+  if (1) {
   fitargs.addArg(Minos(kTRUE)); 
   fitargs.addArg(PrintLevel(-1));
   fitargs.addArg(PrintEvalErrors(-1));
   fitargs.addArg(Verbose(kFALSE));
   fitargs.addArg(Save()); 
-  TH1D *h1z = new TH1D("h1z", "significances", 40, 0., 4.); 
+  fitargs.addArg(Minimizer("Minuit2")); 
+  }
+  TH1D *h1z = new TH1D("h1z", " ", 100, 0., 10.); 
+  TH1D *h1zTh = new TH1D("h1zTh", "significance wrt theory expectation", 100, 0., 10.); 
+  TH1D *h1zZero = new TH1D("h1zZero", "significance wrt zero expectation ", 100, 0., 10.); 
   RooFitResult *fr0(0), *fr1(0); 
-  for (int imc = 0; imc < ntoy; ++imc) {
+  zone(2, 1, c1);
+  double zExpTh(0.); 
+  double zExpZero(0.); 
+  for (int imc = 0; imc < fNtoy; ++imc) {
     data0->reset();
     data1->reset();
     cout << "==> starting run " << imc << endl;
@@ -1204,7 +1353,13 @@ void plotHpt::toy4(double nsg0, double nsg1, double nbg, int ntoy) {
     data1->append(*bg0); 
     data1->append(*s1); 
 
+    cout << "----------------------------------------------------------------------" << endl;
+    cout << "Fit model 0 to data 0" << endl;
+    cout << "----------------------------------------------------------------------" << endl;
     fr0 = model0.fitTo(*data0, fitargs); 
+    cout << "----------------------------------------------------------------------" << endl;
+    cout << "Fit model 1 to data 1" << endl;
+    cout << "----------------------------------------------------------------------" << endl;
     fr1 = model1.fitTo(*data1, fitargs); 
 
     bExpected     = sg0frac.getVal()*data0->numEntries();
@@ -1213,16 +1368,76 @@ void plotHpt::toy4(double nsg0, double nsg1, double nbg, int ntoy) {
     sExpected     = sg1frac.getVal()*data1->numEntries();
     sExpectedRelE = sg1frac.getError()/sg1frac.getVal();
  
+    int reset(0); 
+    if (0 && bExpected < 1.) {
+      reset = 1; 
+      bExpected = 2.3; 
+      bExpectedRelE = 0.99;
+    }
+
+    if (sg0frac.getVal() < sg0frac.getError()) {
+      bExpected = nsg0; 
+      bExpectedRelE = TMath::Sqrt(nsg0)/nsg0; 
+    }
+    
     zExp = NumberCountingUtils::BinomialExpZ(sExpected, bExpected, bExpectedRelE);
+    zExpTh = NumberCountingUtils::BinomialExpZ(sExpected, nsg0, TMath::Sqrt(nsg0)/nsg0);
+    zExpZero = NumberCountingUtils::BinomialExpZ(sExpected, 2.3, 0.99);
+    cout << Form("%3d zExp = %5.4f from bExpected = %4.1f+/-%4.1f and sExpected = %4.1f (reset = %d, zExpTh = %4.1f, zExpZero = %4.1f)", 
+		 imc, zExp, bExpected, bExpected*bExpectedRelE, sExpected, reset, zExpTh, zExpZero) 
+	 << endl;
+    if (zExp < 0) {
+      --imc;
+      continue;
+    }
+
     h1z->Fill(zExp); 
-    cout << Form("%3d zExp = %5.4f", imc, zExp) << endl;
+    h1zTh->Fill(zExpTh); 
+    h1zZero->Fill(zExpZero); 
 
+    if (zExp < 0.1) {
+      RooPlot *g0M = m.frame(); 
+      g0M->SetTitle("m(top) = 173.5GeV");
+      data0->plotOn(g0M, Binning(NBINS));  
+      model0.plotOn(g0M); 
+      model0.plotOn(g0M, Components("bg0M"), LineStyle(kDashed)) ;
+      c1->cd(1);
+      model0.paramOn(g0M, Layout(0.15, 0.85)) ;
+      g0M->Draw();
 
+      RooPlot *g1M = m.frame(); 
+      g1M->SetTitle("m(top) #rightarrow #infty");
+      data1->plotOn(g1M, Binning(NBINS));  
+      model1.plotOn(g1M); 
+      model1.plotOn(g1M, Components("bg1M"), LineStyle(kDashed)) ;
+      c1->cd(2);
+      model1.paramOn(g1M, Layout(0.15, 0.85)) ;
+      g1M->Draw();
+      tl->SetNDC(kTRUE);
+      tl->DrawLatex(0.2, 0.2, Form("zExp = %4.3f", zExp)); 
+      tl->DrawLatex(0.2, 0.15, Form("S = %4.1f, B = %4.1f +/- %4.1f", sExpected, bExpected, bExpectedRelE*bExpected)); 
+      c1->SaveAs(Form("%s/toy4-%d.pdf", fDirectory.c_str(), imc)); 
+    }
   }
-  makeCanvas(1); 
-  c1->cd();
+  pad->cd();
+  gStyle->SetOptStat(0); 
   h1z->Draw();
-  c1->SaveAs(Form("%s/toy4-%d-%d-%d-significance.pdf", fDirectory.c_str(), (int)nsg0, (int)nsg1, (int)nbg)); 
+  tl->SetTextColor(kBlack); 
+  tl->DrawLatex(0.6, 0.80, Form("Mean = %4.3f", h1z->GetMean())); 
+  tl->DrawLatex(0.6, 0.75, Form("RMS = %4.3f", h1z->GetRMS())); 
+  tl->DrawLatex(0.6, 0.70, Form("Mean(TH) =  %4.3f", h1zTh->GetMean())); 
+  tl->DrawLatex(0.6, 0.65, Form("Mean(zero) =  %4.3f", h1zZero->GetMean())); 
+  tl->DrawLatex(0.6, 0.92, Form("Setup: %s", fSetup.c_str())); 
+  fHistFile->Close();
+
+  fTEX.open(fTexFileName.c_str(), ios::app);
+  fTEX << formatTex(h1z->GetMean(), Form("%s:zexp:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(h1z->GetRMS(), Form("%s:zexp:rms", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(h1zTh->GetMean(), Form("%s:zexpTh:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(h1zTh->GetRMS(), Form("%s:zexpTh:rms", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(h1zZero->GetMean(), Form("%s:zexpZero:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(h1zZero->GetRMS(), Form("%s:zexpZero:rms", fSetup.c_str()), 2) << endl;
+  fTEX.close();
 }
 
 
@@ -1368,6 +1583,25 @@ void plotHpt::loopFunction2() {
 
 }
 
+
+// ----------------------------------------------------------------------
+void plotHpt::loopFunction3() {
+
+  if (!fGoodCand) return;
+
+  if (fb.pt > PTLO /*&& fb.pt < PTHI*/ && fb.g0pt > G0PT && fb.g1pt > G1PT) {
+    fHists["bgshape_default_pt"]->Fill(fb.pt); 
+    fHists["bgshape_default_m"]->Fill(fb.m); 
+  }
+
+  int ptbin = fb.pt/100; 
+  if (ptbin > NPTBINS - 1) ptbin = NPTBINS - 1; 
+  //  cout << "pt = " << fb.pt << " -> ptbin = " << ptbin << endl;
+  fHists[Form("bgshape_ptbin%d_pt", ptbin)]->Fill(fb.pt); 
+  fHists[Form("bgshape_ptbin%d_m", ptbin)]->Fill(fb.m); 
+  
+}
+
 // ----------------------------------------------------------------------
 void plotHpt::loopFunction1() {
   char cds[100], cut[100];
@@ -1460,6 +1694,7 @@ void plotHpt::loopOverTree(TTree *t, int ifunc, int nevts, int nstart) {
   void (plotHpt::*pF)(void);
   if (ifunc == 1) pF = &plotHpt::loopFunction1;
   if (ifunc == 2) pF = &plotHpt::loopFunction2;
+  if (ifunc == 3) pF = &plotHpt::loopFunction3;
 
   // -- the real loop starts here
   for (int jentry = nbegin; jentry < nend; jentry++) {
@@ -1591,4 +1826,260 @@ void plotHpt::validation() {
 
   c0->SaveAs(Form("%s/plot-ratio-%s-%s.pdf", fDirectory.c_str(), what.c_str(), sel.c_str()));
 
+}
+
+
+// ----------------------------------------------------------------------
+void plotHpt::allNumbers() {
+
+  tl->SetNDC(kTRUE);
+  tl->SetTextColor(kBlack);
+
+  TH1D *h1(0); 
+
+  readHistograms();
+
+  zone(2,3);
+
+  double ptlo(0.), pthi(0.), ptnl(0.), ptnh(0.), g0pt(0.), g1pt(0.); 
+
+  cout << "fullAnalysis: " << endl;
+  h1 = (TH1D*)fHists["pt_sherpa_hipt"]; 
+  cout << h1 << endl;
+  ptlo = h1->GetBinLowEdge(h1->FindFirstBinAbove(1.)); 
+  pthi = h1->GetBinLowEdge(h1->GetNbinsX()+1);
+  cout << " signal region: " << ptlo << " < pT < " << pthi << endl;
+  h1 = (TH1D*)fHists["pt_sherpa_lopt"]; 
+  ptnl = h1->GetBinLowEdge(h1->FindFirstBinAbove(1.));
+  ptnh = h1->GetBinLowEdge(h1->FindLastBinAbove(1.)+1);
+  cout << " norm   region: " << ptnl << " < pT < " << ptnh << endl;
+
+  // -- mass fits in hipt and lopt region
+  h1 = (TH1D*)fHists["m_mcatnlo_hipt"]; 
+  h1->SetTitle("HIPT"); 
+  h1->Fit("gaus", "", "e"); 
+  cout << " SM Higgs high-mass fitted resolution: " << h1->GetFunction("gaus")->GetParameter(2) << " +/- " << h1->GetFunction("gaus")->GetParError(2) 
+       << " RMS: " << h1->GetRMS() << " +/- " << h1->GetRMSError()
+       << endl;
+  cout << " SM Higgs mass peak: "       << h1->GetFunction("gaus")->GetParameter(1) << " +/- " << h1->GetFunction("gaus")->GetParError(1) << endl;
+  tl->DrawLatex(0.16, 0.8, Form("resolution: %4.1f GeV", h1->GetFunction("gaus")->GetParameter(2))); 
+  fHiggsMres  = h1->GetFunction("gaus")->GetParameter(2);
+  fHiggsMpeak = h1->GetFunction("gaus")->GetParameter(1);
+
+  // -- printout single photon ET cuts
+  h1 = (TH1D*)fHists["g0pt_mcatnlo_lopt"]->Clone("h1");
+  g0pt = h1->GetBinLowEdge(h1->FindFirstBinAbove(1.));
+  cout << "  Gamma0 pT > " << g0pt << endl;
+  tl->SetTextColor(kBlack); tl->DrawLatex(0.16, 0.60, Form("pT(G0) > %4.0f", h1->GetBinLowEdge(h1->FindFirstBinAbove(1.)))); 
+  h1 = (TH1D*)fHists["g1pt_mcatnlo_lopt"]->Clone("h1");
+  g1pt = h1->GetBinLowEdge(h1->FindFirstBinAbove(1.)); 
+  cout << "  Gamma1 pT > " << g1pt << endl;
+  tl->SetTextColor(kBlack); tl->DrawLatex(0.16, 0.55, Form("pT(G1) > %4.0f", h1->GetBinLowEdge(h1->FindFirstBinAbove(1.)))); 
+  
+
+  
+  c0->cd(2);
+  h1 = (TH1D*)fHists["m_mcatnlo_lopt"]; 
+  h1->SetTitle("LOPT"); 
+  h1->Fit("gaus", "", "e"); 
+  cout << " SM Higgs low-mass fitted resolution:  " << h1->GetFunction("gaus")->GetParameter(2) << " +/- " << h1->GetFunction("gaus")->GetParError(2) 
+       << " RMS: " << h1->GetRMS() << " +/- " << h1->GetRMSError()
+       << endl;
+  cout << " SM Higgs mass peak: "       << h1->GetFunction("gaus")->GetParameter(1) << " +/- " << h1->GetFunction("gaus")->GetParError(1) << endl;
+  tl->DrawLatex(0.16, 0.8, Form("resolution: %4.1f GeV", h1->GetFunction("gaus")->GetParameter(2))); 
+
+
+  // -------
+  // -- HIPT
+  // -------
+  // -- Background 
+  c0->cd(3);
+  gPad->SetLogy(1);
+  h1 = (TH1D*)fHists["pt_sherpa_hipt"]->Clone("h1");
+  normHist(h1, "sherpa", LUMI); 
+  fBg = h1->GetSumOfWeights(); 
+  h1->SetMinimum(0.001); 
+  h1->SetMaximum(10000.); 
+  h1->Fit("expo", "r", "", PTLO, PTHI); 
+  h1->GetFunction("expo")->SetLineColor(fDS["sherpa"]->fColor); 
+  fBgTau  = h1->GetFunction("expo")->GetParameter(1); 
+  fBgTauE = h1->GetFunction("expo")->GetParError(1); 
+  h1->Draw("hist");
+  h1->GetFunction("expo")->Draw("same");
+  cout << "  SHERPA background:        " << fBg << " fitted exponential slope = " << fBgTau << "+/-" << fBgTauE << endl;
+  tl->SetTextColor(fDS["sherpa"]->fColor); tl->DrawLatex(0.48, 0.80, Form("%6.1f", fBg)); 
+
+  // -- SM Higgs (Sg0)
+  h1 = (TH1D*)fHists["pt_mcatnlo_hipt"]->Clone("h1");
+  normHist(h1, "mcatnlo0", LUMI); 
+  fSg0 = h1->GetSumOfWeights(); 
+  h1->Fit("expo", "r", "histsame", PTLO, PTHI); 
+  h1->GetFunction("expo")->SetLineColor(fDS["mcatnlo0"]->fColor); 
+  fSg0Tau  = h1->GetFunction("expo")->GetParameter(1); 
+  fSg0TauE = h1->GetFunction("expo")->GetParError(1); 
+  h1->Draw("histsame");
+  h1->GetFunction("expo")->Draw("same");
+  cout << "  SM Higgs count:           " << fSg0  << " fitted exponential slope = " << fSg0Tau << "+/-" << fSg0TauE << endl;
+   tl->SetTextColor(fDS["mcatnlo0"]->fColor); tl->DrawLatex(0.48, 0.75, Form("%6.1f", fSg0)); 
+  // -- Contact Higgs (Sg1)
+  h1 = (TH1D*)fHists["pt_mcatnlo5_hipt"]->Clone("h1");
+  normHist(h1, "mcatnlo5", LUMI); 
+  fSg1 = h1->GetSumOfWeights(); 
+  h1->Fit("expo", "r", "histsame", PTLO, PTHI); 
+  h1->GetFunction("expo")->SetLineColor(fDS["mcatnlo5"]->fColor); 
+  fSg1Tau  = h1->GetFunction("expo")->GetParameter(1); 
+  fSg1TauE = h1->GetFunction("expo")->GetParError(1); 
+  h1->Draw("samehist");
+  h1->GetFunction("expo")->Draw("same");
+  cout << "  Contact Higgs count:      " << fSg1  << " fitted exponential slope = " << fSg1Tau << "+/-" << fSg1TauE << endl;
+  tl->SetTextColor(fDS["mcatnlo5"]->fColor); tl->DrawLatex(0.48, 0.70, Form("%6.1f", fSg1)); 
+  cout << "  Signal/Background:      " << fSg0/fBg << " and " << fSg1/fBg << endl;
+  tl->SetTextColor(fDS["mcatnlo5"]->fColor); tl->DrawLatex(0.60, 0.60, Form("S/B = %4.3f", fSg0/fBg)); 
+  tl->SetTextColor(fDS["mcatnlo0"]->fColor);  tl->DrawLatex(0.60, 0.55, Form("S/B = %4.3f", fSg1/fBg)); 
+
+
+  // -------
+  // -- LOPT
+  // -------
+  h1 = (TH1D*)fHists["pt_sherpa_lopt"]->Clone("h1");
+  normHist(h1, "sherpa", LUMI); 
+  c0->cd(3);
+  h1->Draw("histsame");
+  fNormBg = h1->GetSumOfWeights(); 
+  cout << "  SHERPA norm background:   " << fNormBg << endl;
+  tl->SetTextColor(fDS["sherpa"]->fColor); tl->DrawLatex(0.7, 0.80, Form("%6.1f", fNormBg)); 
+
+  h1 = (TH1D*)fHists["pt_mcatnlo_lopt"]->Clone("h1");
+  normHist(h1, "mcatnlo0", LUMI); 
+  h1->Draw("histsame");
+  fNormSg0 = h1->GetSumOfWeights(); 
+  cout << "  SM Higgs norm count:      " << fNormSg0 << endl;
+  tl->SetTextColor(fDS["mcatnlo0"]->fColor); tl->DrawLatex(0.7, 0.75, Form("%6.1f", fNormSg0)); 
+
+  h1 = (TH1D*)fHists["pt_mcatnlo5_lopt"]->Clone("h1");
+  normHist(h1, "mcatnlo5", LUMI); 
+  h1->Draw("histsame");
+  fNormSg1 = h1->GetSumOfWeights(); 
+  cout << "  Contact Higgs norm count: " << fNormSg1 << endl;
+  tl->SetTextColor(fDS["mcatnlo5"]->fColor); tl->DrawLatex(0.7, 0.70, Form("%6.1f", fNormSg1)); 
+
+
+  // -- overlay mass histograms: hipt
+  TH1D *mhipt = (TH1D*)fHists["m_sherpa_hipt"]->Clone("mhipt");
+  mhipt->SetTitle("HIPT"); 
+  normHist(mhipt, "sherpa", LUMI); 
+
+  h1 = (TH1D*)fHists["m_mcatnlo_hipt"]->Clone("h1");
+  normHist(h1, "mcatnlo0", LUMI); 
+
+  // -- debug consistency printout
+  c0->cd(3); tl->SetTextColor(fDS["sherpa"]->fColor); tl->DrawLatex(0.31, 0.35, Form("%6.1f", mhipt->Integral())); 
+  c0->cd(3); tl->SetTextColor(fDS["mcatnlo0"]->fColor); tl->DrawLatex(0.31, 0.30, Form("%6.1f", h1->Integral())); 
+
+  mhipt->Add(h1); 
+  c0->cd(5);
+  mhipt->SetMinimum(0.);
+  mhipt->Draw();
+
+
+  // -- overlay mass histograms: lopt
+  TH1D *mlopt = (TH1D*)fHists["m_sherpa_lopt"]->Clone("mlopt");
+  normHist(mlopt, "sherpa", LUMI); 
+  mlopt->SetTitle("LOPT"); 
+
+  h1 = (TH1D*)fHists["m_mcatnlo_lopt"]->Clone("h1");
+  normHist(h1, "mcatnlo0", LUMI); 
+
+  // -- debug consistency printout
+  c0->cd(3); tl->SetTextColor(fDS["sherpa"]->fColor); tl->DrawLatex(0.31, 0.20, Form("%6.1f", mlopt->Integral())); 
+  c0->cd(3); tl->SetTextColor(fDS["mcatnlo0"]->fColor); tl->DrawLatex(0.31, 0.15, Form("%6.1f", h1->Integral())); 
+
+  mlopt->Add(h1); 
+  mlopt->SetMinimum(0.);
+  c0->cd(6);
+  mlopt->Draw();
+
+
+  // -- run toys
+  if (1) {
+    c0->cd(4);
+    int ntoy = 200; 
+    toy4(fSg0, fSg1, fBg, ntoy); 
+  }
+  
+  c0->SaveAs(Form("%s/allNumbers-%s.pdf", fDirectory.c_str(), fSetup.c_str())); 
+
+  fTEX.open(fTexFileName.c_str(), ios::app);
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  fTEX << formatTex(g0pt, Form("%s:g0pt:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(g1pt, Form("%s:g1pt:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(ptlo, Form("%s:ptlo:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(pthi, Form("%s:pthi:val", fSetup.c_str()), 2) << endl;
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  fTEX << formatTex(fSg0, Form("%s:sg0:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fSg1, Form("%s:sg1:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fBg, Form("%s:bg:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fSg0/fBg, Form("%s:sb0:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fSg1/fBg, Form("%s:sb1:val", fSetup.c_str()), 2) << endl;
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  fTEX << formatTex(fBgTau, Form("%s:bgTau:val", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fBgTauE, Form("%s:bgTau:err", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fSg0Tau, Form("%s:sg0Tau:val", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fSg0TauE, Form("%s:sg0Tau:err", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fSg1Tau, Form("%s:sg1Tau:val", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fSg1TauE, Form("%s:sg1Tau:err", fSetup.c_str()), 6) << endl;
+  fTEX.close();
+  
+} 
+
+
+// ----------------------------------------------------------------------
+void plotHpt::setCuts(string cuts) {
+  cout << "==> plotHpt::setCuts: " << cuts << endl;
+
+  istringstream ss(cuts);
+  string token, name, sval;
+
+  while (getline(ss, token, ',')) {
+    
+    string::size_type m1 = token.find("="); 
+    name = token.substr(0, m1);
+    sval = token.substr(m1+1);
+
+    if (string::npos != name.find("PTLO")) {
+      float val; 
+      val = atof(sval.c_str()); 
+      PTLO = val;
+    }
+
+    if (string::npos != name.find("PTHI")) {
+      float val; 
+      val = atof(sval.c_str()); 
+      PTHI = val;
+    }
+
+    if (string::npos != name.find("PTNL")) {
+      float val; 
+      val = atof(sval.c_str()); 
+      PTNL = val;
+    }
+
+    if (string::npos != name.find("PTNH")) {
+      float val; 
+      val = atof(sval.c_str()); 
+      PTNH = val;
+    }
+
+    if (string::npos != name.find("G0PT")) {
+      float val; 
+      val = atof(sval.c_str()); 
+      G0PT = val;
+    }
+
+    if (string::npos != name.find("G1PT")) {
+      float val; 
+      val = atof(sval.c_str()); 
+      G1PT = val;
+    }
+  }
 }

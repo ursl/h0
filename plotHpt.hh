@@ -20,11 +20,12 @@ public :
   virtual        ~plotHpt();
 
   void   loadFiles(std::string afiles);
+  void   setCuts(std::string cuts);
 
 
   // -- Main analysis methods 
   void   makeAll(int bitmask = 0);
-  void   treeAnalysis(int nevts = -1); 
+  virtual void treeAnalysis(int nevts = -1); 
   void   optimizeCuts(std::string fname = "opt.root", double lumi = 1000., int nevts = -1);
   void   optAnalysis(int mode = 1, std::string filename = "opt.root", std::string treename = "opt");
   void   massResolution(std::string hname = "mpt_mcatnlo5_nopt");
@@ -57,20 +58,46 @@ public :
   //     > all necessary plots are produced. This emulates overlayAll, in a sense...
   void   validation(); 
 
+  // study the background mass shape in different pT bins
+  void   bgShape(int nevts = -1);
 
-  void   bookHist(std::string name, std::string cuts); 
+  // analysis: Everything after treeAnalysis and before toyX()
+  //     - event yields in lumi
+  //     - hi-pt diphoton resolution
+  //     - all required histograms
+  void allNumbers(); 
+
+  virtual void   bookHist(std::string name, std::string cuts); 
   void   readHistograms();
   void   setupTree(TTree *t); 
   void   loopOverTree(TTree *t, int ifunc, int nevts = -1, int nstart = 0); 
   void   candAnalysis(); 
-  void   loopFunction1(); 
-  void   loopFunction2(); 
+  void   loopFunction1(); // treeAnalysis
+  void   loopFunction2(); // optimizeCuts
+  void   loopFunction3(); // bgShape
 
   TH1*   combMCAtNLOHist(TH1 *h0, TH1 *h1);
 
+  void setNtoy(int ntoy) {fNtoy = ntoy;} 
+
+
 private: 
 
-  int    NBINS; 
+  // -- essential analysis numbers
+  double fSg0, fSg1, fBg; 
+  double fNormSg0, fNormSg0E; 
+  double fNormSg1, fNormSg1E; 
+  double fNormBg;
+  double fHiggsMpeak, fHiggsMres;
+  double fBgMp1, fBgMp1E;
+  double fBgTau, fBgTauE;
+  double fSg0Tau, fSg0TauE;
+  double fSg1Tau, fSg1TauE;
+  
+  // -- setup
+  int    NBINS, NPTBINS; 
+
+  // -- cuts
   double GETA;
   double G0ISO, G1ISO; 
   double G0ISOR, G1ISOR; 
@@ -80,12 +107,7 @@ private:
   double PTLO, PTHI; 
   double MGGLO, MGGHI; 
 
-  double fSg0Xs, fSg1Xs, fBgXs, fBgRf, fSgBF;
-
   bool fGoodCand, fGoodCandNoPtCuts; 
-
-  TH1D *fHistSg0, *fHistSg1, *fHistBg; 
-  TH2D *fHistBg2;
 
   TTree* fTree;
 
@@ -99,6 +121,9 @@ private:
 
   // -- pt bins
   std::vector<ptbins>   fPtBins;
+
+
+  int fNtoy; 
 
   // ----------------------------------------------------------------------
   ClassDef(plotHpt,1) 
