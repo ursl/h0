@@ -20,8 +20,9 @@ GLIBS         = $(filter-out -lz, $(ROOTGLIBS)) -lTMVA -lRooFitCore -lRooFit -lR
 EXTHEADERS    = -I../util -I$(DELPHES)
 LIBPATH       = $(shell pwd)/lib
 
-READER = anaH.o runH.o
+READER = anaH.o
 ANA = plotHpt.o 
+EXE =  runH.o runPlot.o
 
 DICTFILES = ${ANA:.o=Dict.o}
 DICTHEADERS = ${ANA:.o=Dict.h}
@@ -53,8 +54,10 @@ lib/libh0.so: $(addprefix obj/,$(ANA) $(READER) $(DICTFILES))
 	$(CXX) $(SOFLAGS) $(GLIBS) $(addprefix obj/,$(ANA) $(READER) $(DICTFILES)) $(LIBPATH)/libDelphes.so $(LIBPATH)/libutil.so -o lib/libh0.so 
 
 # -- binaries
-bin: lib/libh0.so obj/runH.o 
+bin: lib/libh0.so obj/runH.o  obj/runPlot.o
 	$(LD) $(LDFLAGS) -o bin/runH $(GLIBS) obj/runH.o $(LIBPATH)/libh0.so $(LIBPATH)/libDelphes.so $(LIBPATH)/libutil.so
+	$(LD) $(LDFLAGS) -o bin/runPlot $(GLIBS) obj/runPlot.o lib/libh0.so  $(LIBPATH)/libDelphes.so $(LIBPATH)/libutil.so
+
 
 # -- preparatory setup
 prep:
