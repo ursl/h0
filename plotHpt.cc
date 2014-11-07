@@ -1625,7 +1625,7 @@ void plotHpt::loopFunction1() {
     fHists[Form("mpt_%s_goodcand", cds)]->Fill(fb.pt, fb.m); 
     
     if (fb.pt < PTNL) return;
-    if (fb.pt > PTNL && fb.pt < PTNH) { 
+    if (fb.pt > PTNL && fb.pt < PTNH && fb.g0pt > G0PTLO && fb.g1pt > G1PTLO)  { 
       sprintf(cut, "lopt"); 
       fHists[Form("m_%s_%s", cds, cut)]->Fill(fb.m); 
       fHists[Form("pt_%s_%s", cds, cut)]->Fill(fb.pt); 
@@ -1858,10 +1858,12 @@ void plotHpt::allNumbers() {
   h1 = (TH1D*)fHists["m_mcatnlo_hipt"]; 
   h1->SetTitle("HIPT"); 
   h1->Fit("gaus", "", "e"); 
-  cout << " SM Higgs high-mass fitted resolution: " << h1->GetFunction("gaus")->GetParameter(2) << " +/- " << h1->GetFunction("gaus")->GetParError(2) 
+  cout << " SM Higgs high-mass fitted resolution: " << h1->GetFunction("gaus")->GetParameter(2) 
+       << " +/- " << h1->GetFunction("gaus")->GetParError(2) 
        << " RMS: " << h1->GetRMS() << " +/- " << h1->GetRMSError()
        << endl;
-  cout << " SM Higgs mass peak: "       << h1->GetFunction("gaus")->GetParameter(1) << " +/- " << h1->GetFunction("gaus")->GetParError(1) << endl;
+  cout << " SM Higgs mass peak: "       << h1->GetFunction("gaus")->GetParameter(1) 
+       << " +/- " << h1->GetFunction("gaus")->GetParError(1) << endl;
   tl->DrawLatex(0.16, 0.8, Form("resolution: %4.1f GeV", h1->GetFunction("gaus")->GetParameter(2))); 
   fHiggsMres  = h1->GetFunction("gaus")->GetParameter(2);
   fHiggsMpeak = h1->GetFunction("gaus")->GetParameter(1);
@@ -1870,11 +1872,11 @@ void plotHpt::allNumbers() {
   h1 = (TH1D*)fHists["g0pt_mcatnlo_hipt"]->Clone("h1");
   g0pt = h1->GetBinLowEdge(h1->FindFirstBinAbove(1.));
   cout << "  Gamma0 pT > " << g0pt << endl;
-  tl->SetTextColor(kBlack); tl->DrawLatex(0.16, 0.60, Form("pT(G0) > %4.0f", h1->GetBinLowEdge(h1->FindFirstBinAbove(1.)))); 
+  tl->SetTextColor(kBlack); tl->DrawLatex(0.16, 0.60, Form("pT(G0) > %4.0f", h1->GetBinLowEdge(h1->FindFirstBinAbove(0.5)))); 
   h1 = (TH1D*)fHists["g1pt_mcatnlo_hipt"]->Clone("h1");
   g1pt = h1->GetBinLowEdge(h1->FindFirstBinAbove(1.)); 
   cout << "  Gamma1 pT > " << g1pt << endl;
-  tl->SetTextColor(kBlack); tl->DrawLatex(0.16, 0.55, Form("pT(G1) > %4.0f", h1->GetBinLowEdge(h1->FindFirstBinAbove(1.)))); 
+  tl->SetTextColor(kBlack); tl->DrawLatex(0.16, 0.55, Form("pT(G1) > %4.0f", h1->GetBinLowEdge(h1->FindFirstBinAbove(0.5)))); 
   
 
   
@@ -1882,10 +1884,12 @@ void plotHpt::allNumbers() {
   h1 = (TH1D*)fHists["m_mcatnlo_lopt"]; 
   h1->SetTitle("LOPT"); 
   h1->Fit("gaus", "", "e"); 
-  cout << " SM Higgs low-mass fitted resolution:  " << h1->GetFunction("gaus")->GetParameter(2) << " +/- " << h1->GetFunction("gaus")->GetParError(2) 
+  cout << " SM Higgs low-mass fitted resolution:  " << h1->GetFunction("gaus")->GetParameter(2) 
+       << " +/- " << h1->GetFunction("gaus")->GetParError(2) 
        << " RMS: " << h1->GetRMS() << " +/- " << h1->GetRMSError()
        << endl;
-  cout << " SM Higgs mass peak: "       << h1->GetFunction("gaus")->GetParameter(1) << " +/- " << h1->GetFunction("gaus")->GetParError(1) << endl;
+  cout << " SM Higgs mass peak: "       << h1->GetFunction("gaus")->GetParameter(1) 
+       << " +/- " << h1->GetFunction("gaus")->GetParError(1) << endl;
   tl->DrawLatex(0.16, 0.8, Form("resolution: %4.1f GeV", h1->GetFunction("gaus")->GetParameter(2))); 
 
 
