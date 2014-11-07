@@ -43,6 +43,7 @@ int main(int argc, char *argv[]) {
   gROOT->Clear();  gROOT->DeleteAll();
   plotHpt a(dir, ifiles, setup);
   if (cuts != "nada") {
+    cout << "setting cuts: " << cuts << endl
     a.setCuts(cuts);
   } 
   a.setNtoy(ntoy); 
