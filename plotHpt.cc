@@ -345,6 +345,11 @@ void plotHpt::bgShape(int nevts) {
 void plotHpt::treeAnalysis(int nevts) {
 
   cout << "treeAnalysis: open " << fHistFileName << endl;
+  cout << " cuts: " << endl;
+  cout << "  PT > " << PTLO << endl;
+  cout << "  G0PT > " << G0PT << endl;
+  cout << "  G1PT > " << G1PT << endl;
+  
   TFile *f = TFile::Open(fHistFileName.c_str(), "RECREATE"); 
   
   string ds("sherpa");
