@@ -34,7 +34,7 @@ sub runAllNumbers() {
     my $cuts = ""; 
     for ($g0pt = 0; $g0pt < $#G0PT; $g0pt++) {
 	for ($g1pt = 60; $g1pt < $G0PT[$g0pt]; $g1pt += 40) {
-	    $cuts = "PTLO=$ptlo;PTHI=10000;G0PT=$G0PT[$g0pt];g1PT=$g1pt";
+	    $cuts = "PTLO=$ptlo,G0PT=$G0PT[$g0pt],G1PT=$g1pt";
 	    $completeCommand = $command . " -c \"$cuts\" " . " -s $idx";
 	    print "$completeCommand\n";
 	    if (!$opt_d) {
