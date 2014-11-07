@@ -25,15 +25,15 @@ exit(0);
 
 # ----------------------------------------------------------------------
 sub runAllNumbers() {
-    my @G0PT = (80, 160, 240); 
+    my @G0PT = (80, 120, 160, 200, 240); 
 
     # bin/runPlot -s 1 -c "PTLO=400;PTHI=10000;G0PT=100;g1PT=40" -n 20
 
     my $idx = 10*$ptlo; 
-    my $command = "bin/runPlot -n 200"; 
+    my $command = "bin/runPlot -n 1000"; 
     my $cuts = ""; 
     for ($g0pt = 0; $g0pt < $#G0PT; $g0pt++) {
-	for ($g1pt = 60; $g1pt < $G0PT[$g0pt]; $g1pt += 40) {
+	for ($g1pt = 50; $g1pt < $G0PT[$g0pt]; $g1pt += 20) {
 	    $cuts = "PTLO=$ptlo,G0PT=$G0PT[$g0pt],G1PT=$g1pt";
 	    $completeCommand = $command . " -c \"$cuts\" " . " -s $idx";
 	    print "$completeCommand\n";
