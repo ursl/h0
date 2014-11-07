@@ -30,7 +30,7 @@ sub runAllNumbers() {
     # bin/runPlot -s 1 -c "PTLO=400;PTHI=10000;G0PT=100;g1PT=40" -n 20
 
     my $idx = 10*$ptlo; 
-    my $command = "bin/runPlot -n 20"; 
+    my $command = "bin/runPlot -n 200"; 
     my $cuts = ""; 
     for ($g0pt = 0; $g0pt < $#G0PT; $g0pt++) {
 	for ($g1pt = 40; $g1pt < $G0PT[$g0pt]; $g1pt += 20) {
