@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
   string dir("hpt0"), 
     ifiles("plotHpt.files"), 
     setup(""), 
-    cuts;
+    cuts("nada");
   
   int mode(-1), ntoy(200); 
   // -- command line arguments
@@ -42,6 +42,9 @@ int main(int argc, char *argv[]) {
 
   gROOT->Clear();  gROOT->DeleteAll();
   plotHpt a(dir, ifiles, setup);
+  if (cuts != "nada") {
+    a.setCuts(cuts);
+  } 
   a.setNtoy(ntoy); 
   if (mode > -1) {
     a.makeAll(mode);
