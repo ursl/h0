@@ -50,7 +50,12 @@ public :
   // toy4 adds a sensitivity calculation
   //     - signal is     Higgs(mtop -> infty)
   //     - background is diphoton + Higgs(mtop = 173.5GeV)
-  void   toy4(double nsg0 = 50, double nsg1 = 100, double nbg = 450, int ntoy = 200); 
+  void   toy4(double nsg0 = 50, double nsg1 = 100, double nbg = 450, int ntoy = -1); 
+
+  // toy5 tests things
+  //     - binned fit with completely constrained signal shape
+  //     - constrain bg shape with control region
+  void   toy5(double nsg0 = 50, double nsg1 = 100, double nbg = 450, int ntoy = 200); 
 
   // validation produces the simple plots
   //     - pT for various components
@@ -65,7 +70,7 @@ public :
   //     - event yields in lumi
   //     - hi-pt diphoton resolution
   //     - all required histograms
-  void allNumbers(); 
+  void allNumbers(int ntoy = 100); 
 
   virtual void   bookHist(std::string name, std::string cuts); 
   void   readHistograms();
