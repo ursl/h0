@@ -1,0 +1,330 @@
+  
+ Enter prefix for name of BASES files
+  
+ Enter prefix for name of event files
+  
+ Enter pair ECM(GeV),fren[NLO],ffact[NLO],fren[MC],ffact[MC]
+  fren=mu_ren/mu0
+  ffact=mu_fac/mu0
+  mu_ren=renormalization scale
+  mu_fac=factorization scale
+  mu0=reference scale
+  
+ Enter Higgs mass, Higgs width, top and b masses (all GeV)
+  
+ Enter 0 to use a fixed Higgs width
+       1 to use a running Higgs width
+       2 to use a modified Breit-Wigner
+       3 to use the NBW scheme
+  
+ Enter process number: -(1)16XX
+       XX control the decay
+  
+ Enter GammaX, M_H(min), M_H(max)
+   If GammaX>0, the Higgs mass is chosen in the range
+       M0-GammaX*width < M_H < M0+GammaX*width
+   If GammaX<0, the Higgs mass is chosen in the range
+              M_H(min) < M_H < M_H(max)
+  
+ Enter d, u, s, c, b, glu (Herwig) masses
+  
+ Enter beam type for beam1 and beam2 (p, pbar, n, nbar):
+  
+ Enter group name and id number for PDF set
+ ==== STAND-ALONE LHAGLUE MODE TO USE LHAPDF ====
+ *************************************
+ *       LHAPDF Version 5.9.1        *
+ *   Configured for the following:   *
+ *             All PDFs              *
+ *         FULL MEMORY option        *
+ *    Maximum  3 concurrent set(s)   *
+ *************************************
+
+ >>>>>> PDF description: <<<<<<
+ MSTW 2008 NLO (68% C.L.)                                        
+ Reference:                                                      
+  A.D. Martin, W.J. Stirling, R.S. Thorne and G. Watt            
+  "Parton distributions for the LHC"                             
+  arXiv:0901.0002 [hep-ph]                                       
+  http://projects.hepforge.org/mstwpdf/                          
+ This set has 41 member PDFs.                                    
+  mem=0 --> central value                                        
+  mem=1-40 --> 20 eigenvector sets (+/- directions)              
+  See Section 6 of paper for error calculation.                  
+ >>>>>>                   <<<<<<
+
+ ==============================================
+ PDFset name /shome/strebeli/software/lhapdf/share/lhapdf/PDFsets/MSTW2008nlo68cl.LHgrid     
+ with         40 members
+ ====  initialized. ===========================
+ Strong coupling at Mz for PDF is:  0.12018
+  
+ Enter Lambda_QCD_5, < 0 for default
+ Lambda_5=  0.25508353777482062       GeV
+  
+ Enter scheme: 'DI' or 'MS'
+ Scheme=MS
+  
+ Enter the maximum number of events to generate;
+ enter 0 to skip the event generation step
+  
+ Enter 0 to have +1/-1 event weights
+       1 to normalize the weights, in such a way that
+         their sum is equal to the total rate
+  
+ Enter the seed for random numbers; it will be used
+ to generate events. Enter 0 for default
+  
+ Enter 1 to compute Born exacly
+       2 to compute Born in the M_top->infinity limit
+       3 for exact M_top and M_b dependence at NLO
+  
+ Enter 0 to include all contributions
+       1 to exclude |top|^2
+  
+ Enter 0 for MC@NLO-format event file
+       1 for LHEF-format event file
+  
+ Enter number of iterations
+ for grid setup and for integral evaluation;
+ set either one to 0 to skip the integration step
+
+                                                       Date: 14/ 5/25  12:46
+        **********************************************************
+        *                                                        *
+        *     BBBBBBB     AAAA     SSSSSS   EEEEEE   SSSSSS      *
+        *     BB    BB   AA  AA   SS    SS  EE      SS    SS     *
+        *     BB    BB  AA    AA  SS        EE      SS           *
+        *     BBBBBBB   AAAAAAAA   SSSSSS   EEEEEE   SSSSSS      *
+        *     BB    BB  AA    AA        SS  EE            SS     *
+        *     BB    BB  AA    AA  SS    SS  EE      SS    SS     *
+        *     BBBB BB   AA    AA   SSSSSS   EEEEEE   SSSSSS      *
+        *                                                        *
+        *                   BASES Version 5.1                    *
+        *           coded by S.Kawabata KEK, March 1994          *
+        **********************************************************
+
+
+     <<   Parameters for BASES    >>
+
+      (1) Dimensions of integration etc.
+          # of dimensions :    Ndim    =        4   ( 50 at max.)
+          # of Wilds      :    Nwild   =        4   ( 15 at max.)
+          # of sample points : Ncall   =   114244(real)   120000(given)
+          # of subregions    : Ng      =       39 / variable
+          # of regions       : Nregion =       13 / variable
+          # of Hypercubes    : Ncube   =    28561
+
+      (2) About the integration variables
+          ------+---------------+---------------+-------+-------
+              i       XL(i)           XU(i)       IG(i)   Wild
+          ------+---------------+---------------+-------+-------
+              1    0.000000E+00    1.000000E+00     1      yes
+              2    0.000000E+00    1.000000E+00     1      yes
+              3    0.000000E+00    1.000000E+00     1      yes
+              4    0.000000E+00    1.000000E+00     1      yes
+          ------+---------------+---------------+-------+-------
+
+      (3) Parameters for the grid optimization step
+          Max.# of iterations: ITMX1 =       10
+          Expected accuracy  : Acc1  =   0.2000 %
+
+      (4) Parameters for the integration step
+          Max.# of iterations: ITMX2 =       10
+          Expected accuracy  : Acc2  =   0.0500 %
+
+                                                       Date: 14/ 5/25  12:46
+               Convergency Behavior for the Grid Optimization Step
+ ------------------------------------------------------------------------------
+ <- Result of  each iteration ->  <-     Cumulative Result     -> < CPU  time >
+  IT Eff R_Neg   Estimate  Acc %  Estimate(+- Error )order  Acc % ( H: M: Sec )
+ ------------------------------------------------------------------------------
+   1  93  0.00  6.299E+00  0.562  6.299399(+-0.035405)E 00  0.562   0: 0:51.92
+   2  96  0.00  6.343E+00  0.254  6.335416(+-0.014662)E 00  0.231   0: 1:49.68
+   3  96  0.00  6.344E+00  0.205  6.340084(+-0.009720)E 00  0.153   0: 2:48.33
+ ------------------------------------------------------------------------------
+
+                                                       Date: 14/ 5/25  12:46
+               Convergency Behavior for the Integration Step      
+ ------------------------------------------------------------------------------
+ <- Result of  each iteration ->  <-     Cumulative Result     -> < CPU  time >
+  IT Eff R_Neg   Estimate  Acc %  Estimate(+- Error )order  Acc % ( H: M: Sec )
+ ------------------------------------------------------------------------------
+   1  96  0.00  6.365E+00  0.210  6.365402(+-0.013345)E 00  0.210   0: 3:46.98
+   2  96  0.00  6.346E+00  0.229  6.356537(+-0.009824)E 00  0.155   0: 4:45.66
+   3  96  0.00  6.341E+00  0.212  6.351193(+-0.007927)E 00  0.125   0: 5:44.37
+   4  96  0.00  6.358E+00  0.213  6.352974(+-0.006838)E 00  0.108   0: 6:43.02
+   5  96  0.00  6.345E+00  0.206  6.351337(+-0.006058)E 00  0.095   0: 7:41.67
+   6  96  0.00  6.360E+00  0.205  6.352934(+-0.005496)E 00  0.087   0: 8:40.32
+   7  96  0.00  6.356E+00  0.212  6.353328(+-0.005089)E 00  0.080   0: 9:39.01
+   8  96  0.00  6.345E+00  0.206  6.352265(+-0.004743)E 00  0.075   0:10:37.64
+   9  96  0.00  6.348E+00  0.205  6.351752(+-0.004457)E 00  0.070   0:11:36.28
+  10  96  0.00  6.350E+00  0.207  6.351605(+-0.004220)E 00  0.066   0:12:34.79
+ ------------------------------------------------------------------------------
+
+                    ****** END OF BASES *********
+
+
+     <<   Computing Time Information   >>
+
+               (1) For BASES              H: M:  Sec
+                   Overhead           :   0: 0: 0.00
+                   Grid Optim. Step   :   0: 2:48.33
+                   Integration Step   :   0: 9:46.45
+                   Go time for all    :   0:12:34.79
+
+               (2) Expected event generation time
+                   Expected time for 1000 events :      0.73 Sec
+    
+ |integral[a]|:   6.3516049509805059       +-   4.21969729579552057E-003
+  integral[a] :   4.8460754021106034       +-   4.53177461396001534E-003
+
+                                                       Date: 14/ 5/25  12:59
+        **********************************************************
+        *                                                        *
+        *     BBBBBBB     AAAA     SSSSSS   EEEEEE   SSSSSS      *
+        *     BB    BB   AA  AA   SS    SS  EE      SS    SS     *
+        *     BB    BB  AA    AA  SS        EE      SS           *
+        *     BBBBBBB   AAAAAAAA   SSSSSS   EEEEEE   SSSSSS      *
+        *     BB    BB  AA    AA        SS  EE            SS     *
+        *     BB    BB  AA    AA  SS    SS  EE      SS    SS     *
+        *     BBBB BB   AA    AA   SSSSSS   EEEEEE   SSSSSS      *
+        *                                                        *
+        *                   BASES Version 5.1                    *
+        *           coded by S.Kawabata KEK, March 1994          *
+        **********************************************************
+
+
+     <<   Parameters for BASES    >>
+
+      (1) Dimensions of integration etc.
+          # of dimensions :    Ndim    =        4   ( 50 at max.)
+          # of Wilds      :    Nwild   =        4   ( 15 at max.)
+          # of sample points : Ncall   =   114244(real)   120000(given)
+          # of subregions    : Ng      =       39 / variable
+          # of regions       : Nregion =       13 / variable
+          # of Hypercubes    : Ncube   =    28561
+
+      (2) About the integration variables
+          ------+---------------+---------------+-------+-------
+              i       XL(i)           XU(i)       IG(i)   Wild
+          ------+---------------+---------------+-------+-------
+              1    0.000000E+00    1.000000E+00     1      yes
+              2    0.000000E+00    1.000000E+00     1      yes
+              3    0.000000E+00    1.000000E+00     1      yes
+              4    0.000000E+00    1.000000E+00     1      yes
+          ------+---------------+---------------+-------+-------
+
+      (3) Parameters for the grid optimization step
+          Max.# of iterations: ITMX1 =       10
+          Expected accuracy  : Acc1  =   0.2000 %
+
+      (4) Parameters for the integration step
+          Max.# of iterations: ITMX2 =       10
+          Expected accuracy  : Acc2  =   0.0500 %
+
+                                                       Date: 14/ 5/25  12:59
+               Convergency Behavior for the Grid Optimization Step
+ ------------------------------------------------------------------------------
+ <- Result of  each iteration ->  <-     Cumulative Result     -> < CPU  time >
+  IT Eff R_Neg   Estimate  Acc %  Estimate(+- Error )order  Acc % ( H: M: Sec )
+ ------------------------------------------------------------------------------
+   1 100  0.00  3.304E+01  0.138  3.304348(+-0.004574)E 01  0.138   0: 0:30.67
+ ------------------------------------------------------------------------------
+
+                                                       Date: 14/ 5/25  12:59
+               Convergency Behavior for the Integration Step      
+ ------------------------------------------------------------------------------
+ <- Result of  each iteration ->  <-     Cumulative Result     -> < CPU  time >
+  IT Eff R_Neg   Estimate  Acc %  Estimate(+- Error )order  Acc % ( H: M: Sec )
+ ------------------------------------------------------------------------------
+   1 100  0.00  3.296E+01  0.083  3.296300(+-0.002746)E 01  0.083   0: 1: 0.96
+   2 100  0.00  3.304E+01  0.084  3.300096(+-0.001951)E 01  0.059   0: 1:31.20
+   3 100  0.00  3.300E+01  0.084  3.300004(+-0.001594)E 01  0.048   0: 2: 1.36
+ ------------------------------------------------------------------------------
+
+                    ****** END OF BASES *********
+
+
+     <<   Computing Time Information   >>
+
+               (1) For BASES              H: M:  Sec
+                   Overhead           :   0: 0: 0.00
+                   Grid Optim. Step   :   0: 0:30.67
+                   Integration Step   :   0: 1:30.69
+                   Go time for all    :   0: 2: 1.36
+
+               (2) Expected event generation time
+                   Expected time for 1000 events :      0.38 Sec
+    
+ |integral[b]|:   33.000044247725185       +-   1.59398374285027629E-002
+  integral[b] :   31.593434250347485       +-   1.66212197668955501E-002
+   
+ The following number of events will be generated
+ # events[a]:        1615
+ # events[b]:        8385
+   
+ Estimated fractions of events with negative weights
+ Events[a]: w<0/all:  0.11851567914637795     
+ Events[b]: w<0/all:  2.13122441112281631E-002
+ Events[all]: w<0/all:  3.70105988694048524E-002
+
+
+
+
+
+                                                       Date: 14/ 5/25  13:01
+        **********************************************************
+        *                                                        *
+        *    SSSSS   PPPPPP   RRRRRR   IIIII  N    NN   GGGGG    *
+        *   SS   SS  PP   PP  RR   RR   III   NN   NN  GG   GG   *
+        *   SS       PP   PP  RR   RR   III   NNN  NN  GG        *
+        *    SSSSS   PPPPPP   RRRRR     III   NNNN NN  GG  GGGG  *
+        *        SS  PP       RR  RR    III   NN NNNN  GG   GG   *
+        *   SS   SS  PP       RR   RR   III   NN  NNN  GG   GG   *
+        *    SSSSS   PP       RR    RR IIIII  NN   NN   GGGGG    *
+        *                                                        *
+        *                  SPRING Version 5.1                    *
+        *           coded by S.Kawabata KEK, March 1994          *
+        **********************************************************
+
+     Number of generated events    =      1615
+     Generation efficiency         =    54.322 Percent
+     Computing time for generation =     1.540 Seconds
+                    for Overhead   =     0.010 Seconds
+                    for Others     =     0.070 Seconds
+     GO time for event generation  =     1.620 Seconds
+     Max. number of trials MXTRY   =        50 per event
+     Number of mis-generations     =         0 times
+
+
+
+
+
+                                                       Date: 14/ 5/25  13:01
+        **********************************************************
+        *                                                        *
+        *    SSSSS   PPPPPP   RRRRRR   IIIII  N    NN   GGGGG    *
+        *   SS   SS  PP   PP  RR   RR   III   NN   NN  GG   GG   *
+        *   SS       PP   PP  RR   RR   III   NNN  NN  GG        *
+        *    SSSSS   PPPPPP   RRRRR     III   NNNN NN  GG  GGGG  *
+        *        SS  PP       RR  RR    III   NN NNNN  GG   GG   *
+        *   SS   SS  PP       RR   RR   III   NN  NNN  GG   GG   *
+        *    SSSSS   PP       RR    RR IIIII  NN   NN   GGGGG    *
+        *                                                        *
+        *                  SPRING Version 5.1                    *
+        *           coded by S.Kawabata KEK, March 1994          *
+        **********************************************************
+
+     Number of generated events    =      8385
+     Generation efficiency         =    75.330 Percent
+     Computing time for generation =     3.030 Seconds
+                    for Overhead   =     0.000 Seconds
+                    for Others     =     0.250 Seconds
+     GO time for event generation  =     3.280 Seconds
+     Max. number of trials MXTRY   =        50 per event
+     Number of mis-generations     =         1 times
+ Total for fully inclusive
+ had1= 1  had2= 1  strf1= 21100  strf2= 21100  nl= 5  lambda5=0.2551D+00
+ ecm or ebeam  mass      width     xf   xr   tot        err    
+ 1.400D+04     1.250D+02 4.900D-03 1.00 1.00 0.3644D+02 0.1723D-01
