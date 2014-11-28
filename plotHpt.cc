@@ -1526,7 +1526,7 @@ void plotHpt::toy4(double nsg0, double nsg1, double nbg, int ntoy) {
       tl->SetNDC(kTRUE);
       tl->DrawLatex(0.2, 0.2, Form("zExp = %4.3f", zExp)); 
       tl->DrawLatex(0.2, 0.15, Form("S = %4.1f, B = %4.1f +/- %4.1f", sExpected, bExpected, bExpectedRelE*bExpected)); 
-      c1->SaveAs(Form("%s/toy4-%d.pdf", fDirectory.c_str(), imc)); 
+      c1->SaveAs(Form("%s/toy4-%s-%d.pdf", fDirectory.c_str(), fSetup.c_str(), imc)); 
     }
   }
   pad->cd();

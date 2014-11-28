@@ -27,8 +27,6 @@ exit(0);
 sub runAllNumbers() {
     my @G0PT = (80, 120, 160, 200, 240); 
 
-    # bin/runPlot -s 1 -c "PTLO=400;PTHI=10000;G0PT=100;g1PT=40" -n 20
-
     my $idx = 10*$ptlo; 
     my $command = "bin/runPlot -n 1000"; 
     my $cuts = ""; 
