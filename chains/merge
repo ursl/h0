@@ -46,7 +46,12 @@ tie %jobs, "Tie::IxHash";
     "sherpa_132" => "csherpa_132_chain",
     "sherpa_132_sys" => "csherpa_132_sys",
     "sherpa_133_sys" => "csherpa_133_sys",
-    "sherpa_134_sys" => "csherpa_134_sys"
+    "sherpa_134_sys" => "csherpa_134_sys",
+    "sherpa_135_sys" => "csherpa_135_sys",
+    "sherpa_141_sys" => "csherpa_141_sys",
+    "sherpa_150_sys" => "csherpa_150_sys",
+    "sherpa_151_sys" => "csherpa_151_sys",
+    "sherpa_152_sys" => "csherpa_152_sys"
 );
 
 my @lines;

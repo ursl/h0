@@ -157,77 +157,124 @@ void plotHpt::bookHist(string name, string cuts) {
   sprintf(hist, "%s_%s_%s", "genpt", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "genpt");
   sprintf(ahist, "%s", "p_{T}(#gamma#gamma)^{gen} [GeV]"); 
-  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0, 1000.))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0, 1000.))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  }
 
   // -- gen pT vs g1pt
   sprintf(hist, "genpt_g1pt_%s_%s", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "pt");
   sprintf(ahist, "%s", "p_T^{gen}(#gamma#gamma) [GeV]"); 
-  fHists.insert(make_pair(hist, new TH2D(hist, thist, 100, 0, 1000., 100, 0., 300.))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "pt_{#gamma1}^{gen} [GeV]");
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH2D(hist, thist, 100, 0, 1000., 100, 0., 300.))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "pt_{#gamma1}^{gen} [GeV]");
+  }
 
   // -- reco overlays
   sprintf(hist, "%s_%s_%s", "mpt", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "mpt");
   sprintf(ahist, "%s", "p_T(#gamma#gamma) [GeV]"); 
-  fHists.insert(make_pair(hist, new TH2D(hist, thist, 100, 0., 1000., NBINS, MGGLO, MGGHI))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "m_{#gamma #gamma} [GeV]");
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH2D(hist, thist, 100, 0., 1000., NBINS, MGGLO, MGGHI))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "m_{#gamma #gamma} [GeV]");
+  }
 
   sprintf(hist, "%s_%s_%s", "m", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "m");
   sprintf(ahist, "%s", "m(#gamma#gamma) [GeV]"); 
-  fHists.insert(make_pair(hist, new TH1D(hist, thist, NBINS, MGGLO, MGGHI))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH1D(hist, thist, NBINS, MGGLO, MGGHI))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  }
 
   sprintf(hist, "%s_%s_%s", "pt", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "pt");
   sprintf(ahist, "%s", "pT(#gamma#gamma) [GeV]"); 
-  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0, 1000.))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
-  
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0, 1000.))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  }
+
   sprintf(hist, "%s_%s_%s", "eta", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "eta");
   sprintf(ahist, "%s", "#eta(#gamma#gamma)"); 
-  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, -5., 5.))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
-  
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, -5., 5.))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  }
+
   sprintf(hist, "%s_%s_%s", "g0pt", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "g0pt");
   sprintf(ahist, "%s", "p_{T}(#gamma_{0}) [GeV]"); 
-  fHists.insert(make_pair(hist, new TH1D(hist, thist, 800, 0., 800.))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH1D(hist, thist, 800, 0., 800.))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  }
 
   sprintf(hist, "%s_%s_%s", "g1pt", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "g1pt");
   sprintf(ahist, "%s", "p_T(#gamma_{1}) [GeV]"); 
-  fHists.insert(make_pair(hist, new TH1D(hist, thist, 300, 0., 300.))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH1D(hist, thist, 300, 0., 300.))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  }
 
   sprintf(hist, "%s_%s_%s", "g0iso", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "g0iso");
   sprintf(ahist, "%s", "I(#gamma_{0})"); 
-  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 2.))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 2.))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  }
 
   sprintf(hist, "%s_%s_%s", "g1iso", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "g1iso");
   sprintf(ahist, "%s", "I(#gamma_{1})"); 
-  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 2.))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 2.))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  }
 
   sprintf(hist, "%s_%s_%s", "g0isor", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "g0isor");
   sprintf(ahist, "%s", "I^{rel}(#gamma_{0})"); 
-  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 0.006))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 0.006))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  }
 
   sprintf(hist, "%s_%s_%s", "g1isor", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "g1isor");
   sprintf(ahist, "%s", "I^{rel}(#gamma_{1})"); 
-  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 0.012))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
-
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 0.012))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  }
 }
 
 
@@ -249,8 +296,65 @@ void plotHpt::makeAll(int bitmask) {
     validation(); 
   }
 
+  if (bitmask & 0x20) {
+    // -- different mass cuts
+    // MSTW08
+    bgSyst("sys132", "sys133", "sys134"); 
+    // CTEQ6
+    bgSyst("sys150", "sys151", "sys152"); 
+
+    // -- different processes
+    bgSyst("sys132", "sys141"); 
+
+    // -- MSTW08 vs CTEQ6
+    bgSyst("sys133", "sys152"); 
+    bgSyst("sys134", "sys150"); 
+    bgSyst("sys135", "sys151"); 
+
+    
+  }
+
 }
 
+
+// ----------------------------------------------------------------------
+void plotHpt::bgSyst(string ds0, string ds1, string ds2) {
+  
+  vector<string> vds; 
+  vds.push_back(ds0);
+  vds.push_back(ds1);
+  if (string::npos == ds2.find("nada")) vds.push_back(ds2);
+
+  for (unsigned int i = 0; i < vds.size(); ++i) {
+    fCds = vds[i]; 
+    bookHist(vds[i], "nopt"); 
+    bookHist(vds[i], "goodcand"); 
+    bookHist(vds[i], "lopt"); 
+    bookHist(vds[i], "hipt"); 
+    TTree *t = getTree(vds[i]); 
+    setupTree(t); 
+    loopOverTree(t, 1); 
+  }
+
+  int OTYPE = LUMI;
+  string what("pt");
+  string sel("hipt");
+
+  zone();
+  if (3 == vds.size()) {
+    overlay(fHists[Form("%s_%s_%s", what.c_str(), vds[0].c_str(), sel.c_str())], vds[0], 
+	    fHists[Form("%s_%s_%s", what.c_str(), vds[1].c_str(), sel.c_str())], vds[1], 
+	    fHists[Form("%s_%s_%s", what.c_str(), vds[2].c_str(), sel.c_str())], vds[2], 
+	    OTYPE, false, true, 0.2); 
+    c0->SaveAs(Form("%s/bgsyst-%s-%s-%s.pdf", fDirectory.c_str(), vds[0].c_str(), vds[1].c_str(), vds[2].c_str())); 
+  } else {
+    overlay(fHists[Form("%s_%s_%s", what.c_str(), vds[0].c_str(), sel.c_str())], vds[0], 
+	    fHists[Form("%s_%s_%s", what.c_str(), vds[1].c_str(), sel.c_str())], vds[1], 
+	    OTYPE, false, true, 0.2); 
+    c0->SaveAs(Form("%s/bgsyst-%s-%s.pdf", fDirectory.c_str(), vds[0].c_str(), vds[1].c_str())); 
+    
+  }
+}
 
 // ----------------------------------------------------------------------
 void plotHpt::bgShape(int nevts) {
@@ -1448,6 +1552,300 @@ void plotHpt::toy4(double nsg0, double nsg1, double nbg, int ntoy) {
 
 
 
+// ----------------------------------------------------------------------
+void plotHpt::toy5(double nsg0, double nsg1, double nbg, int ntoy) {
+
+  fHistFile = TFile::Open(fHistFileName.c_str()); 
+
+  int NBINS(10); 
+
+  // mass
+  // ====
+  
+  // -- Signal
+  RooRealVar m("m", "m", 100., 150., "GeV"); 
+  RooRealVar sgP("sgP", "signal peak mass", 125., 100, 150);  
+  sgP.setConstant(kTRUE);
+  RooRealVar sgS("sgS", "signal sigma mass", fHiggsMres, 0., 15.);  
+  sgS.setConstant(kTRUE);
+  RooGaussian sg0M("sg0M", "signal mass", m, sgP, sgS); 
+  RooGaussian sg1M("sg1M", "signal mass", m, sgP, sgS); 
+
+  // -- Background
+  double bgc0  = 0.0245329; // FIXME!!!
+  //  double bgc0e = 0.00418385;  // derived from the normalized unscaled fit! 
+  RooRealVar C0("C0", "coefficient #0", bgc0, -1., 1.); 
+  //  C0.setRange(bgc0 - bgc0e, bgc0 + bgc0e);
+  //   double bgc1  = 0.0001231;
+  //   double bgc1e = 3.341922e-5; // derived from the normalized unscaled fit! 
+  //   RooRealVar C1("C1", "coefficient #1", bgc1, -1., 1.); 
+  //  C1.setRange(bgc1 - bgc1e, bgc1 + bgc1e);
+  RooPolynomial bg0M("bg0M", "background 0 gamma gamma mass", m, RooArgList(C0)); 
+  RooPolynomial bg1M("bg1M", "background 1 gamma gamma mass", m, RooArgList(C0)); 
+
+
+  // pT
+  // ==
+  RooRealVar pt("pt", "pt", 300., 1000., "GeV"); 
+  //  SM Higgs count:           17.2289 fitted exponential slope = -0.0108046+/-0.000305826
+  // -- SM Higgs
+  //  double sg0tau  = -1.09325e-02; // FIXME!!!
+  double sg0tau = fSg0Tau; 
+  //  double sg0taue = 1.67445e-04;
+  double sg0taue = fSg0TauE;
+  RooRealVar sg0Tau("sg0Tau", "signal 0 tau", sg0tau, -10., 10.); 
+  sg0Tau.setRange(sg0tau - sg0taue, sg0tau + sg0taue); 
+  RooExponential sg0Pt("sg0Pt", "signal 0 pT", pt, sg0Tau);   
+
+  //  Contact Higgs count:      45.3107 fitted exponential slope = -0.00707933+/-0.000137285
+  // -- "contact" Higgs
+  //  double sg1tau  = -7.81368e-03; // FIXME!!!
+  double sg1tau = fSg1Tau; 
+  //  double sg1taue = 9.10171e-05;
+  double sg1taue = fSg1TauE;
+  RooRealVar sg1Tau("sg1Tau", "signal 1 tau", sg1tau, -10., 10.); 
+  sg1Tau.setRange(sg1tau - sg1taue, sg1tau + sg1taue); 
+  RooExponential sg1Pt("sg1Pt", "signal 1 pT", pt, sg1Tau);   
+
+  //  SHERPA background:        168.859 fitted exponential slope = -0.0113285+/-0.000262761
+  //  double bgtau  = -1.26957e-02; // FIXME!!!
+  double bgtau = fBgTau; 
+  //  double bgtaue = 1.55210e-04; 
+  RooRealVar bgTau("bgTau", "background gamma gamma tau", bgtau, -10., 10.); 
+  RooExponential bg0Pt("bg0Pt", "background 0 gamma gamma pT", pt, bgTau);   
+  RooExponential bg1Pt("bg1Pt", "background 1 gamma gamma pT", pt, bgTau);   
+
+
+  RooRealVar sg0frac("sg0frac","fraction of Higgs 0 signal", nsg0/nbg, 0., 1.);
+  RooRealVar sg1frac("sg1frac","fraction of Higgs 1 signal", nsg1/nbg, 0., 1.);
+  RooAddPdf model0M("model0M", "model 0 for mass", RooArgList(sg0M, bg0M), sg0frac);
+  RooAddPdf model0Pt("model0Pt", "model 0 for pT", RooArgList(sg0Pt, bg0Pt), sg0frac);
+
+  RooAddPdf model1M("model1M", "model 1 for mass", RooArgList(sg1M, bg1M), sg1frac);
+  RooAddPdf model1Pt("model1Pt", "model 1 for pT", RooArgList(sg1Pt, bg1Pt), sg1frac);
+  
+  RooProdPdf model0("model0", "complete model 0", RooArgSet(model0M, model0Pt)); 
+  RooProdPdf model1("model1", "complete model 1", RooArgSet(model1M, model1Pt)); 
+
+  // -- alternative way to assemble data sets
+  RooProdPdf modelBg("modelBg", "complete background model", RooArgSet(bg0M, bg0Pt)); 
+  RooProdPdf model0Sg("model0Sg", "complete signal model 0", RooArgSet(sg0M, sg0Pt)); 
+  RooProdPdf model1Sg("model1Sg", "complete signal model 1", RooArgSet(sg1M, sg1Pt)); 
+
+//   RooDataSet *data0 = model0.generate(RooArgSet(m, pt), nsg0 + nbg);  
+//   RooDataSet *data1 = model1.generate(RooArgSet(m, pt), nsg1 + nbg);  
+
+  RooDataSet *bg0 = modelBg.generate(RooArgSet(m, pt), nbg);  
+  RooDataSet *data0 = new RooDataSet(*bg0); 
+  RooDataSet *data1 = new RooDataSet(*data0); 
+
+  RooDataSet *s0 = model0Sg.generate(RooArgSet(m, pt), nsg0);  
+  RooDataSet *s1 = model1Sg.generate(RooArgSet(m, pt), nsg1);  
+  data0->append(*s0); 
+  data1->append(*s1); 
+
+
+  TVirtualPad *pad = gPad; 
+  makeCanvas(1); 
+  zone(2,2, c1);
+  
+  RooPlot *f0M = m.frame(); 
+  f0M->SetTitle("m(top) = 173.5 GeV");
+  data0->plotOn(f0M, Binning(NBINS));  
+  model0.plotOn(f0M); 
+  model0.plotOn(f0M, Components("bg0M"), LineStyle(kDashed)) ;
+  model0.paramOn(f0M, Layout(0.15, 0.85)) ;
+  f0M->Draw();
+
+  c1->cd(2);
+  RooPlot *a = m.frame(); 
+  a->SetTitle("signal (blue) and background (red) for m(top) = 173.5 GeV");
+  s0->plotOn(a, Binning(NBINS), LineColor(kBlue), MarkerColor(kBlue));  
+  bg0->plotOn(a, Binning(NBINS), LineColor(kRed), MarkerColor(kRed)); 
+  a->Draw();
+
+  c1->cd(4);
+  RooPlot *a1 = m.frame(); 
+  a1->SetTitle("signal (blue) and background (red) for m(top) #rightarrow #infty");
+  s1->plotOn(a1, Binning(NBINS), LineColor(kBlue), MarkerColor(kBlue));  
+  bg0->plotOn(a1, Binning(NBINS), LineColor(kRed), MarkerColor(kRed)); 
+  a1->Draw();
+  
+  double bExpected     = sg0frac.getVal()*data0->numEntries();
+  double bExpectedRelE = sg0frac.getError()/sg0frac.getVal();
+
+  cout << "--> bExpected = " << bExpected << " +/- " << bExpected*bExpectedRelE 
+       << " (rel: " << bExpectedRelE << "), sg0frac.getError()= " << sg0frac.getError() 
+       << " sg0frac.getVal() = " << sg0frac.getVal() << ", data0 entries = " << data0->numEntries()
+       << endl;
+
+ 
+  RooPlot *g1M = m.frame(); 
+  g1M->SetTitle("m(top) #rightarrow #infty");
+  data1->plotOn(g1M, Binning(NBINS));  
+  model1.plotOn(g1M); 
+  model1.plotOn(g1M, Components("bg1M"), LineStyle(kDashed)) ;
+  c1->cd(3);
+  model1.paramOn(g1M, Layout(0.15, 0.85)) ;
+  g1M->Draw();
+  
+  
+  double sExpected     = sg1frac.getVal()*data1->numEntries();
+  double sExpectedRelE = sg1frac.getError()/sg1frac.getVal();
+  
+  cout << "--> bExpected = " << bExpected << " +/- " << bExpected*bExpectedRelE 
+       << " (rel: " << bExpectedRelE << "), sg0frac.getError()= " << sg0frac.getError() 
+       << " sg0frac.getVal() = " << sg0frac.getVal() << ", data0 entries = " << data0->numEntries()
+       << endl;
+
+  cout << "--> sExpected = " << sExpected << " +/- " << sExpected*sExpectedRelE 
+       << " (rel: " << sExpectedRelE << "), sg1frac.getError() = " << sg1frac.getError() 
+       << " sg1frac.getVal() = " << sg1frac.getVal() << ", data1 entries = " << data1->numEntries()
+       << endl;
+  
+  double zExp = NumberCountingUtils::BinomialExpZ(sExpected, bExpected, bExpectedRelE);
+  cout << "--> zExp: " << zExp << endl;
+
+  
+  double tau = 6.; 
+  double zExpWithTau = NumberCountingUtils::BinomialWithTauExpZ(sExpected, bExpected, tau);
+  cout << "--> zExp(tau): " << zExpWithTau << endl;
+
+  // -- now setup toy loop
+  RooCmdArg fitargs; 
+  if (1) {
+  fitargs.addArg(Minos(kTRUE)); 
+  fitargs.addArg(PrintLevel(-1));
+  fitargs.addArg(PrintEvalErrors(-1));
+  fitargs.addArg(Verbose(kFALSE));
+  fitargs.addArg(Save()); 
+  fitargs.addArg(Minimizer("Minuit2")); 
+  }
+  TH1D *h1z = new TH1D("h1z", " ", 100, 0., 10.); 
+  TH1D *h1zTh = new TH1D("h1zTh", "significance wrt theory expectation", 100, 0., 10.); 
+  TH1D *h1zZero = new TH1D("h1zZero", "significance wrt zero expectation ", 100, 0., 10.); 
+  RooFitResult *fr0(0), *fr1(0); 
+  zone(2, 1, c1);
+  double zExpTh(0.); 
+  double zExpZero(0.); 
+  for (int imc = 0; imc < fNtoy; ++imc) {
+    data0->reset();
+    data1->reset();
+    cout << "==> starting run " << imc << endl;
+    C0.setVal(bgc0);
+    bgTau.setVal(bgtau);
+
+    sg0Tau.setVal(sg0tau);
+    sg0frac.setVal(nsg0/nbg);
+
+    sg1Tau.setVal(sg1tau);
+    sg1frac.setVal(nsg1/nbg);
+
+    if (0) {
+      modelBg.Print("t");
+      model0Sg.Print("t");
+      model1Sg.Print("t");
+    }
+
+    bg0 = modelBg.generate(RooArgSet(m, pt), nbg);  
+    s0 = model0Sg.generate(RooArgSet(m, pt), nsg0);  
+    s1 = model1Sg.generate(RooArgSet(m, pt), nsg1);  
+    
+    data0->append(*bg0); 
+    data0->append(*s0); 
+
+    data1->append(*bg0); 
+    data1->append(*s1); 
+
+    cout << "----------------------------------------------------------------------" << endl;
+    cout << "Fit model 0 to data 0" << endl;
+    cout << "----------------------------------------------------------------------" << endl;
+    fr0 = model0.fitTo(*data0, fitargs); 
+    cout << "----------------------------------------------------------------------" << endl;
+    cout << "Fit model 1 to data 1" << endl;
+    cout << "----------------------------------------------------------------------" << endl;
+    fr1 = model1.fitTo(*data1, fitargs); 
+
+    bExpected     = sg0frac.getVal()*data0->numEntries();
+    bExpectedRelE = sg0frac.getError()/sg0frac.getVal();
+
+    sExpected     = sg1frac.getVal()*data1->numEntries();
+    sExpectedRelE = sg1frac.getError()/sg1frac.getVal();
+ 
+    int reset(0); 
+    if (0 && bExpected < 1.) {
+      reset = 1; 
+      bExpected = 2.3; 
+      bExpectedRelE = 0.99;
+    }
+
+    if (sg0frac.getVal() < sg0frac.getError()) {
+      bExpected = nsg0; 
+      bExpectedRelE = TMath::Sqrt(nsg0)/nsg0; 
+    }
+    
+    zExp = NumberCountingUtils::BinomialExpZ(sExpected, bExpected, bExpectedRelE);
+    zExpTh = NumberCountingUtils::BinomialExpZ(sExpected, nsg0, TMath::Sqrt(nsg0)/nsg0);
+    zExpZero = NumberCountingUtils::BinomialExpZ(sExpected, 2.3, 0.99);
+    cout << Form("%3d zExp = %5.4f from bExpected = %4.1f+/-%4.1f and sExpected = %4.1f (reset = %d, zExpTh = %4.1f, zExpZero = %4.1f)", 
+		 imc, zExp, bExpected, bExpected*bExpectedRelE, sExpected, reset, zExpTh, zExpZero) 
+	 << endl;
+    if (zExp < 0) {
+      --imc;
+      continue;
+    }
+
+    h1z->Fill(zExp); 
+    h1zTh->Fill(zExpTh); 
+    h1zZero->Fill(zExpZero); 
+
+    if (zExp < 0.1) {
+      RooPlot *g0M = m.frame(); 
+      g0M->SetTitle("m(top) = 173.5GeV");
+      data0->plotOn(g0M, Binning(NBINS));  
+      model0.plotOn(g0M); 
+      model0.plotOn(g0M, Components("bg0M"), LineStyle(kDashed)) ;
+      c1->cd(1);
+      model0.paramOn(g0M, Layout(0.15, 0.85)) ;
+      g0M->Draw();
+
+      RooPlot *g1M = m.frame(); 
+      g1M->SetTitle("m(top) #rightarrow #infty");
+      data1->plotOn(g1M, Binning(NBINS));  
+      model1.plotOn(g1M); 
+      model1.plotOn(g1M, Components("bg1M"), LineStyle(kDashed)) ;
+      c1->cd(2);
+      model1.paramOn(g1M, Layout(0.15, 0.85)) ;
+      g1M->Draw();
+      tl->SetNDC(kTRUE);
+      tl->DrawLatex(0.2, 0.2, Form("zExp = %4.3f", zExp)); 
+      tl->DrawLatex(0.2, 0.15, Form("S = %4.1f, B = %4.1f +/- %4.1f", sExpected, bExpected, bExpectedRelE*bExpected)); 
+      c1->SaveAs(Form("%s/toy4-%d.pdf", fDirectory.c_str(), imc)); 
+    }
+  }
+  pad->cd();
+  gStyle->SetOptStat(0); 
+  h1z->Draw();
+  tl->SetTextColor(kBlack); 
+  tl->DrawLatex(0.6, 0.80, Form("Mean = %4.3f", h1z->GetMean())); 
+  tl->DrawLatex(0.6, 0.75, Form("RMS = %4.3f", h1z->GetRMS())); 
+  tl->DrawLatex(0.6, 0.70, Form("Mean(TH) =  %4.3f", h1zTh->GetMean())); 
+  tl->DrawLatex(0.6, 0.65, Form("Mean(zero) =  %4.3f", h1zZero->GetMean())); 
+  tl->DrawLatex(0.6, 0.92, Form("Setup: %s", fSetup.c_str())); 
+  fHistFile->Close();
+
+  fTEX.open(fTexFileName.c_str(), ios::app);
+  fTEX << formatTex(h1z->GetMean(), Form("%s:zexp:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(h1z->GetRMS(), Form("%s:zexp:rms", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(h1zTh->GetMean(), Form("%s:zexpTh:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(h1zTh->GetRMS(), Form("%s:zexpTh:rms", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(h1zZero->GetMean(), Form("%s:zexpZero:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(h1zZero->GetRMS(), Form("%s:zexpZero:rms", fSetup.c_str()), 2) << endl;
+  fTEX.close();
+}
+
+
+
 
 
 
@@ -1531,14 +1929,94 @@ void plotHpt::loadFiles(string afiles) {
 	ds->fLcolor = kRed; 
 	ds->fFcolor = kRed; 
 	ds->fSymbol = 27; 
+	ds->fFillStyle = 3365; 
+	ds->fSize = 1; 
+	ds->fWidth = 2; 
+	if (string::npos != stype.find("132")) {
+	  sname = "sys132"; 
+	  sdecay = "132";
+	  ds->fColor = kRed; 
+	  ds->fLcolor = kRed; 
+	  ds->fFcolor = kRed; 
+	  ds->fSymbol = 27; 
+	  ds->fFillStyle = 3365; 
+	}
+	if (string::npos != stype.find("133")) {
+	  sname = "sys133"; 
+	  sdecay = "133";
+	  ds->fColor = kRed+1; 
+	  ds->fLcolor = kRed+1; 
+	  ds->fFcolor = kRed+1; 
+	  ds->fSymbol = 24; 
+	  ds->fFillStyle = 3305; 
+	}
+	if (string::npos != stype.find("134")) {
+	  sname = "sys134"; 
+	  sdecay = "134";
+	  ds->fColor = kRed+2; 
+	  ds->fLcolor = kRed+2; 
+	  ds->fFcolor = kRed+2; 
+	  ds->fSymbol = 25; 
+	  ds->fFillStyle = 3395; 
+	}
+	if (string::npos != stype.find("135")) {
+	  sname = "sys135"; 
+	  sdecay = "135";
+	  ds->fColor = kRed+3; 
+	  ds->fLcolor = kRed+3; 
+	  ds->fFcolor = kRed+3; 
+	  ds->fSymbol = 26; 
+	  ds->fFillStyle = 3356; 
+	}
+	if (string::npos != stype.find("140")) {
+	  sname = "sys140"; 
+	  sdecay = "140";
+	}
+	if (string::npos != stype.find("141")) {
+	  // against 132 or sherpa
+	  sname = "sys141"; 
+	  sdecay = "141";
+	  ds->fColor = kBlue; 
+	  ds->fLcolor = kBlue; 
+	  ds->fFcolor = kBlue; 
+	  ds->fSymbol = 26; 
+	  ds->fFillStyle = 3305; 
+	}
+	if (string::npos != stype.find("150")) {
+	  // against 134
+	  sname = "sys150"; 
+	  sdecay = "150";
+	  ds->fColor = kBlue; 
+	  ds->fLcolor = kBlue; 
+	  ds->fFcolor = kBlue; 
+	  ds->fSymbol = 27; 
+	  ds->fFillStyle = 3305; 
+	}
+	if (string::npos != stype.find("151")) {
+	  // against 135
+	  sname = "sys151"; 
+	  sdecay = "151";
+	  ds->fColor = kBlue+1; 
+	  ds->fLcolor = kBlue+1; 
+	  ds->fFcolor = kBlue+1; 
+	  ds->fSymbol = 25; 
+	  ds->fFillStyle = 3395; 
+	}
+	if (string::npos != stype.find("152")) {
+	  // against 133
+	  sname = "sys152"; 
+	  sdecay = "152";
+	  ds->fColor = kBlue+2; 
+	  ds->fLcolor = kBlue+2; 
+	  ds->fFcolor = kBlue+2; 
+	  ds->fSymbol = 26; 
+	  ds->fFillStyle = 3365; 
+	}
 	ds->fF = pF; 
 	ds->fXsec = atof(sxsec.c_str());
 	ds->fBf   = 1.;
 	ds->fLumi = nevt/ds->fXsec/ds->fBf/1000.;
 	ds->fName = "SHERPA " + sdecay; 
-	ds->fFillStyle = 3365; 
-	ds->fSize = 1; 
-	ds->fWidth = 2; 
 	fDS.insert(make_pair(sname, ds)); 
       } 
 
@@ -1990,6 +2468,7 @@ void plotHpt::allNumbers() {
   c0->cd(5);
   mhipt->SetMinimum(0.);
   mhipt->Draw();
+  tl->SetTextColor(fDS["mcatnlo0"]->fColor); tl->DrawLatex(0.7, 0.70, Form("SM!")); 
 
 
   // -- overlay mass histograms: lopt
@@ -2013,8 +2492,9 @@ void plotHpt::allNumbers() {
   // -- run toys
   if (1) {
     c0->cd(4);
-    int ntoy = 200; 
+    int ntoy = 1; 
     toy4(fSg0, fSg1, fBg, ntoy); 
+    //    toy5(fSg0, fSg1, fBg, ntoy); 
   }
   
   c0->SaveAs(Form("%s/allNumbers-%s.pdf", fDirectory.c_str(), fSetup.c_str())); 

@@ -16,7 +16,8 @@ echo "============================="
 # ----------------------------------------------------------------------
 # -- Setup production
 # ----------------------------------------------------------------------
-echo "--> Setup production"
+echo "--> Setup production for job $JOB"
+date
 
 echo $VO_CMS_SW_DIR
 ls -l $VO_CMS_SW_DIR
@@ -30,7 +31,7 @@ which srmcp
 
 pwd
 ls -l 
-date
+
 setenv ROOTSYS /shome/ursl/root
 setenv LD_LIBRARY_PATH ${ROOTSYS}/lib:${LD_LIBRARY_PATH}
 setenv PATH ${ROOTSYS}/bin:${PATH}
@@ -39,16 +40,26 @@ echo "--> environment"
 df -kl 
 printenv
 
+echo "--> running SHERPA"
+/bin/cp /shome/ursl/h/prod/jobs/sherpa/dat/$JOB.dat .
+ls -l 
+date
+/shome/ursl/h/sherpa/SHERPA-MC-1.4.0/bin/Sherpa -f $JOB.dat HEPMC2_SHORT_OUTPUT=$JOB
+date
+ls -l 
+
 echo "--> Extract tar file"
 date
 ls -l 
-tar zxf $JOB.tar.gz
-/bin/cp /shome/ursl/h/prod/jobs/sherpa/dat/$JOB.dat .
-
-echo "--> running SHERPA"
-date
-/shome/ursl/h/sherpa/SHERPA-MC-1.4.0/bin/Sherpa -f $JOB.dat HEPMC2_SHORT_OUTPUT=$JOB
+tar zxvf $JOB.tar.gz
 ls -l 
+if (! -d "delphes") then
+  echo "ERROR could not extract directory delphes from tar file"
+  exit
+else 
+  echo "extracted directory delphes from tar file, contents:"
+  ls -l delphes
+endif
 
 echo "--> running DELPHES"
 date

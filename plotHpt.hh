@@ -52,6 +52,12 @@ public :
   //     - background is diphoton + Higgs(mtop = 173.5GeV)
   void   toy4(double nsg0 = 50, double nsg1 = 100, double nbg = 450, int ntoy = 200); 
 
+  // toy5 introduces the LLR
+  //     - extended UML
+  //     - signal is     Higgs(mtop -> infty)
+  //     - background is diphoton + Higgs(mtop = 173.5GeV)
+  void   toy5(double nsg0 = 50, double nsg1 = 100, double nbg = 450, int ntoy = 200); 
+
   // validation produces the simple plots
   //     - pT for various components
   //     - mass for various selections
@@ -60,6 +66,7 @@ public :
 
   // study the background mass shape in different pT bins
   void   bgShape(int nevts = -1);
+  void   bgSyst(std::string ds0, std::string ds1, std::string ds2 = "nada");
 
   // analysis: Everything after treeAnalysis and before toyX()
   //     - event yields in lumi
