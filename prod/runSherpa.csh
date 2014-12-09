@@ -28,6 +28,10 @@ echo "-> which globus-url-copy"
 which globus-url-copy
 echo "-> which srmcp"
 which srmcp
+echo "-> which lcg-cp"
+setenv BLA  `which lcg-cp`
+echo "-> ldd $BLA"
+ldd $BLA
 
 pwd
 ls -l 
@@ -67,9 +71,6 @@ else
 endif
 
 echo "--> running DELPHES"
-setenv ROOTSYS /shome/ursl/root
-setenv LD_LIBRARY_PATH ${ROOTSYS}/lib:${LD_LIBRARY_PATH}
-setenv PATH ${ROOTSYS}/bin:${PATH}
 date
 cd ./delphes
 cat ./delphes_card_CMS.tcl
@@ -80,13 +81,14 @@ ls -l
 # ----------------------------------------------------------------------
 # -- Save Output to NFS, not the SE
 # ----------------------------------------------------------------------
-
-# several files possible if tree grows to big. copy them all
+setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/swshare/emi/emi-wn/usr/lib64
+echo "--> LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
 
 echo "--> Save hepmc to SE: $STORAGE1/hepmc"
 echo "--> Save root  to SE: $STORAGE1/delphes"
-echo $SRMCP 
+echo "--> srmcp command: $SRMCP"
 
+# several files possible if tree grows to big. copy them all
 set FILES=`ls $JOB*.root`
 echo "Found the following output root files: $FILES"
 foreach f ($FILES)
