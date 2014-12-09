@@ -12,7 +12,7 @@ use lib '/shome/ursl/perl/modules/Tie-IxHash-1.23/lib';
 use Tie::IxHash;
 
 use Getopt::Std;
-getopts('do:r:');
+getopts('do:r:s:');
 
 
 # -- more definitions
@@ -44,11 +44,19 @@ tie %jobs, "Tie::IxHash";
     "mcatnlo_155" => "cmcatnlo_155_chain", 
     "sherpa_131" => "csherpa_131_chain",
     "sherpa_132" => "csherpa_132_chain",
+    "sherpa_132_sys" => "csherpa_132_sys",
+    "sherpa_133_sys" => "csherpa_133_sys",
+    "sherpa_134_sys" => "csherpa_134_sys",
+    "sherpa_135_sys" => "csherpa_135_sys",
+    "sherpa_141_sys" => "csherpa_141_sys",
+    "sherpa_150_sys" => "csherpa_150_sys",
+    "sherpa_151_sys" => "csherpa_151_sys",
+    "sherpa_152_sys" => "csherpa_152_sys"
 );
 
 my @lines;
 print "srmLs -x $storage -c -p root \n";
-@lines = `srmLs -x $storage -c -p root `;
+@lines = `srmLs -x $storage -c -p root |sort`;
 @lines = grep(s/\n//, @lines); 
 for $i (@lines) {
     print "lines $i\n";
@@ -56,8 +64,11 @@ for $i (@lines) {
 
 
 foreach $j (keys %jobs) {
+    if ($opt_s && $opt_s ne $j) {
+	print "$opt_s does not correspond to $j, skipping\n";
+	next;
+    }
     $output = "$jobs{$j}".".root";
-    print "merging $jobs{$j} into $opt_o/$output\n";
     $frag = $jobs{$j};
     @rootfiles = grep{$_ =~ $frag} @lines; 
     @rootfiles = grep{$_ =~ /\.root/} @rootfiles; 
@@ -65,6 +76,8 @@ foreach $j (keys %jobs) {
     for $i (@rootfiles) {
 	print "-> $i\n";
     }
+
+    print "merging $jobs{$j} into $opt_o/$output\n";
 
     if ($#rootfiles == 0) {
 	@rootfiles = grep(s/.*$user\/$rootdir\///, @rootfiles); 

@@ -54,6 +54,7 @@ plotHpt::plotHpt(string dir,  string files, string setup): plotClass(dir, files,
   loadFiles(files);
 
   fNtoy = 200; 
+  fSetup = setup;
 
   if (setup == "") {
     fHistFileName = Form("%s/plotHpt.root", dir.c_str()); 
@@ -81,13 +82,13 @@ plotHpt::plotHpt(string dir,  string files, string setup): plotClass(dir, files,
   G1ISOR = 0.010; 
 
   PTNL = 150.;
-  PTNH = 250.;
+  PTNH = 400.;
   PTLO = 400.;
   PTHI = 10000.;
 
-  NBINS = 35;  
-  MGGLO = 90.;
-  MGGHI = 160.;
+  NBINS = 55;  
+  MGGLO = 70.;
+  MGGHI = 180.;
 
   fLumi = 1000.;
   
@@ -157,77 +158,124 @@ void plotHpt::bookHist(string name, string cuts) {
   sprintf(hist, "%s_%s_%s", "genpt", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "genpt");
   sprintf(ahist, "%s", "p_{T}(#gamma#gamma)^{gen} [GeV]"); 
-  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0, 1000.))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0, 1000.))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  }
 
   // -- gen pT vs g1pt
   sprintf(hist, "genpt_g1pt_%s_%s", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "pt");
   sprintf(ahist, "%s", "p_T^{gen}(#gamma#gamma) [GeV]"); 
-  fHists.insert(make_pair(hist, new TH2D(hist, thist, 100, 0, 1000., 100, 0., 300.))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "pt_{#gamma1}^{gen} [GeV]");
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH2D(hist, thist, 100, 0, 1000., 100, 0., 300.))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "pt_{#gamma1}^{gen} [GeV]");
+  }
 
   // -- reco overlays
   sprintf(hist, "%s_%s_%s", "mpt", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "mpt");
   sprintf(ahist, "%s", "p_T(#gamma#gamma) [GeV]"); 
-  fHists.insert(make_pair(hist, new TH2D(hist, thist, 100, 0., 1000., NBINS, MGGLO, MGGHI))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "m_{#gamma #gamma} [GeV]");
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH2D(hist, thist, 100, 0., 1000., NBINS, MGGLO, MGGHI))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "m_{#gamma #gamma} [GeV]");
+  }
 
   sprintf(hist, "%s_%s_%s", "m", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "m");
   sprintf(ahist, "%s", "m(#gamma#gamma) [GeV]"); 
-  fHists.insert(make_pair(hist, new TH1D(hist, thist, NBINS, MGGLO, MGGHI))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH1D(hist, thist, NBINS, MGGLO, MGGHI))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  }
 
   sprintf(hist, "%s_%s_%s", "pt", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "pt");
   sprintf(ahist, "%s", "pT(#gamma#gamma) [GeV]"); 
-  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0, 1000.))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
-  
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0, 1000.))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  }
+
   sprintf(hist, "%s_%s_%s", "eta", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "eta");
   sprintf(ahist, "%s", "#eta(#gamma#gamma)"); 
-  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, -5., 5.))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
-  
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, -5., 5.))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  }
+
   sprintf(hist, "%s_%s_%s", "g0pt", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "g0pt");
   sprintf(ahist, "%s", "p_{T}(#gamma_{0}) [GeV]"); 
-  fHists.insert(make_pair(hist, new TH1D(hist, thist, 800, 0., 800.))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH1D(hist, thist, 800, 0., 800.))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  }
 
   sprintf(hist, "%s_%s_%s", "g1pt", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "g1pt");
   sprintf(ahist, "%s", "p_T(#gamma_{1}) [GeV]"); 
-  fHists.insert(make_pair(hist, new TH1D(hist, thist, 300, 0., 300.))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH1D(hist, thist, 300, 0., 300.))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  }
 
   sprintf(hist, "%s_%s_%s", "g0iso", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "g0iso");
   sprintf(ahist, "%s", "I(#gamma_{0})"); 
-  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 2.))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 2.))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  }
 
   sprintf(hist, "%s_%s_%s", "g1iso", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "g1iso");
   sprintf(ahist, "%s", "I(#gamma_{1})"); 
-  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 2.))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 2.))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  }
 
   sprintf(hist, "%s_%s_%s", "g0isor", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "g0isor");
   sprintf(ahist, "%s", "I^{rel}(#gamma_{0})"); 
-  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 0.006))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 0.006))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  }
 
   sprintf(hist, "%s_%s_%s", "g1isor", name.c_str(), cuts.c_str());
   sprintf(thist, "%s", "g1isor");
   sprintf(ahist, "%s", "I^{rel}(#gamma_{1})"); 
-  fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 0.012))); 
-  setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
-
+  if (fHists.count(hist) > 0) {
+    fHists[hist]->Reset();
+  } else {
+    fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0., 0.012))); 
+    setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
+  }
 }
 
 
@@ -249,8 +297,65 @@ void plotHpt::makeAll(int bitmask) {
     validation(); 
   }
 
+  if (bitmask & 0x20) {
+    // -- different mass cuts
+    // MSTW08
+    bgSyst("sys132", "sys133", "sys134"); 
+    // CTEQ6
+    bgSyst("sys150", "sys151", "sys152"); 
+
+    // -- different processes
+    bgSyst("sys132", "sys141"); 
+
+    // -- MSTW08 vs CTEQ6
+    bgSyst("sys133", "sys152"); 
+    bgSyst("sys134", "sys150"); 
+    bgSyst("sys135", "sys151"); 
+
+    
+  }
+
 }
 
+
+// ----------------------------------------------------------------------
+void plotHpt::bgSyst(string ds0, string ds1, string ds2) {
+  
+  vector<string> vds; 
+  vds.push_back(ds0);
+  vds.push_back(ds1);
+  if (string::npos == ds2.find("nada")) vds.push_back(ds2);
+
+  for (unsigned int i = 0; i < vds.size(); ++i) {
+    fCds = vds[i]; 
+    bookHist(vds[i], "nopt"); 
+    bookHist(vds[i], "goodcand"); 
+    bookHist(vds[i], "lopt"); 
+    bookHist(vds[i], "hipt"); 
+    TTree *t = getTree(vds[i]); 
+    setupTree(t); 
+    loopOverTree(t, 1); 
+  }
+
+  int OTYPE = LUMI;
+  string what("pt");
+  string sel("hipt");
+
+  zone();
+  if (3 == vds.size()) {
+    overlay(fHists[Form("%s_%s_%s", what.c_str(), vds[0].c_str(), sel.c_str())], vds[0], 
+	    fHists[Form("%s_%s_%s", what.c_str(), vds[1].c_str(), sel.c_str())], vds[1], 
+	    fHists[Form("%s_%s_%s", what.c_str(), vds[2].c_str(), sel.c_str())], vds[2], 
+	    OTYPE, false, true, 0.2); 
+    c0->SaveAs(Form("%s/bgsyst-%s-%s-%s.pdf", fDirectory.c_str(), vds[0].c_str(), vds[1].c_str(), vds[2].c_str())); 
+  } else {
+    overlay(fHists[Form("%s_%s_%s", what.c_str(), vds[0].c_str(), sel.c_str())], vds[0], 
+	    fHists[Form("%s_%s_%s", what.c_str(), vds[1].c_str(), sel.c_str())], vds[1], 
+	    OTYPE, false, true, 0.2); 
+    c0->SaveAs(Form("%s/bgsyst-%s-%s.pdf", fDirectory.c_str(), vds[0].c_str(), vds[1].c_str())); 
+    
+  }
+}
 
 // ----------------------------------------------------------------------
 void plotHpt::bgShape(int nevts) {
@@ -1765,11 +1870,6 @@ void plotHpt::toy5(double nsg0, double nsg1, double nbg, int ntoy) {
   fTEX.close();
 }
 
-
-
-
-
-
 // ----------------------------------------------------------------------
 void plotHpt::loadFiles(string afiles) {
   
@@ -1850,14 +1950,94 @@ void plotHpt::loadFiles(string afiles) {
 	ds->fLcolor = kRed; 
 	ds->fFcolor = kRed; 
 	ds->fSymbol = 27; 
+	ds->fFillStyle = 3365; 
+	ds->fSize = 1; 
+	ds->fWidth = 2; 
+	if (string::npos != stype.find("132")) {
+	  sname = "sys132"; 
+	  sdecay = "132";
+	  ds->fColor = kRed; 
+	  ds->fLcolor = kRed; 
+	  ds->fFcolor = kRed; 
+	  ds->fSymbol = 27; 
+	  ds->fFillStyle = 3365; 
+	}
+	if (string::npos != stype.find("133")) {
+	  sname = "sys133"; 
+	  sdecay = "133";
+	  ds->fColor = kRed+1; 
+	  ds->fLcolor = kRed+1; 
+	  ds->fFcolor = kRed+1; 
+	  ds->fSymbol = 24; 
+	  ds->fFillStyle = 3305; 
+	}
+	if (string::npos != stype.find("134")) {
+	  sname = "sys134"; 
+	  sdecay = "134";
+	  ds->fColor = kRed+2; 
+	  ds->fLcolor = kRed+2; 
+	  ds->fFcolor = kRed+2; 
+	  ds->fSymbol = 25; 
+	  ds->fFillStyle = 3395; 
+	}
+	if (string::npos != stype.find("135")) {
+	  sname = "sys135"; 
+	  sdecay = "135";
+	  ds->fColor = kRed+3; 
+	  ds->fLcolor = kRed+3; 
+	  ds->fFcolor = kRed+3; 
+	  ds->fSymbol = 26; 
+	  ds->fFillStyle = 3356; 
+	}
+	if (string::npos != stype.find("140")) {
+	  sname = "sys140"; 
+	  sdecay = "140";
+	}
+	if (string::npos != stype.find("141")) {
+	  // against 132 or sherpa
+	  sname = "sys141"; 
+	  sdecay = "141";
+	  ds->fColor = kBlue; 
+	  ds->fLcolor = kBlue; 
+	  ds->fFcolor = kBlue; 
+	  ds->fSymbol = 26; 
+	  ds->fFillStyle = 3305; 
+	}
+	if (string::npos != stype.find("150")) {
+	  // against 134
+	  sname = "sys150"; 
+	  sdecay = "150";
+	  ds->fColor = kBlue; 
+	  ds->fLcolor = kBlue; 
+	  ds->fFcolor = kBlue; 
+	  ds->fSymbol = 27; 
+	  ds->fFillStyle = 3305; 
+	}
+	if (string::npos != stype.find("151")) {
+	  // against 135
+	  sname = "sys151"; 
+	  sdecay = "151";
+	  ds->fColor = kBlue+1; 
+	  ds->fLcolor = kBlue+1; 
+	  ds->fFcolor = kBlue+1; 
+	  ds->fSymbol = 25; 
+	  ds->fFillStyle = 3395; 
+	}
+	if (string::npos != stype.find("152")) {
+	  // against 133
+	  sname = "sys152"; 
+	  sdecay = "152";
+	  ds->fColor = kBlue+2; 
+	  ds->fLcolor = kBlue+2; 
+	  ds->fFcolor = kBlue+2; 
+	  ds->fSymbol = 26; 
+	  ds->fFillStyle = 3365; 
+	}
 	ds->fF = pF; 
 	ds->fXsec = atof(sxsec.c_str());
 	ds->fBf   = 1.;
 	ds->fLumi = nevt/ds->fXsec/ds->fBf/1000.;
 	ds->fName = "SHERPA " + sdecay; 
-	ds->fFillStyle = 3365; 
-	ds->fSize = 1; 
-	ds->fWidth = 2; 
 	fDS.insert(make_pair(sname, ds)); 
       } 
 
@@ -2182,6 +2362,7 @@ void plotHpt::allNumbers(int ntoy) {
 
   tl->SetNDC(kTRUE);
   tl->SetTextColor(kBlack);
+  tl->SetTextSize(0.05);
 
   TH1D *h1(0); 
 
@@ -2239,7 +2420,8 @@ void plotHpt::allNumbers(int ntoy) {
   cout << " SM Higgs mass peak: "       << h1->GetFunction("gaus")->GetParameter(1) 
        << " +/- " << h1->GetFunction("gaus")->GetParError(1) << endl;
   tl->DrawLatex(0.16, 0.8, Form("resolution: %4.1f GeV", h1->GetFunction("gaus")->GetParameter(2))); 
-
+  fNormHiggsMpeak = h1->GetFunction("gaus")->GetParameter(1);
+  fNormHiggsMres = h1->GetFunction("gaus")->GetParameter(2); 
 
   // -------
   // -- HIPT
@@ -2366,13 +2548,58 @@ void plotHpt::allNumbers(int ntoy) {
   mlopt->Add(h1); 
   mlopt->SetMinimum(0.);
   c0->cd(6);
-  mlopt->Draw();
+  //  mlopt->Draw();
 
+
+  // -- Fit it!
+  RooRealVar m("m", "m", MGGLO, MGGHI, "GeV"); 
+  RooRealVar sgP("sgP", "signal peak mass", fNormHiggsMpeak, 100, 150);  
+  sgP.setConstant(kTRUE);
+  RooRealVar sgS("sgS", "signal sigma mass", fNormHiggsMres, 0., 15.);  
+  sgS.setConstant(kTRUE);
+  RooGaussian sgM("sgM", "signal mass", m, sgP, sgS); 
+
+  // -- Background
+  double bgc0  = 0.0245329; // FIXME!!!
+  RooRealVar C0("C0", "coefficient #0", bgc0, -1., 1.); 
+  RooPolynomial bgM("bgM", "background gamma gamma mass", m, RooArgList(C0)); 
+
+  RooRealVar nSg("nSg", "signal events", h1->Integral(), 0., 100*h1->Integral());
+  RooRealVar nBg("nBg", "background events", mlopt->Integral(), 0., 100.*mlopt->Integral());
+
+  RooAddPdf modelM("modelM", "model for mass", RooArgList(sgM, bgM), RooArgList(nSg, nBg));
+
+  RooDataHist mloptRdh("mloptRdh","lopt mass distribution", RooArgList(m), mlopt);
+  modelM.fitTo(mloptRdh, Range(80., 160.)); 
+
+  RooPlot *f0M = m.frame(); 
+  f0M->SetTitle("normalization region");
+  mloptRdh.plotOn(f0M);  
+  modelM.plotOn(f0M); 
+  modelM.plotOn(f0M, Components("bgM"), LineStyle(kDashed)) ;
+  //  modelM.paramOn(f0M, Layout(0.15, 0.85)) ;
+  f0M->Draw();
+
+  double f0 = fSg0/fNormSg0; 
+  double f1 = fSg1/fNormSg1; 
+
+  tl->SetTextSize(0.08);
+  tl->SetTextColor(kBlack); 
+  tl->DrawLatex(0.25, 0.5, Form("SG: %4.1f +/- %3.1f", nSg.getVal(), nSg.getError())); 
+  tl->DrawLatex(0.25, 0.4, Form("BG: %4.1f +/- %3.1f", nBg.getVal(), nBg.getError())); 
+  tl->DrawLatex(0.25, 0.3, Form("f0: %4.3f", f0)); 
+  tl->DrawLatex(0.25, 0.2, Form("f1: %4.3f", f1)); 
+  tl->SetTextSize(0.05);
+  
+
+  
 
   // -- run toys
   if (1) {
     c0->cd(4);
+    int ntoy = 1; 
     toy4(fSg0, fSg1, fBg, ntoy); 
+    //    toy5(fSg0, fSg1, fBg, ntoy); 
   }
   
   c0->SaveAs(Form("%s/allNumbers-%s.pdf", fDirectory.c_str(), fSetup.c_str())); 

@@ -52,9 +52,10 @@ public :
   //     - background is diphoton + Higgs(mtop = 173.5GeV)
   void   toy4(double nsg0 = 50, double nsg1 = 100, double nbg = 450, int ntoy = -1); 
 
-  // toy5 tests things
-  //     - binned fit with completely constrained signal shape
-  //     - constrain bg shape with control region
+  // toy5 introduces the LLR
+  //     - extended UML
+  //     - signal is     Higgs(mtop -> infty)
+  //     - background is diphoton + Higgs(mtop = 173.5GeV)
   void   toy5(double nsg0 = 50, double nsg1 = 100, double nbg = 450, int ntoy = 200); 
 
   // validation produces the simple plots
@@ -65,6 +66,7 @@ public :
 
   // study the background mass shape in different pT bins
   void   bgShape(int nevts = -1);
+  void   bgSyst(std::string ds0, std::string ds1, std::string ds2 = "nada");
 
   // analysis: Everything after treeAnalysis and before toyX()
   //     - event yields in lumi
@@ -94,6 +96,7 @@ private:
   double fNormSg1, fNormSg1E; 
   double fNormBg;
   double fHiggsMpeak, fHiggsMres;
+  double fNormHiggsMpeak, fNormHiggsMres;
   double fBgMp1, fBgMp1E;
   double fBgTau, fBgTauE;
   double fSg0Tau, fSg0TauE;

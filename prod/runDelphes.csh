@@ -4,7 +4,7 @@ setenv JOB
 setenv DECAY
 setenv FILE1 $JOB-$DECAY.root
 setenv STORAGE1
-setenv MCATNLO 155
+setenv MCATNLO 150
 setenv HEPMCBASE "srm://t3se01.psi.ch:8443/srm/managerv2?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/strebeli/ggHyy/store/mcanlo_$MCATNLO"
 
 
