@@ -50,13 +50,13 @@ all: vars prep lib bin
 # -----------------------------------------------------------------------
 
 # -- library
-lib/libh0.so: $(addprefix obj/,$(ANA) $(READER) $(DICTFILES)) 
+lib: $(addprefix obj/,$(ANA) $(READER) $(DICTFILES)) 
 	$(CXX) $(SOFLAGS) $(GLIBS) $(addprefix obj/,$(ANA) $(READER) $(DICTFILES)) $(LIBPATH)/libDelphes.so $(LIBPATH)/libutil.so -o lib/libh0.so 
 
 # -- binaries
 bin: lib/libh0.so obj/runH.o  obj/runPlot.o
-	$(LD) $(LDFLAGS) -o bin/runH $(GLIBS) obj/runH.o $(LIBPATH)/libh0.so $(LIBPATH)/libDelphes.so $(LIBPATH)/libutil.so
-	$(LD) $(LDFLAGS) -o bin/runPlot $(GLIBS) obj/runPlot.o lib/libh0.so  $(LIBPATH)/libDelphes.so $(LIBPATH)/libutil.so
+	$(LD) $(LDFLAGS) -o bin/runH $(GLIBS) obj/runH.o $(LIBPATH)/libDelphes.so $(LIBPATH)/libutil.so $(LIBPATH)/libh0.so 
+	$(LD) $(LDFLAGS) -o bin/runPlot $(GLIBS) obj/runPlot.o  $(LIBPATH)/libDelphes.so $(LIBPATH)/libutil.so lib/libh0.so
 
 
 # -- preparatory setup
