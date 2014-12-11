@@ -74,6 +74,9 @@ public :
   //     - all required histograms
   void allNumbers(int ntoy = 100); 
 
+  // -- next version
+  void allNumbers1(int ntoy = -1); 
+
   virtual void   bookHist(std::string name, std::string cuts); 
   void   readHistograms();
   void   setupTree(TTree *t); 
