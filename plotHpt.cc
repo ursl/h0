@@ -1498,17 +1498,17 @@ void plotHpt::allNumbers1(int ntoy) {
   double ptlo(0.), pthi(0.), ptnl(0.), ptnh(0.), g0pt(0.), g1pt(0.), g0ptlo(0.), g1ptlo(0.); 
 
   cout << "allNumbers1: " << endl;
-  h1 = (TH1D*)fHists["cuts"]; 
-  cout << "cuts = " << h1 << endl;
-  ptnl = h1->GetBinContent(1); 
-  ptnh = h1->GetBinContent(2); 
-  ptlo = h1->GetBinContent(3); 
-  pthi = h1->GetBinContent(4); 
+  TH1 *cuts = (TH1D*)fHists["cuts"]; 
+  cout << "cuts = " << cuts << endl;
+  ptnl = cuts->GetBinContent(1); 
+  ptnh = cuts->GetBinContent(2); 
+  ptlo = cuts->GetBinContent(3); 
+  pthi = cuts->GetBinContent(4); 
 
-  g0ptlo = h1->GetBinContent(10); 
-  g1ptlo = h1->GetBinContent(11); 
-  g0pt   = h1->GetBinContent(12); 
-  g1pt   = h1->GetBinContent(13); 
+  g0ptlo = cuts->GetBinContent(10); 
+  g1ptlo = cuts->GetBinContent(11); 
+  g0pt   = cuts->GetBinContent(12); 
+  g1pt   = cuts->GetBinContent(13); 
   
   cout << " signal region: " << ptlo << " < pT < " << pthi << endl;
   cout << " norm   region: " << ptnl << " < pT < " << ptnh << endl;
@@ -1634,9 +1634,27 @@ void plotHpt::allNumbers1(int ntoy) {
 
   m1hipt->Add(h1); 
 
-  c0->cd(5);
-  m1hipt->SetMinimum(0.);
-  m1hipt->Draw();
+  c0->cd(4);
+  cuts->SetMinimum(0.);
+  cuts->Draw();
+  tl->SetTextSize(0.05);
+  tl->SetTextColor(kBlack); 
+  tl->DrawLatex(0.5, 0.80, Form("Lumi: %4.0f", fLumi)); 
+
+  tl->DrawLatex(0.5, 0.75, Form("pthi: %4.0f", pthi)); 
+  tl->DrawLatex(0.5, 0.70, Form("ptlo: %4.0f", ptlo)); 
+
+  tl->DrawLatex(0.5, 0.65, Form("g0pt: %4.0f", g0pt)); 
+  tl->DrawLatex(0.5, 0.60, Form("g1pt: %4.0f", g1pt)); 
+
+  tl->DrawLatex(0.5, 0.55, Form("ptnh: %4.0f", ptnh)); 
+  tl->DrawLatex(0.5, 0.50, Form("ptnl: %4.0f", ptnl)); 
+
+  tl->DrawLatex(0.5, 0.45, Form("g0ptlo: %4.0f", g0ptlo)); 
+  tl->DrawLatex(0.5, 0.40, Form("g1ptlo: %4.0f", g1ptlo)); 
+
+  
+
 
   h1 = (TH1D*)fHists["m_mcatnlo_hipt"]->Clone("h1");
   normHist(h1, "mcatnlo0", LUMI); 
@@ -1691,7 +1709,7 @@ void plotHpt::allNumbers1(int ntoy) {
   nmloptRdh.plotOn(nf0M);  
   nmodelM.plotOn(nf0M); 
   nmodelM.plotOn(nf0M, Components("bgM"), LineStyle(kDashed)) ;
-  nf0M->Draw();
+  nf0M->Draw("hist");
 
   double f0 = fSg0/fNormSg0; 
   double f1 = fSg1/fNormSg1; 
