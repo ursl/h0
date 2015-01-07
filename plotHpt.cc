@@ -32,13 +32,21 @@
 #include "RooAddPdf.h"
 #include "RooProdPdf.h"
 #include "RooExtendPdf.h"
+#include "RooMCStudy.h"
+#include "RooMsgService.h"
 
 #include "RooStats/ModelConfig.h"
 #include "RooStats/ProfileLikelihoodCalculator.h"
+#include "RooDLLSignificanceMCSModule.h"
 
 #include "RooStats/NumberCountingUtils.h"
 #include "RooGlobalFunc.h"
 #include "RooStats/RooStatsUtils.h"
+#include "RooStats/FrequentistCalculator.h"
+#include "RooStats/ProfileLikelihoodTestStat.h"
+#include "RooStats/ToyMCSampler.h"
+#include "RooStats/HypoTestResult.h"
+#include "RooStats/HypoTestPlot.h"
 
 #include "dataset.hh"
 #include "util.hh"
@@ -49,11 +57,13 @@ using namespace std;
 using namespace RooFit; 
 using namespace RooStats; 
 
+#include "plotHpt.icc"
+
 // ----------------------------------------------------------------------
 plotHpt::plotHpt(string dir,  string files, string setup): plotClass(dir, files, setup), fWorkspace("w") {
   loadFiles(files);
 
-  fNtoy = 200; 
+  fNtoy = 1000; 
   fSetup = setup;
 
   if (setup == "") {
@@ -81,11 +91,11 @@ plotHpt::plotHpt(string dir,  string files, string setup): plotClass(dir, files,
   G0ISOR = 0.005; 
   G1ISOR = 0.010; 
 
-  PTNL = 150.;
-  PTNH = 400.;
+  PTNL = 100.;
+  PTNH = 300.;
   PTLO = 400.;
   PTHI = 10000.;
-
+  
   NBINS = 55;  
   MGGLO = 70.;
   MGGHI = 180.;
@@ -102,7 +112,7 @@ plotHpt::plotHpt(string dir,  string files, string setup): plotClass(dir, files,
 
 // ----------------------------------------------------------------------
 plotHpt::~plotHpt() {
-
+  if (fHistFile) fHistFile->Close();
 }
 
 
@@ -130,8 +140,10 @@ void plotHpt::readHistograms() {
   cuts.push_back("nopt");
   cuts.push_back("goodcand");
 
-
   TH1* h1(0);
+  h1 = (TH1*)fHistFile->Get("cuts");
+  fHists.insert(make_pair("cuts", h1));
+
   char hist[200];
   for (unsigned int ih = 0; ih < hists.size(); ++ih) {
     for (unsigned int ic = 0; ic < cuts.size(); ++ic) {
@@ -146,7 +158,7 @@ void plotHpt::readHistograms() {
     }
   }
   
-//   fHistFile->Close();
+  //  fHistFile->Close();
 
 }
 
@@ -283,12 +295,15 @@ void plotHpt::bookHist(string name, string cuts) {
 void plotHpt::makeAll(int bitmask) {
   if (bitmask & 0x1) {
     treeAnalysis();
-    allNumbers(); 
+    allNumbers2(); 
   }
   if (bitmask & 0x2) {
-    optimizeCuts(); 
+    allNumbers2(); 
   }
   if (bitmask & 0x4) {
+    optimizeCuts(); 
+  }
+  if (bitmask & 0x8) {
     optAnalysis(1); 
     optAnalysis(2); 
     optAnalysis(3); 
@@ -518,6 +533,20 @@ void plotHpt::treeAnalysis(int nevts) {
   cout << "  G1PT > " << G1PT << endl;
   
   TFile *f = TFile::Open(fHistFileName.c_str(), "RECREATE"); 
+
+  TH1D *h = new TH1D("cuts", "cuts", 20, 0, 20.); 
+
+  h->SetBinContent(1, PTNL); 
+  h->SetBinContent(2, PTNH); 
+
+  h->SetBinContent(3, PTLO); 
+  h->SetBinContent(4, PTHI); 
+
+  h->SetBinContent(10, G0PTLO); 
+  h->SetBinContent(11, G1PTLO); 
+  h->SetBinContent(12, G0PT); 
+  h->SetBinContent(13, G1PT); 
+
   
   string ds("sherpa");
   fCds = ds; 
@@ -880,1176 +909,7 @@ void plotHpt::optAnalysis(int mode, string filename, string treename) {
 
 
 
-// ----------------------------------------------------------------------
-void plotHpt::toy1(int nsg, int nbg) {
 
-  fHistFile = TFile::Open(fHistFileName.c_str()); 
-
-  // =======
-  // -- mass
-  // =======
-
-  // -- Signal
-  RooRealVar m("m", "m", 100., 150.); 
-  RooRealVar meanM("meanM", "meanM", 125., 100, 150);  
-  RooRealVar sigmaM("sigmaM", "sigmaM", 5., 3., 10.);  
-  RooGaussian sgM("sgM", "signal mass", m, meanM, sigmaM); 
-
-  // -- Background
-  RooRealVar C0("C0", "coefficient #0", 1.0, -1., 1.); 
-  RooRealVar C1("C1", "coefficient #1", 0.1, -1., 1.); 
-  RooPolynomial bgM("bgM", "background mass", m, RooArgList(C0, C1)); 
-
-
-  // =====
-  // -- pT
-  // =====
-
-  RooRealVar pt("pt", "pt", 0., 1000); 
-  RooRealVar tau("tau","tau", -0.01412, -10, -1.e-4); 
-  RooExponential sgPt("sgPt", "signal pT", pt, tau);   
-
-  RooRealVar bgTau("bgTau", "background tau", -0.019, -10, -1.e-4); 
-  RooExponential bgPt("bgPt", "background pT", pt, bgTau);   
-
-  TH1D *h1 = (TH1D*)fHistFile->Get("pt_mcatnlo_hipt")->Clone("h1");
-  //  h1->Smooth();
-  RooDataHist hSgPt("hSgPt", "signal histogram pT", pt, h1); 
-  RooHistPdf sgHistPt("sgHistPt","signal histogam pT", pt, hSgPt, 2) ;
-
-  h1 = (TH1D*)fHistFile->Get("pt_sherpa_hipt")->Clone("h1");
-  //  h1->Smooth();
-  RooDataHist hBgPt("hBgPt", "background histogram pT", pt, h1); 
-  RooHistPdf bgHistPt("bgHistPt","background histogam pT", pt, hBgPt, 2) ;
-
-  // -- determine Chebychev coefficients
-  if (0) {
-
-    // -- OLD Background
-    RooRealVar C0("C0", "coefficient #0", 0.086, -1., 1.); 
-    RooRealVar C1("C1", "coefficient #1", 0.006, -1., 1.); 
-    RooRealVar C2("C2", "coefficient #2", 0.008, -1., 1.); 
-    RooChebychev bgM("bgM", "background mass", m, RooArgList(C0, C1, C2)); 
-
-    TH1D *h1 = (TH1D*)fHistFile->Get("m_sherpa_hipt");
-    RooDataHist dataBg("data", "background mass distribution", m, h1);
-    bgM.fitTo(dataBg); 
-    
-    RooPlot *frameBg = m.frame(); 
-    dataBg.plotOn(frameBg);  
-    bgM.plotOn(frameBg); 
-    
-    bgM.paramOn(frameBg);
-    frameBg->Draw();
-  }
-
-  RooRealVar fsig("fsig", "signal fraction", 0.25, 0., 1.) ;
-
-  RooAddPdf modelM("modelM", "model for mass", RooArgList(sgM, bgM), fsig); 
-  RooAddPdf modelPt("modelPt", "model for pT", RooArgList(sgHistPt, bgHistPt), fsig) ;
-  RooProdPdf model("model", "complete model", RooArgSet(modelM, modelPt)); 
-  
-
-  RooDataSet *data = model.generate(RooArgSet(m, pt), nsg+nbg);  
-
-  sigmaM.setConstant(kTRUE);
-  meanM.setConstant(kTRUE);
-
-  C0.setRange(0.9, 1.1);
-   C1.setRange(0.0, 0.2);
-
-  model.fitTo(*data); 
-  RooPlot *frameM = m.frame(); 
-  data->plotOn(frameM);  
-  model.plotOn(frameM); 
-  model.plotOn(frameM, Components("bgM"), LineStyle(kDashed)) ;
-  
-  RooPlot *framePt = pt.frame();  
-  data->plotOn(framePt);  
-  model.plotOn(framePt); 
-  model.plotOn(framePt, Components("bgHistPt"), LineStyle(kDashed)) ;
-
-
-  zone(1, 2);
-  frameM->Draw();
-  c0->cd(2);
-  gPad->SetLogy(1);
-  framePt->Draw();
-
-  fHistFile->Close();
-}
-
-
-// ----------------------------------------------------------------------
-void plotHpt::toy2(int nsg, int nbg) {
-
-  fHistFile = TFile::Open(fHistFileName.c_str()); 
-
-  double ggSigma(5.0); 
-
-  // =======
-  // -- mass
-  // =======
-
-  RooRealVar nSg("nSg", "signal fraction", nsg, 0., 100*nsg);
-  RooRealVar nBg("nBg", "background fraction", nbg, 0., 100.*nbg);
-
-  // -- Signal
-  RooRealVar m("m", "m", 100., 150.); 
-  RooRealVar meanM("meanM", "meanM", 125., 100, 150);  
-  RooRealVar sigmaM("sigmaM", "sigmaM", ggSigma, 3., 10.);  
-  RooGaussian sgM("sgM", "signal mass", m, meanM, sigmaM); 
-  RooExtendPdf esgM("esgM", "extended signal mass", sgM, nSg);
-
-  // -- Background
-  RooRealVar C0("C0", "coefficient #0", 1.0, -1., 2.); 
-  RooRealVar C1("C1", "coefficient #1", 0.1, -1., 2.); 
-  RooPolynomial bgM("bgM", "background mass", m, RooArgList(C0, C1)); 
-  RooExtendPdf ebgM("ebgM", "extended background mass", bgM, nBg);
-  
-
-  // =====
-  // -- pT
-  // =====
-
-  RooRealVar pt("pt", "pt", 0., 1000); 
-  RooRealVar tau("tau","tau", -0.01412, -10, -1.e-4); 
-  RooExponential sgPt("sgPt", "signal pT", pt, tau);   
-  RooExtendPdf esgPt("esgPt", "extended signal pT", sgPt, nSg); 
-
-  RooRealVar bgTau("bgTau", "background tau", -0.019, -10, 0.); 
-  RooExponential bgPt("bgPt", "background pT", pt, bgTau);   
-
-  //  TH1D *h1 = (TH1D*)fHistFile->Get("pt_mcatnlo_hipt")->Clone("h1");
-  TH1D *h1 = (TH1D*)fHistFile->Get("pt_mcatnlo5_hipt")->Clone("h1");
-  RooDataHist hSgPt("hSgPt", "signal histogram pT", pt, h1); 
-  RooHistPdf sgHistPt("sgHistPt","signal histogam pT", pt, hSgPt, 2) ;
-  //  RooExtendPdf esgHistPt("esgHistPt", "extended signal histogram pT", sgHistPt, nSg); 
-
-  TH1D *h2 = (TH1D*)fHistFile->Get("pt_sherpa_hipt")->Clone("h2");
-  RooDataHist hBgPt("hBgPt", "background histogram pT", pt, h2); 
-  RooHistPdf bgHistPt("bgHistPt","background histogam pT", pt, hBgPt, 2) ;
-  //  RooExtendPdf ebgHistPt("ebgHistPt", "extended background histogram pT", bgHistPt, nBg); 
-
-  RooAddPdf modelM("modelM", "model for mass", RooArgList(sgM, bgM), RooArgList(nSg, nBg)); 
-  //  RooAddPdf modelPt("modelPt", "model for pT", RooArgList(sgHistPt, bgHistPt), RooArgList(nSg, nBg));
-  RooAddPdf modelPt("modelPt", "model for pT", RooArgList(sgPt, bgPt), RooArgList(nSg, nBg));
-  RooProdPdf model("model", "complete model", RooArgSet(modelM, modelPt)); 
-  
-  //  RooDataSet *data = model.generate(RooArgSet(m, pt), nsg+nbg);  
-  RooDataSet *data = model.generate(RooArgSet(m, pt));  
-
-  sigmaM.setConstant(kTRUE);
-  meanM.setConstant(kTRUE);
-
-  C0.setRange(0.9, 1.1);
-  C1.setRange(0.0, 0.2);
-
-  model.fitTo(*data, Extended(kTRUE)); 
-  RooPlot *frameM = m.frame(); 
-  data->plotOn(frameM);  
-  model.plotOn(frameM); 
-  model.plotOn(frameM, Components("bgM"), LineStyle(kDashed)) ;
-  
-  RooPlot *framePt = pt.frame();  
-  data->plotOn(framePt);  
-  model.plotOn(framePt); 
-  model.plotOn(framePt, Components("bgHistPt"), LineStyle(kDashed)) ;
-
-
-  zone(2, 2);
-  frameM->Draw();
-  c0->cd(2);
-  gPad->SetLogy(1);
-  h1->SetLineColor(kBlue);
-  h2->SetLineColor(kRed);
-  h1->Draw(); 
-  h2->Draw("same"); 
-  c0->cd(3);
-  gPad->SetLogy(0);
-  framePt->Draw();
-  c0->cd(4);
-  gPad->SetLogy(1);
-  framePt->Draw();
-
-  fHistFile->Close();
-}
-
-
-// ----------------------------------------------------------------------
-void plotHpt::toy3(int nsg0, double nsg1, double  nbg) {
-
-  fHistFile = TFile::Open(fHistFileName.c_str()); 
-
-  // -- determine function parameters
-  if (0) { 
-    double xmin(300.), xmax(1000.); 
-    gStyle->SetOptStat(0); 
-    gStyle->SetOptFit(111); 
-    zone(2,2);
-    TH1D *h1 = (TH1D*)fHistFile->Get("m_sherpa_hipt")->Clone("h1");
-    //    h1->Scale(1./h1->GetSumOfWeights()); 
-    h1->SetMinimum(0.);
-    h1->Fit("pol1"); 
-    h1->GetFunction("pol1")->SetLineWidth(2); 
-
-    c0->cd(2);
-    gPad->SetLogy(1);
-    TH1D *h2 = (TH1D*)fHistFile->Get("pt_sherpa_hipt")->Clone("h2");
-    //    h2->Scale(1./h2->GetSumOfWeights()); 
-    h2->SetTitle("Sherpa gg"); 
-    h2->Fit("expo", "rl", "", xmin, xmax); 
-    h2->GetFunction("expo")->SetLineWidth(2); 
-
-    c0->cd(3);
-    gPad->SetLogy(1);
-    TH1D *h3 = (TH1D*)fHistFile->Get("pt_mcatnlo5_hipt")->Clone("h3");
-    //    h3->Scale(1./h3->GetSumOfWeights()); 
-    h3->SetTitle("m(top) #rightarrow #infty"); 
-    h3->Fit("expo", "rl", "", xmin, xmax); 
-    h3->GetFunction("expo")->SetLineWidth(2); 
-
-    c0->cd(4);
-    gPad->SetLogy(1);
-    TH1D *h4 = (TH1D*)fHistFile->Get("pt_mcatnlo_hipt")->Clone("h4");
-    //    h4->Scale(1./h4->GetSumOfWeights()); 
-    h4->SetTitle("m(top) = 173.5 GeV"); 
-    h4->Fit("expo", "rl", "", xmin, xmax); 
-    h4->GetFunction("expo")->SetLineWidth(2); 
-
-    //  ****************************************
-    //  Minimizer is Linear
-    //  Chi2                      =      14.1314
-    //  NDf                       =           23
-    //  p0                        =      166.971   +/-   28.4753     
-    //  p1                        =     0.837631   +/-   0.227452    
-
-    //  NORMALIZED TO 1:
-    //  ****************************************
-    //  Minimizer is Linear
-    //  Chi2                      =   0.00207631
-    //  NDf                       =           23
-    //  p0                        =    0.0245329   +/-   0.345162    
-    //  p1                        =  0.000123072   +/-   0.00275705  
-   
-    //  SHERPA
-    //  FCN=80.7532 FROM MIGRAD    STATUS=CONVERGED      83 CALLS          84 TOTAL
-    //                      EDM=1.57571e-10    STRATEGY= 1      ERROR MATRIX ACCURATE
-    //   EXT PARAMETER                                   STEP         FIRST
-    //   NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE
-    //    1  Constant     1.05700e+01   6.00323e-02   7.54946e-05   8.85296e-04
-    //    2  Slope       -1.26957e-02   1.55210e-04   1.95185e-07   3.77248e-01
-    //                                ERR DEF= 0.5
-    //  m(top) -> infty
-    //  FCN=44.2806 FROM MIGRAD    STATUS=CONVERGED      42 CALLS          43 TOTAL
-    //                      EDM=8.07575e-08    STRATEGY= 1      ERROR MATRIX ACCURATE
-    //   EXT PARAMETER                                   STEP         FIRST
-    //   NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE
-    //    1  Constant     8.84227e+00   4.01906e-02   5.02440e-05   1.74232e-02
-    //    2  Slope       -7.81368e-03   9.10171e-05   1.13778e-07   9.73403e+00
-    //                                ERR DEF= 0.5
-    // m(top) = 173.5 GeV
-    //  FCN=35.0345 FROM MIGRAD    STATUS=CONVERGED      70 CALLS          71 TOTAL
-    //                      EDM=2.92507e-12    STRATEGY= 1      ERROR MATRIX ACCURATE
-    //   EXT PARAMETER                                   STEP         FIRST
-    //   NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE
-    //    1  Constant     9.45657e+00   6.72258e-02   6.20582e-05   1.01431e-04
-    //    2  Slope       -1.09325e-02   1.67445e-04   1.54573e-07   4.42596e-02
-    //                                ERR DEF= 0.5
-    return;
-  }
-
-
-
-
-  // mass
-  // ====
-  
-  // -- Signal
-  RooRealVar m("m", "m", 100., 150.); 
-  RooRealVar sgP("sgP", "signal peak mass", 125., 100, 150);  
-  sgP.setConstant(kTRUE);
-  RooRealVar sgS("sgS", "signal sigma mass", 10., 5., 15.);  
-  sgS.setConstant(kTRUE);
-  RooGaussian sg0M("sg0M", "signal mass", m, sgP, sgS); 
-  RooGaussian sg1M("sg1M", "signal mass", m, sgP, sgS); 
-
-  // -- Background
-  double bgc0  = 0.0245329;
-  double bgc0e = 0.00418385;  // derived from the normalized unscaled fit! 
-  RooRealVar C0("C0", "coefficient #0", bgc0, -1., 1.); 
-  //  C0.setRange(bgc0 - bgc0e, bgc0 + bgc0e);
-  //   double bgc1  = 0.0001231;
-  //   double bgc1e = 3.341922e-5; // derived from the normalized unscaled fit! 
-  //   RooRealVar C1("C1", "coefficient #1", bgc1, -1., 1.); 
-  //  C1.setRange(bgc1 - bgc1e, bgc1 + bgc1e);
-  RooPolynomial bg0M("bg0M", "background 0 gamma gamma mass", m, RooArgList(C0)); 
-  RooPolynomial bg1M("bg1M", "background 1 gamma gamma mass", m, RooArgList(C0)); 
-
-
-  // pT
-  // ==
-  RooRealVar pt("pt", "pt", 300., 1000.); 
-  // -- SM Higgs
-  double sg0tau  = -1.09325e-02; 
-  double sg0taue = 1.67445e-04;
-  RooRealVar sg0Tau("sg0Tau", "signal 0 tau", sg0tau, -10., 10.); 
-  sg0Tau.setRange(sg0tau - sg0taue, sg0tau + sg0taue); 
-  RooExponential sg0Pt("sg0Pt", "signal 0 pT", pt, sg0Tau);   
-
-  // -- "contact" Higgs
-  double sg1tau  = -7.81368e-03; 
-  double sg1taue = 9.10171e-05;
-  RooRealVar sg1Tau("sg1Tau", "signal 1 tau", sg1tau, -10., 10.); 
-  sg1Tau.setRange(sg1tau - sg1taue, sg1tau + sg1taue); 
-  RooExponential sg1Pt("sg1Pt", "signal 1 pT", pt, sg1Tau);   
-
-
-  double bgtau  = -1.26957e-02; 
-  double bgtaue = 1.55210e-04; 
-  RooRealVar bgTau("bgTau", "background gamma gamma tau", bgtau, -10., 10.); 
-  //  bg0Tau.setRange(bg0tau - bg0taue, bg0tau + bg0taue); 
-  RooExponential bg0Pt("bg0Pt", "background 0 gamma gamma pT", pt, bgTau);   
-  RooExponential bg1Pt("bg1Pt", "background 1 gamma gamma pT", pt, bgTau);   
-
-
-  RooRealVar sg0frac("sg0frac","fraction of Higgs 0 signal", nsg0/nbg, 0., 1.);
-  RooRealVar sg1frac("sg1frac","fraction of Higgs 1 signal", nsg1/nbg, 0., 1.);
-  RooAddPdf model0M("model0M", "model 0 for mass", RooArgList(sg0M, bg0M), sg0frac);
-  RooAddPdf model0Pt("model0Pt", "model 0 for pT", RooArgList(sg0Pt, bg0Pt), sg0frac);
-
-  RooAddPdf model1M("model1M", "model 1 for mass", RooArgList(sg1M, bg1M), sg1frac);
-  RooAddPdf model1Pt("model1Pt", "model 1 for pT", RooArgList(sg1Pt, bg1Pt), sg1frac);
-  
-  RooProdPdf model0("model0", "complete model 0", RooArgSet(model0M, model0Pt)); 
-  RooProdPdf model1("model1", "complete model 1", RooArgSet(model1M, model1Pt)); 
-  RooDataSet *data0 = model0.generate(RooArgSet(m, pt), nsg0 + nbg);  
-  RooDataSet *data1 = model1.generate(RooArgSet(m, pt), nsg1 + nbg);  
-
-  cout << "XXXXX initial signal fractions, 0 = " << sg0frac.getVal() 
-       << ", 1 = " << sg1frac.getVal() 
-       << endl;
-
-
-  RooFitResult *resData0Model0 = model0.fitTo(*data0, Save()); 
-  RooPlot *f0M = m.frame(); 
-  data0->plotOn(f0M);  
-  model0.plotOn(f0M); 
-  model0.plotOn(f0M, Components("bg0M"), LineStyle(kDashed)) ;
-  
-  RooPlot *f0Pt = pt.frame();  
-  data0->plotOn(f0Pt);  
-  model0.plotOn(f0Pt); 
-  model0.plotOn(f0Pt, Components("bg0Pt"), LineStyle(kDashed)) ;
-
-  RooFitResult *resData0Model1 = model1.fitTo(*data0, Save()); 
-  RooPlot *f1M = m.frame(); 
-  data0->plotOn(f1M);  
-  model1.plotOn(f1M); 
-  model1.plotOn(f1M, Components("bg1M"), LineStyle(kDashed)) ;
-  
-  RooPlot *f1Pt = pt.frame();  
-  data0->plotOn(f1Pt);  
-  model1.plotOn(f1Pt); 
-  model1.plotOn(f1Pt, Components("bg1Pt"), LineStyle(kDashed)) ;
-
-
-  zone(2, 2);
-  f0M->Draw();
-  c0->cd(2);
-  gPad->SetLogy(1);
-  f0Pt->Draw();
-
-  c0->cd(3);
-  f1M->Draw();
-  c0->cd(4);
-  gPad->SetLogy(1);
-  f1Pt->Draw();
-
-  c0->SaveAs("toy3-data0.pdf");
-
-
-  RooFitResult *resData1Model1 =  model1.fitTo(*data1, Save()); 
-  RooPlot *g1M = m.frame(); 
-  data1->plotOn(g1M);  
-  model1.plotOn(g1M); 
-  model1.plotOn(g1M, Components("bg1M"), LineStyle(kDashed)) ;
-  
-  RooPlot *g1Pt = pt.frame();  
-  data1->plotOn(g1Pt);  
-  model1.plotOn(g1Pt); 
-  model1.plotOn(g1Pt, Components("bg1Pt"), LineStyle(kDashed)) ;
-
-  RooFitResult *resData1Model0 = model0.fitTo(*data1, Save()); 
-  RooPlot *g0M = m.frame(); 
-  data1->plotOn(g0M);  
-  model0.plotOn(g0M); 
-  model0.plotOn(g0M, Components("bg0M"), LineStyle(kDashed)) ;
-  
-  RooPlot *g0Pt = pt.frame();  
-  data1->plotOn(g0Pt);  
-  model0.plotOn(g0Pt); 
-  model0.plotOn(g0Pt, Components("bg0Pt"), LineStyle(kDashed)) ;
-
-
-  zone(2, 2);
-  g1M->Draw();
-  c0->cd(2);
-  gPad->SetLogy(1);
-  g1Pt->Draw();
-
-  c0->cd(3);
-  g0M->Draw();
-  c0->cd(4);
-  gPad->SetLogy(1);
-  g0Pt->Draw();
-
-  cout << "Fitting model 0 on data 0" << endl;
-  resData0Model0->Print("v");
-  cout << "Fitting model 1 on data 0" << endl;
-  resData0Model1->Print("v");
-
-  cout << "Fitting model 0 on data 1" << endl;
-  resData1Model0->Print("v");
-  cout << "Fitting model 1 on data 1" << endl;
-  resData1Model1->Print("v");
-
-  c0->SaveAs("toy3-data1.pdf");
-
-  fHistFile->Close(); 
-
-}
-
-
-// ----------------------------------------------------------------------
-void plotHpt::toy4(double nsg0, double nsg1, double nbg, int ntoy) {
-
-  if (ntoy > 0) fNtoy = ntoy; 
-
-  fHistFile = TFile::Open(fHistFileName.c_str()); 
-
-  int NBINS(10); 
-
-  // mass
-  // ====
-  
-  // -- Signal
-  RooRealVar m("m", "m", 100., 150., "GeV"); 
-  RooRealVar sgP("sgP", "signal peak mass", 125., 100, 150);  
-  sgP.setConstant(kTRUE);
-  RooRealVar sgS("sgS", "signal sigma mass", fHiggsMres, 0., 15.);  
-  sgS.setConstant(kTRUE);
-  RooGaussian sg0M("sg0M", "signal mass", m, sgP, sgS); 
-  RooGaussian sg1M("sg1M", "signal mass", m, sgP, sgS); 
-
-  // -- Background
-  double bgc0  = 0.0245329; // FIXME!!!
-  //  double bgc0e = 0.00418385;  // derived from the normalized unscaled fit! 
-  RooRealVar C0("C0", "coefficient #0", bgc0, -1., 1.); 
-  //  C0.setRange(bgc0 - bgc0e, bgc0 + bgc0e);
-  //   double bgc1  = 0.0001231;
-  //   double bgc1e = 3.341922e-5; // derived from the normalized unscaled fit! 
-  //   RooRealVar C1("C1", "coefficient #1", bgc1, -1., 1.); 
-  //  C1.setRange(bgc1 - bgc1e, bgc1 + bgc1e);
-  RooPolynomial bg0M("bg0M", "background 0 gamma gamma mass", m, RooArgList(C0)); 
-  RooPolynomial bg1M("bg1M", "background 1 gamma gamma mass", m, RooArgList(C0)); 
-
-
-  // pT
-  // ==
-  RooRealVar pt("pt", "pt", 300., 1000., "GeV"); 
-  //  SM Higgs count:           17.2289 fitted exponential slope = -0.0108046+/-0.000305826
-  // -- SM Higgs
-  //  double sg0tau  = -1.09325e-02; // FIXME!!!
-  double sg0tau = fSg0Tau; 
-  //  double sg0taue = 1.67445e-04;
-  double sg0taue = fSg0TauE;
-  RooRealVar sg0Tau("sg0Tau", "signal 0 tau", sg0tau, -10., 10.); 
-  sg0Tau.setRange(sg0tau - sg0taue, sg0tau + sg0taue); 
-  RooExponential sg0Pt("sg0Pt", "signal 0 pT", pt, sg0Tau);   
-
-  //  Contact Higgs count:      45.3107 fitted exponential slope = -0.00707933+/-0.000137285
-  // -- "contact" Higgs
-  //  double sg1tau  = -7.81368e-03; // FIXME!!!
-  double sg1tau = fSg1Tau; 
-  //  double sg1taue = 9.10171e-05;
-  double sg1taue = fSg1TauE;
-  RooRealVar sg1Tau("sg1Tau", "signal 1 tau", sg1tau, -10., 10.); 
-  sg1Tau.setRange(sg1tau - sg1taue, sg1tau + sg1taue); 
-  RooExponential sg1Pt("sg1Pt", "signal 1 pT", pt, sg1Tau);   
-
-  //  SHERPA background:        168.859 fitted exponential slope = -0.0113285+/-0.000262761
-  //  double bgtau  = -1.26957e-02; // FIXME!!!
-  double bgtau = fBgTau; 
-  //  double bgtaue = 1.55210e-04; 
-  RooRealVar bgTau("bgTau", "background gamma gamma tau", bgtau, -10., 10.); 
-  RooExponential bg0Pt("bg0Pt", "background 0 gamma gamma pT", pt, bgTau);   
-  RooExponential bg1Pt("bg1Pt", "background 1 gamma gamma pT", pt, bgTau);   
-
-
-  RooRealVar sg0frac("sg0frac","fraction of Higgs 0 signal", nsg0/nbg, 0., 1.);
-  RooRealVar sg1frac("sg1frac","fraction of Higgs 1 signal", nsg1/nbg, 0., 1.);
-  RooAddPdf model0M("model0M", "model 0 for mass", RooArgList(sg0M, bg0M), sg0frac);
-  RooAddPdf model0Pt("model0Pt", "model 0 for pT", RooArgList(sg0Pt, bg0Pt), sg0frac);
-
-  RooAddPdf model1M("model1M", "model 1 for mass", RooArgList(sg1M, bg1M), sg1frac);
-  RooAddPdf model1Pt("model1Pt", "model 1 for pT", RooArgList(sg1Pt, bg1Pt), sg1frac);
-  
-  RooProdPdf model0("model0", "complete model 0", RooArgSet(model0M, model0Pt)); 
-  RooProdPdf model1("model1", "complete model 1", RooArgSet(model1M, model1Pt)); 
-
-  // -- alternative way to assemble data sets
-  RooProdPdf modelBg("modelBg", "complete background model", RooArgSet(bg0M, bg0Pt)); 
-  RooProdPdf model0Sg("model0Sg", "complete signal model 0", RooArgSet(sg0M, sg0Pt)); 
-  RooProdPdf model1Sg("model1Sg", "complete signal model 1", RooArgSet(sg1M, sg1Pt)); 
-
-//   RooDataSet *data0 = model0.generate(RooArgSet(m, pt), nsg0 + nbg);  
-//   RooDataSet *data1 = model1.generate(RooArgSet(m, pt), nsg1 + nbg);  
-
-  RooDataSet *bg0 = modelBg.generate(RooArgSet(m, pt), nbg);  
-  RooDataSet *data0 = new RooDataSet(*bg0); 
-  RooDataSet *data1 = new RooDataSet(*data0); 
-
-  RooDataSet *s0 = model0Sg.generate(RooArgSet(m, pt), nsg0);  
-  RooDataSet *s1 = model1Sg.generate(RooArgSet(m, pt), nsg1);  
-  data0->append(*s0); 
-  data1->append(*s1); 
-
-
-  TVirtualPad *pad = gPad; 
-  makeCanvas(1); 
-  zone(2,2, c1);
-  
-  RooPlot *f0M = m.frame(); 
-  f0M->SetTitle("m(top) = 173.5 GeV");
-  data0->plotOn(f0M, Binning(NBINS));  
-  model0.plotOn(f0M); 
-  model0.plotOn(f0M, Components("bg0M"), LineStyle(kDashed)) ;
-  model0.paramOn(f0M, Layout(0.15, 0.85)) ;
-  f0M->Draw();
-
-  c1->cd(2);
-  RooPlot *a = m.frame(); 
-  a->SetTitle("signal (blue) and background (red) for m(top) = 173.5 GeV");
-  s0->plotOn(a, Binning(NBINS), LineColor(kBlue), MarkerColor(kBlue));  
-  bg0->plotOn(a, Binning(NBINS), LineColor(kRed), MarkerColor(kRed)); 
-  a->Draw();
-
-  c1->cd(4);
-  RooPlot *a1 = m.frame(); 
-  a1->SetTitle("signal (blue) and background (red) for m(top) #rightarrow #infty");
-  s1->plotOn(a1, Binning(NBINS), LineColor(kBlue), MarkerColor(kBlue));  
-  bg0->plotOn(a1, Binning(NBINS), LineColor(kRed), MarkerColor(kRed)); 
-  a1->Draw();
-  
-  double bExpected(0.), bExpectedRelE(0.), sExpected(0.), sExpectedRelE(0.); 
-  double zExp(0.); 
-
-  // -- now setup toy loop
-  RooCmdArg fitargs; 
-  if (1) {
-  fitargs.addArg(Minos(kTRUE)); 
-  fitargs.addArg(PrintLevel(-1));
-  fitargs.addArg(PrintEvalErrors(-1));
-  fitargs.addArg(Verbose(kFALSE));
-  fitargs.addArg(Save()); 
-  fitargs.addArg(Minimizer("Minuit2")); 
-  }
-  TH1D *h1z = new TH1D("h1z", " ", 100, 0., 10.); 
-  TH1D *h1zTh = new TH1D("h1zTh", "significance wrt theory expectation", 100, 0., 10.); 
-  TH1D *h1zZero = new TH1D("h1zZero", "significance wrt zero expectation ", 100, 0., 10.); 
-  RooFitResult *fr0(0), *fr1(0); 
-  zone(2, 1, c1);
-  double zExpTh(0.); 
-  double zExpZero(0.); 
-  for (int imc = 0; imc < fNtoy; ++imc) {
-    data0->reset();
-    data1->reset();
-    cout << "==> starting run " << imc << endl;
-    C0.setVal(bgc0);
-    bgTau.setVal(bgtau);
-
-    sg0Tau.setVal(sg0tau);
-    sg0frac.setVal(nsg0/nbg);
-
-    sg1Tau.setVal(sg1tau);
-    sg1frac.setVal(nsg1/nbg);
-
-    if (0) {
-      modelBg.Print("t");
-      model0Sg.Print("t");
-      model1Sg.Print("t");
-    }
-
-    bg0 = modelBg.generate(RooArgSet(m, pt), nbg);  
-    s0 = model0Sg.generate(RooArgSet(m, pt), nsg0);  
-    s1 = model1Sg.generate(RooArgSet(m, pt), nsg1);  
-    
-    data0->append(*bg0); 
-    data0->append(*s0); 
-
-    data1->append(*bg0); 
-    data1->append(*s1); 
-
-    cout << "----------------------------------------------------------------------" << endl;
-    cout << "Fit model 0 to data 0, toy = " << imc << endl;
-    cout << "----------------------------------------------------------------------" << endl;
-    fr0 = model0.fitTo(*data0, fitargs); 
-    cout << "----------------------------------------------------------------------" << endl;
-    cout << "Fit model 1 to data 1" << endl;
-    cout << "----------------------------------------------------------------------" << endl;
-    fr1 = model1.fitTo(*data1, fitargs); 
-
-    bExpected     = sg0frac.getVal()*data0->numEntries();
-    bExpectedRelE = sg0frac.getError()/sg0frac.getVal();
-
-    sExpected     = sg1frac.getVal()*data1->numEntries();
-    sExpectedRelE = sg1frac.getError()/sg1frac.getVal();
- 
-    int reset(0); 
-    if (0 && bExpected < 1.) {
-      reset = 1; 
-      bExpected = 2.3; 
-      bExpectedRelE = 0.99;
-    }
-
-    if (sg0frac.getVal() < sg0frac.getError()) {
-      bExpected = nsg0; 
-      bExpectedRelE = TMath::Sqrt(nsg0)/nsg0; 
-    }
-    
-    zExp = NumberCountingUtils::BinomialExpZ(sExpected, bExpected, bExpectedRelE);
-    zExpTh = NumberCountingUtils::BinomialExpZ(sExpected, nsg0, TMath::Sqrt(nsg0)/nsg0);
-    zExpZero = NumberCountingUtils::BinomialExpZ(sExpected, 2.3, 0.99);
-    cout << Form("%3d zExp = %5.4f from bExpected = %4.1f+/-%4.1f and sExpected = %4.1f (reset = %d, zExpTh = %4.1f, zExpZero = %4.1f)", 
-		 imc, zExp, bExpected, bExpected*bExpectedRelE, sExpected, reset, zExpTh, zExpZero) 
-	 << endl;
-    if (zExp < 0) {
-      --imc;
-      continue;
-    }
-
-    h1z->Fill(zExp); 
-    h1zTh->Fill(zExpTh); 
-    h1zZero->Fill(zExpZero); 
-
-    if (0 && zExp < 0.1) {
-      RooPlot *g0M = m.frame(); 
-      g0M->SetTitle("m(top) = 173.5GeV");
-      data0->plotOn(g0M, Binning(NBINS));  
-      model0.plotOn(g0M); 
-      model0.plotOn(g0M, Components("bg0M"), LineStyle(kDashed)) ;
-      c1->cd(1);
-      model0.paramOn(g0M, Layout(0.15, 0.85)) ;
-      g0M->Draw();
-
-      RooPlot *g1M = m.frame(); 
-      g1M->SetTitle("m(top) #rightarrow #infty");
-      data1->plotOn(g1M, Binning(NBINS));  
-      model1.plotOn(g1M); 
-      model1.plotOn(g1M, Components("bg1M"), LineStyle(kDashed)) ;
-      c1->cd(2);
-      model1.paramOn(g1M, Layout(0.15, 0.85)) ;
-      g1M->Draw();
-      tl->SetNDC(kTRUE);
-      tl->DrawLatex(0.2, 0.2, Form("zExp = %4.3f", zExp)); 
-      tl->DrawLatex(0.2, 0.15, Form("S = %4.1f, B = %4.1f +/- %4.1f", sExpected, bExpected, bExpectedRelE*bExpected)); 
-      c1->SaveAs(Form("%s/toy4-%s-%d.pdf", fDirectory.c_str(), fSetup.c_str(), imc)); 
-    }
-  }
-  pad->cd();
-  gStyle->SetOptStat(0); 
-  h1z->Draw();
-  tl->SetTextColor(kBlack); 
-  tl->DrawLatex(0.6, 0.80, Form("Mean = %4.3f", h1z->GetMean())); 
-  tl->DrawLatex(0.6, 0.75, Form("RMS = %4.3f", h1z->GetRMS())); 
-  tl->DrawLatex(0.6, 0.70, Form("Mean(TH) =  %4.3f", h1zTh->GetMean())); 
-  tl->DrawLatex(0.6, 0.65, Form("Mean(zero) =  %4.3f", h1zZero->GetMean())); 
-  tl->DrawLatex(0.6, 0.92, Form("Setup: %s", fSetup.c_str())); 
-  fHistFile->Close();
-
-  fTEX.open(fTexFileName.c_str(), ios::app);
-  fTEX << formatTex(h1z->GetMean(), Form("%s:zexp:val", fSetup.c_str()), 2) << endl;
-  fTEX << formatTex(h1z->GetRMS(), Form("%s:zexp:rms", fSetup.c_str()), 2) << endl;
-  fTEX << formatTex(h1zTh->GetMean(), Form("%s:zexpTh:val", fSetup.c_str()), 2) << endl;
-  fTEX << formatTex(h1zTh->GetRMS(), Form("%s:zexpTh:rms", fSetup.c_str()), 2) << endl;
-  fTEX << formatTex(h1zZero->GetMean(), Form("%s:zexpZero:val", fSetup.c_str()), 2) << endl;
-  fTEX << formatTex(h1zZero->GetRMS(), Form("%s:zexpZero:rms", fSetup.c_str()), 2) << endl;
-  fTEX.close();
-}
-
-// ----------------------------------------------------------------------
-void plotHpt::toy5(double nsg0, double nsg1, double nbg, int ntoy) {
-
-  fHistFile = TFile::Open(fHistFileName.c_str()); 
-
-  int NBINS(10); 
-
-  // mass
-  // ====
-  
-  // -- Signal
-  RooRealVar m("m", "m", 100., 150., "GeV"); 
-  RooRealVar sgP("sgP", "signal peak mass", 125., 100, 150);  
-  sgP.setConstant(kTRUE);
-  RooRealVar sgS("sgS", "signal sigma mass", fHiggsMres, 0., 15.);  
-  sgS.setConstant(kTRUE);
-  RooGaussian sg0M("sg0M", "signal mass", m, sgP, sgS); 
-  RooGaussian sg1M("sg1M", "signal mass", m, sgP, sgS); 
-
-  // -- Background
-  double bgc0  = 0.0245329; // FIXME!!!
-  //  double bgc0e = 0.00418385;  // derived from the normalized unscaled fit! 
-  RooRealVar C0("C0", "coefficient #0", bgc0, -1., 1.); 
-  //  C0.setRange(bgc0 - bgc0e, bgc0 + bgc0e);
-  //   double bgc1  = 0.0001231;
-  //   double bgc1e = 3.341922e-5; // derived from the normalized unscaled fit! 
-  //   RooRealVar C1("C1", "coefficient #1", bgc1, -1., 1.); 
-  //  C1.setRange(bgc1 - bgc1e, bgc1 + bgc1e);
-  RooPolynomial bg0M("bg0M", "background 0 gamma gamma mass", m, RooArgList(C0)); 
-  RooPolynomial bg1M("bg1M", "background 1 gamma gamma mass", m, RooArgList(C0)); 
-
-
-  // pT
-  // ==
-  RooRealVar pt("pt", "pt", 300., 1000., "GeV"); 
-  //  SM Higgs count:           17.2289 fitted exponential slope = -0.0108046+/-0.000305826
-  // -- SM Higgs
-  //  double sg0tau  = -1.09325e-02; // FIXME!!!
-  double sg0tau = fSg0Tau; 
-  //  double sg0taue = 1.67445e-04;
-  double sg0taue = fSg0TauE;
-  RooRealVar sg0Tau("sg0Tau", "signal 0 tau", sg0tau, -10., 10.); 
-  sg0Tau.setRange(sg0tau - sg0taue, sg0tau + sg0taue); 
-  RooExponential sg0Pt("sg0Pt", "signal 0 pT", pt, sg0Tau);   
-
-  //  Contact Higgs count:      45.3107 fitted exponential slope = -0.00707933+/-0.000137285
-  // -- "contact" Higgs
-  //  double sg1tau  = -7.81368e-03; // FIXME!!!
-  double sg1tau = fSg1Tau; 
-  //  double sg1taue = 9.10171e-05;
-  double sg1taue = fSg1TauE;
-  RooRealVar sg1Tau("sg1Tau", "signal 1 tau", sg1tau, -10., 10.); 
-  sg1Tau.setRange(sg1tau - sg1taue, sg1tau + sg1taue); 
-  RooExponential sg1Pt("sg1Pt", "signal 1 pT", pt, sg1Tau);   
-
-  //  SHERPA background:        168.859 fitted exponential slope = -0.0113285+/-0.000262761
-  //  double bgtau  = -1.26957e-02; // FIXME!!!
-  double bgtau = fBgTau; 
-  //  double bgtaue = 1.55210e-04; 
-  RooRealVar bgTau("bgTau", "background gamma gamma tau", bgtau, -10., 10.); 
-  RooExponential bg0Pt("bg0Pt", "background 0 gamma gamma pT", pt, bgTau);   
-  RooExponential bg1Pt("bg1Pt", "background 1 gamma gamma pT", pt, bgTau);   
-
-
-  RooRealVar sg0frac("sg0frac","fraction of Higgs 0 signal", nsg0/nbg, 0., 1.);
-  RooRealVar sg1frac("sg1frac","fraction of Higgs 1 signal", nsg1/nbg, 0., 1.);
-  RooAddPdf model0M("model0M", "model 0 for mass", RooArgList(sg0M, bg0M), sg0frac);
-  RooAddPdf model0Pt("model0Pt", "model 0 for pT", RooArgList(sg0Pt, bg0Pt), sg0frac);
-
-  RooAddPdf model1M("model1M", "model 1 for mass", RooArgList(sg1M, bg1M), sg1frac);
-  RooAddPdf model1Pt("model1Pt", "model 1 for pT", RooArgList(sg1Pt, bg1Pt), sg1frac);
-  
-  RooProdPdf model0("model0", "complete model 0", RooArgSet(model0M, model0Pt)); 
-  RooProdPdf model1("model1", "complete model 1", RooArgSet(model1M, model1Pt)); 
-
-  // -- alternative way to assemble data sets
-  RooProdPdf modelBg("modelBg", "complete background model", RooArgSet(bg0M, bg0Pt)); 
-  RooProdPdf model0Sg("model0Sg", "complete signal model 0", RooArgSet(sg0M, sg0Pt)); 
-  RooProdPdf model1Sg("model1Sg", "complete signal model 1", RooArgSet(sg1M, sg1Pt)); 
-
-//   RooDataSet *data0 = model0.generate(RooArgSet(m, pt), nsg0 + nbg);  
-//   RooDataSet *data1 = model1.generate(RooArgSet(m, pt), nsg1 + nbg);  
-
-  RooDataSet *bg0 = modelBg.generate(RooArgSet(m, pt), nbg);  
-  RooDataSet *data0 = new RooDataSet(*bg0); 
-  RooDataSet *data1 = new RooDataSet(*data0); 
-
-  RooDataSet *s0 = model0Sg.generate(RooArgSet(m, pt), nsg0);  
-  RooDataSet *s1 = model1Sg.generate(RooArgSet(m, pt), nsg1);  
-  data0->append(*s0); 
-  data1->append(*s1); 
-
-
-  TVirtualPad *pad = gPad; 
-  makeCanvas(1); 
-  zone(2,2, c1);
-  
-  RooPlot *f0M = m.frame(); 
-  f0M->SetTitle("m(top) = 173.5 GeV");
-  data0->plotOn(f0M, Binning(NBINS));  
-  model0.plotOn(f0M); 
-  model0.plotOn(f0M, Components("bg0M"), LineStyle(kDashed)) ;
-  model0.paramOn(f0M, Layout(0.15, 0.85)) ;
-  f0M->Draw();
-
-  c1->cd(2);
-  RooPlot *a = m.frame(); 
-  a->SetTitle("signal (blue) and background (red) for m(top) = 173.5 GeV");
-  s0->plotOn(a, Binning(NBINS), LineColor(kBlue), MarkerColor(kBlue));  
-  bg0->plotOn(a, Binning(NBINS), LineColor(kRed), MarkerColor(kRed)); 
-  a->Draw();
-
-  c1->cd(4);
-  RooPlot *a1 = m.frame(); 
-  a1->SetTitle("signal (blue) and background (red) for m(top) #rightarrow #infty");
-  s1->plotOn(a1, Binning(NBINS), LineColor(kBlue), MarkerColor(kBlue));  
-  bg0->plotOn(a1, Binning(NBINS), LineColor(kRed), MarkerColor(kRed)); 
-  a1->Draw();
-  
-  double bExpected     = sg0frac.getVal()*data0->numEntries();
-  double bExpectedRelE = sg0frac.getError()/sg0frac.getVal();
-
-  cout << "--> bExpected = " << bExpected << " +/- " << bExpected*bExpectedRelE 
-       << " (rel: " << bExpectedRelE << "), sg0frac.getError()= " << sg0frac.getError() 
-       << " sg0frac.getVal() = " << sg0frac.getVal() << ", data0 entries = " << data0->numEntries()
-       << endl;
-
- 
-  RooPlot *g1M = m.frame(); 
-  g1M->SetTitle("m(top) #rightarrow #infty");
-  data1->plotOn(g1M, Binning(NBINS));  
-  model1.plotOn(g1M); 
-  model1.plotOn(g1M, Components("bg1M"), LineStyle(kDashed)) ;
-  c1->cd(3);
-  model1.paramOn(g1M, Layout(0.15, 0.85)) ;
-  g1M->Draw();
-  
-  
-  double sExpected     = sg1frac.getVal()*data1->numEntries();
-  double sExpectedRelE = sg1frac.getError()/sg1frac.getVal();
-  
-  cout << "--> bExpected = " << bExpected << " +/- " << bExpected*bExpectedRelE 
-       << " (rel: " << bExpectedRelE << "), sg0frac.getError()= " << sg0frac.getError() 
-       << " sg0frac.getVal() = " << sg0frac.getVal() << ", data0 entries = " << data0->numEntries()
-       << endl;
-
-  cout << "--> sExpected = " << sExpected << " +/- " << sExpected*sExpectedRelE 
-       << " (rel: " << sExpectedRelE << "), sg1frac.getError() = " << sg1frac.getError() 
-       << " sg1frac.getVal() = " << sg1frac.getVal() << ", data1 entries = " << data1->numEntries()
-       << endl;
-  
-  double zExp = NumberCountingUtils::BinomialExpZ(sExpected, bExpected, bExpectedRelE);
-  cout << "--> zExp: " << zExp << endl;
-
-  
-  double tau = 6.; 
-  double zExpWithTau = NumberCountingUtils::BinomialWithTauExpZ(sExpected, bExpected, tau);
-  cout << "--> zExp(tau): " << zExpWithTau << endl;
-
-  // -- now setup toy loop
-  RooCmdArg fitargs; 
-  if (1) {
-  fitargs.addArg(Minos(kTRUE)); 
-  fitargs.addArg(PrintLevel(-1));
-  fitargs.addArg(PrintEvalErrors(-1));
-  fitargs.addArg(Verbose(kFALSE));
-  fitargs.addArg(Save()); 
-  fitargs.addArg(Minimizer("Minuit2")); 
-  }
-  TH1D *h1z = new TH1D("h1z", " ", 100, 0., 10.); 
-  TH1D *h1zTh = new TH1D("h1zTh", "significance wrt theory expectation", 100, 0., 10.); 
-  TH1D *h1zZero = new TH1D("h1zZero", "significance wrt zero expectation ", 100, 0., 10.); 
-  RooFitResult *fr0(0), *fr1(0); 
-  zone(2, 1, c1);
-  double zExpTh(0.); 
-  double zExpZero(0.); 
-  for (int imc = 0; imc < fNtoy; ++imc) {
-    data0->reset();
-    data1->reset();
-    cout << "==> starting run " << imc << endl;
-    C0.setVal(bgc0);
-    bgTau.setVal(bgtau);
-
-    sg0Tau.setVal(sg0tau);
-    sg0frac.setVal(nsg0/nbg);
-
-    sg1Tau.setVal(sg1tau);
-    sg1frac.setVal(nsg1/nbg);
-
-    if (0) {
-      modelBg.Print("t");
-      model0Sg.Print("t");
-      model1Sg.Print("t");
-    }
-
-    bg0 = modelBg.generate(RooArgSet(m, pt), nbg);  
-    s0 = model0Sg.generate(RooArgSet(m, pt), nsg0);  
-    s1 = model1Sg.generate(RooArgSet(m, pt), nsg1);  
-    
-    data0->append(*bg0); 
-    data0->append(*s0); 
-
-    data1->append(*bg0); 
-    data1->append(*s1); 
-
-    cout << "----------------------------------------------------------------------" << endl;
-    cout << "Fit model 0 to data 0" << endl;
-    cout << "----------------------------------------------------------------------" << endl;
-    fr0 = model0.fitTo(*data0, fitargs); 
-    cout << "----------------------------------------------------------------------" << endl;
-    cout << "Fit model 1 to data 1" << endl;
-    cout << "----------------------------------------------------------------------" << endl;
-    fr1 = model1.fitTo(*data1, fitargs); 
-
-    bExpected     = sg0frac.getVal()*data0->numEntries();
-    bExpectedRelE = sg0frac.getError()/sg0frac.getVal();
-
-    sExpected     = sg1frac.getVal()*data1->numEntries();
-    sExpectedRelE = sg1frac.getError()/sg1frac.getVal();
- 
-    int reset(0); 
-    if (0 && bExpected < 1.) {
-      reset = 1; 
-      bExpected = 2.3; 
-      bExpectedRelE = 0.99;
-    }
-
-    if (sg0frac.getVal() < sg0frac.getError()) {
-      bExpected = nsg0; 
-      bExpectedRelE = TMath::Sqrt(nsg0)/nsg0; 
-    }
-    
-    zExp = NumberCountingUtils::BinomialExpZ(sExpected, bExpected, bExpectedRelE);
-    zExpTh = NumberCountingUtils::BinomialExpZ(sExpected, nsg0, TMath::Sqrt(nsg0)/nsg0);
-    zExpZero = NumberCountingUtils::BinomialExpZ(sExpected, 2.3, 0.99);
-    cout << Form("%3d zExp = %5.4f from bExpected = %4.1f+/-%4.1f and sExpected = %4.1f (reset = %d, zExpTh = %4.1f, zExpZero = %4.1f)", 
-		 imc, zExp, bExpected, bExpected*bExpectedRelE, sExpected, reset, zExpTh, zExpZero) 
-	 << endl;
-    if (zExp < 0) {
-      --imc;
-      continue;
-    }
-
-    h1z->Fill(zExp); 
-    h1zTh->Fill(zExpTh); 
-    h1zZero->Fill(zExpZero); 
-
-    if (zExp < 0.1) {
-      RooPlot *g0M = m.frame(); 
-      g0M->SetTitle("m(top) = 173.5GeV");
-      data0->plotOn(g0M, Binning(NBINS));  
-      model0.plotOn(g0M); 
-      model0.plotOn(g0M, Components("bg0M"), LineStyle(kDashed)) ;
-      c1->cd(1);
-      model0.paramOn(g0M, Layout(0.15, 0.85)) ;
-      g0M->Draw();
-
-      RooPlot *g1M = m.frame(); 
-      g1M->SetTitle("m(top) #rightarrow #infty");
-      data1->plotOn(g1M, Binning(NBINS));  
-      model1.plotOn(g1M); 
-      model1.plotOn(g1M, Components("bg1M"), LineStyle(kDashed)) ;
-      c1->cd(2);
-      model1.paramOn(g1M, Layout(0.15, 0.85)) ;
-      g1M->Draw();
-      tl->SetNDC(kTRUE);
-      tl->DrawLatex(0.2, 0.2, Form("zExp = %4.3f", zExp)); 
-      tl->DrawLatex(0.2, 0.15, Form("S = %4.1f, B = %4.1f +/- %4.1f", sExpected, bExpected, bExpectedRelE*bExpected)); 
-      c1->SaveAs(Form("%s/toy4-%s-%d.pdf", fDirectory.c_str(), fSetup.c_str(), imc)); 
-    }
-  }
-  pad->cd();
-  gStyle->SetOptStat(0); 
-  h1z->Draw();
-  tl->SetTextColor(kBlack); 
-  tl->DrawLatex(0.6, 0.80, Form("Mean = %4.3f", h1z->GetMean())); 
-  tl->DrawLatex(0.6, 0.75, Form("RMS = %4.3f", h1z->GetRMS())); 
-  tl->DrawLatex(0.6, 0.70, Form("Mean(TH) =  %4.3f", h1zTh->GetMean())); 
-  tl->DrawLatex(0.6, 0.65, Form("Mean(zero) =  %4.3f", h1zZero->GetMean())); 
-  tl->DrawLatex(0.6, 0.92, Form("Setup: %s", fSetup.c_str())); 
-  fHistFile->Close();
-
-  fTEX.open(fTexFileName.c_str(), ios::app);
-  fTEX << formatTex(h1z->GetMean(), Form("%s:zexp:val", fSetup.c_str()), 2) << endl;
-  fTEX << formatTex(h1z->GetRMS(), Form("%s:zexp:rms", fSetup.c_str()), 2) << endl;
-  fTEX << formatTex(h1zTh->GetMean(), Form("%s:zexpTh:val", fSetup.c_str()), 2) << endl;
-  fTEX << formatTex(h1zTh->GetRMS(), Form("%s:zexpTh:rms", fSetup.c_str()), 2) << endl;
-  fTEX << formatTex(h1zZero->GetMean(), Form("%s:zexpZero:val", fSetup.c_str()), 2) << endl;
-  fTEX << formatTex(h1zZero->GetRMS(), Form("%s:zexpZero:rms", fSetup.c_str()), 2) << endl;
-  fTEX.close();
-}
-
-// ----------------------------------------------------------------------
-void plotHpt::loadFiles(string afiles) {
-  
-  string files = fDirectory + "/" + afiles;
-  cout << "==> Loading files listed in " << files << endl;
-
-  // -- mH = 125.0, from https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageBR3
-  //  fBF["H2GammaGamma"] = 2.28E-03;
-
-  char buffer[1000];
-  ifstream is(files.c_str());
-  while (is.getline(buffer, 1000, '\n')) {
-    if (buffer[0] == '#') {continue;}
-    if (buffer[0] == '/') {continue;}
-    
-    string sbuffer = string(buffer); 
-
-    string::size_type m1 = sbuffer.find("xsec="); 
-    string stype = sbuffer.substr(5, m1-6); 
-
-    string::size_type m2 = sbuffer.find("file="); 
-    string sxsec = sbuffer.substr(m1+5, m2-m1-6); 
-    string sfile = sbuffer.substr(m2+5); 
-    string sname, sdecay; 
-
-    TFile *pF(0); 
-    if (string::npos != stype.find("data")) {
-      // -- DATA
-      cout << "XXXX do not know what to do with data?!" << endl;
-    } else {
-      // -- MC
-      pF = loadFile(sfile); 
-      TTree *t = (TTree*)pF->Get("events"); 
-      int nevt = t->GetEntries();
-      if (string::npos != stype.find("mcatnlo")) {
-	dataset *ds = new dataset(); 
-	if (string::npos != stype.find("0")) {
-	  sname = "mcatnlo0"; 
-	  sdecay = "m_{t}=173.5GeV";
-	  ds->fColor = kBlue; 
-	  ds->fLcolor = kBlue; 
-	  ds->fFcolor = kBlue; 
-	  ds->fSymbol = 24; 
-	  ds->fFillStyle = 3305; 
-	} else if (string::npos != stype.find("1")) {
-	  sname = "mcatnlo1";
-	  sdecay = "blurp";
-	  ds->fColor = kBlue+2; 
-	  ds->fLcolor = kBlue+2; 
-	  ds->fFcolor = kBlue+2; 
-	  ds->fSymbol = 25; 
-	  ds->fFillStyle = 3395; 
-	} else if (string::npos != stype.find("5")) {
-	  sname = "mcatnlo5";
-	  sdecay = "m_{t}#rightarrow#infty";
-	  ds->fColor = kBlack; 
-	  ds->fLcolor = kBlack; 
-	  ds->fFcolor = kBlack; 
-	  ds->fSymbol = 26; 
-	  ds->fFillStyle = 3356; 
-	} 
-	ds->fF = pF; 
-	ds->fXsec = atof(sxsec.c_str());
-	ds->fBf   = 2.28E-03;
-	ds->fLumi = nevt/ds->fXsec/ds->fBf/1000.;
-	ds->fName = "MC@NLO " + sdecay; 
-	ds->fSize = 1; 
-	ds->fWidth = 2; 
-	fDS.insert(make_pair(sname, ds)); 
-      }
-
-
-      if (string::npos != stype.find("sherpa")) {
-	dataset *ds = new dataset(); 
-	sname = "sherpa";
-	sdecay = "#gamma #gamma j {j}";
-	ds->fColor = kRed; 
-	ds->fLcolor = kRed; 
-	ds->fFcolor = kRed; 
-	ds->fSymbol = 27; 
-	ds->fFillStyle = 3365; 
-	ds->fSize = 1; 
-	ds->fWidth = 2; 
-	if (string::npos != stype.find("132")) {
-	  sname = "sys132"; 
-	  sdecay = "132";
-	  ds->fColor = kRed; 
-	  ds->fLcolor = kRed; 
-	  ds->fFcolor = kRed; 
-	  ds->fSymbol = 27; 
-	  ds->fFillStyle = 3365; 
-	}
-	if (string::npos != stype.find("133")) {
-	  sname = "sys133"; 
-	  sdecay = "133";
-	  ds->fColor = kRed+1; 
-	  ds->fLcolor = kRed+1; 
-	  ds->fFcolor = kRed+1; 
-	  ds->fSymbol = 24; 
-	  ds->fFillStyle = 3305; 
-	}
-	if (string::npos != stype.find("134")) {
-	  sname = "sys134"; 
-	  sdecay = "134";
-	  ds->fColor = kRed+2; 
-	  ds->fLcolor = kRed+2; 
-	  ds->fFcolor = kRed+2; 
-	  ds->fSymbol = 25; 
-	  ds->fFillStyle = 3395; 
-	}
-	if (string::npos != stype.find("135")) {
-	  sname = "sys135"; 
-	  sdecay = "135";
-	  ds->fColor = kRed+3; 
-	  ds->fLcolor = kRed+3; 
-	  ds->fFcolor = kRed+3; 
-	  ds->fSymbol = 26; 
-	  ds->fFillStyle = 3356; 
-	}
-	if (string::npos != stype.find("140")) {
-	  sname = "sys140"; 
-	  sdecay = "140";
-	}
-	if (string::npos != stype.find("141")) {
-	  // against 132 or sherpa
-	  sname = "sys141"; 
-	  sdecay = "141";
-	  ds->fColor = kBlue; 
-	  ds->fLcolor = kBlue; 
-	  ds->fFcolor = kBlue; 
-	  ds->fSymbol = 26; 
-	  ds->fFillStyle = 3305; 
-	}
-	if (string::npos != stype.find("150")) {
-	  // against 134
-	  sname = "sys150"; 
-	  sdecay = "150";
-	  ds->fColor = kBlue; 
-	  ds->fLcolor = kBlue; 
-	  ds->fFcolor = kBlue; 
-	  ds->fSymbol = 27; 
-	  ds->fFillStyle = 3305; 
-	}
-	if (string::npos != stype.find("151")) {
-	  // against 135
-	  sname = "sys151"; 
-	  sdecay = "151";
-	  ds->fColor = kBlue+1; 
-	  ds->fLcolor = kBlue+1; 
-	  ds->fFcolor = kBlue+1; 
-	  ds->fSymbol = 25; 
-	  ds->fFillStyle = 3395; 
-	}
-	if (string::npos != stype.find("152")) {
-	  // against 133
-	  sname = "sys152"; 
-	  sdecay = "152";
-	  ds->fColor = kBlue+2; 
-	  ds->fLcolor = kBlue+2; 
-	  ds->fFcolor = kBlue+2; 
-	  ds->fSymbol = 26; 
-	  ds->fFillStyle = 3365; 
-	}
-	ds->fF = pF; 
-	ds->fXsec = atof(sxsec.c_str());
-	ds->fBf   = 1.;
-	ds->fLumi = nevt/ds->fXsec/ds->fBf/1000.;
-	ds->fName = "SHERPA " + sdecay; 
-	fDS.insert(make_pair(sname, ds)); 
-      } 
-
-      // mb ub nb pb fb 
-      cout << "MC "  << sfile  << " as " << sname << " (" << stype << ") with xsec = " << sxsec
-	   << " eq. lumi = " << fDS[sname]->fLumi << "/fb"
-	   << " (Nevts = " << nevt << ")"
-	   << endl;
-
-    }
-  }
-}
 
 // ----------------------------------------------------------------------
 void plotHpt::candAnalysis() {
@@ -2368,7 +1228,7 @@ void plotHpt::allNumbers(int ntoy) {
 
   readHistograms();
 
-  zone(2,3);
+  zone(3, 4);
 
   double ptlo(0.), pthi(0.), ptnl(0.), ptnh(0.), g0pt(0.), g1pt(0.); 
 
@@ -2587,7 +1447,7 @@ void plotHpt::allNumbers(int ntoy) {
   tl->SetTextColor(kBlack); 
   tl->DrawLatex(0.25, 0.5, Form("SG: %4.1f +/- %3.1f", nSg.getVal(), nSg.getError())); 
   tl->DrawLatex(0.25, 0.4, Form("BG: %4.1f +/- %3.1f", nBg.getVal(), nBg.getError())); 
-  tl->DrawLatex(0.25, 0.3, Form("f0: %4.3f", f0)); 
+  tl->DrawLatex(0.25, 0.3, Form("f0: %4.3f", f0));
   tl->DrawLatex(0.25, 0.2, Form("f1: %4.3f", f1)); 
   tl->SetTextSize(0.05);
   
@@ -2597,9 +1457,9 @@ void plotHpt::allNumbers(int ntoy) {
   // -- run toys
   if (1) {
     c0->cd(4);
-    int ntoy = 1; 
-    toy4(fSg0, fSg1, fBg, ntoy); 
-    //    toy5(fSg0, fSg1, fBg, ntoy); 
+    ntoy = 1; 
+    //    toy4(fSg0, fSg1, fBg, ntoy); 
+    toy5(fSg0, fSg1, fBg, ntoy); 
   }
   
   c0->SaveAs(Form("%s/allNumbers-%s.pdf", fDirectory.c_str(), fSetup.c_str())); 
@@ -2625,6 +1485,804 @@ void plotHpt::allNumbers(int ntoy) {
   fTEX << formatTex(fSg1TauE, Form("%s:sg1Tau:err", fSetup.c_str()), 6) << endl;
   fTEX.close();
   
+} 
+
+
+// ----------------------------------------------------------------------
+void plotHpt::allNumbers1(int ntoy) {
+  
+  tl->SetNDC(kTRUE);
+  tl->SetTextColor(kBlack);
+  tl->SetTextSize(0.05);
+  
+  TH1D *h1(0); 
+
+  readHistograms();
+
+  double ptlo(0.), pthi(0.), ptnl(0.), ptnh(0.), g0pt(0.), g1pt(0.), g0ptlo(0.), g1ptlo(0.); 
+
+  cout << "allNumbers1: " << endl;
+  TH1 *cuts = (TH1D*)fHists["cuts"]; 
+  cout << "cuts = " << cuts << endl;
+  ptnl = cuts->GetBinContent(1); 
+  ptnh = cuts->GetBinContent(2); 
+  ptlo = cuts->GetBinContent(3); 
+  pthi = cuts->GetBinContent(4); 
+
+  g0ptlo = cuts->GetBinContent(10); 
+  g1ptlo = cuts->GetBinContent(11); 
+  g0pt   = cuts->GetBinContent(12); 
+  g1pt   = cuts->GetBinContent(13); 
+  
+  cout << " signal region: " << ptlo << " < pT < " << pthi << endl;
+  cout << " norm   region: " << ptnl << " < pT < " << ptnh << endl;
+  cout << "  Gamma0 pT > " << g0pt << endl;
+  cout << "  Gamma1 pT > " << g1pt << endl;
+
+  zone(3,4);
+
+  // -- mass fits in hipt and lopt region
+  h1 = (TH1D*)fHists["m_mcatnlo_hipt"]; 
+  h1->SetTitle("HIPT"); 
+  h1->Fit("gaus", "", "e"); 
+  cout << " SM Higgs high-mass fitted resolution: " << h1->GetFunction("gaus")->GetParameter(2) 
+       << " +/- " << h1->GetFunction("gaus")->GetParError(2) 
+       << " RMS: " << h1->GetRMS() << " +/- " << h1->GetRMSError()
+       << endl;
+  cout << " SM Higgs mass peak: "       << h1->GetFunction("gaus")->GetParameter(1) 
+       << " +/- " << h1->GetFunction("gaus")->GetParError(1) << endl;
+  tl->DrawLatex(0.16, 0.8, Form("resolution: %4.1f GeV", h1->GetFunction("gaus")->GetParameter(2))); 
+  fHiggsMres  = h1->GetFunction("gaus")->GetParameter(2);
+  fHiggsMpeak = h1->GetFunction("gaus")->GetParameter(1);
+
+  
+  c0->cd(2);
+  h1 = (TH1D*)fHists["m_mcatnlo_lopt"]; 
+  h1->SetTitle("LOPT"); 
+  h1->Fit("gaus", "", "e"); 
+  cout << " SM Higgs low-mass fitted resolution:  " << h1->GetFunction("gaus")->GetParameter(2) 
+       << " +/- " << h1->GetFunction("gaus")->GetParError(2) 
+       << " RMS: " << h1->GetRMS() << " +/- " << h1->GetRMSError()
+       << endl;
+  cout << " SM Higgs mass peak: "       << h1->GetFunction("gaus")->GetParameter(1) 
+       << " +/- " << h1->GetFunction("gaus")->GetParError(1) << endl;
+  tl->DrawLatex(0.16, 0.8, Form("resolution: %4.1f GeV", h1->GetFunction("gaus")->GetParameter(2))); 
+  fNormHiggsMpeak = h1->GetFunction("gaus")->GetParameter(1);
+  fNormHiggsMres = h1->GetFunction("gaus")->GetParameter(2); 
+
+  // -------
+  // -- HIPT
+  // -------
+  // -- Background 
+  c0->cd(3);
+  gPad->SetLogy(1);
+  h1 = (TH1D*)fHists["pt_sherpa_hipt"]->Clone("h1");
+  normHist(h1, "sherpa", LUMI); 
+  fBg = h1->GetSumOfWeights(); 
+  h1->SetMinimum(0.001); 
+  h1->SetMaximum(10000.); 
+  h1->Fit("expo", "r", "", PTLO, PTHI); 
+  h1->GetFunction("expo")->SetLineColor(fDS["sherpa"]->fColor); 
+  fBgTau  = h1->GetFunction("expo")->GetParameter(1); 
+  fBgTauE = h1->GetFunction("expo")->GetParError(1); 
+  h1->Draw("hist");
+  h1->GetFunction("expo")->Draw("same");
+  cout << "  SHERPA background:        " << fBg << " fitted exponential slope = " << fBgTau << "+/-" << fBgTauE << endl;
+  tl->SetTextColor(fDS["sherpa"]->fColor); tl->DrawLatex(0.48, 0.80, Form("%6.1f", fBg)); 
+
+  // -- SM Higgs (Sg0)
+  h1 = (TH1D*)fHists["pt_mcatnlo_hipt"]->Clone("h1");
+  normHist(h1, "mcatnlo0", LUMI); 
+  fSg0 = h1->GetSumOfWeights(); 
+  h1->Fit("expo", "r", "histsame", PTLO, PTHI); 
+  h1->GetFunction("expo")->SetLineColor(fDS["mcatnlo0"]->fColor); 
+  fSg0Tau  = h1->GetFunction("expo")->GetParameter(1); 
+  fSg0TauE = h1->GetFunction("expo")->GetParError(1); 
+  h1->Draw("histsame");
+  h1->GetFunction("expo")->Draw("same");
+  cout << "  SM Higgs count:           " << fSg0  << " fitted exponential slope = " << fSg0Tau << "+/-" << fSg0TauE << endl;
+   tl->SetTextColor(fDS["mcatnlo0"]->fColor); tl->DrawLatex(0.48, 0.75, Form("%6.1f", fSg0)); 
+  // -- Contact Higgs (Sg1)
+  h1 = (TH1D*)fHists["pt_mcatnlo5_hipt"]->Clone("h1");
+  normHist(h1, "mcatnlo5", LUMI); 
+  fSg1 = h1->GetSumOfWeights(); 
+  h1->Fit("expo", "r", "histsame", PTLO, PTHI); 
+  h1->GetFunction("expo")->SetLineColor(fDS["mcatnlo5"]->fColor); 
+  fSg1Tau  = h1->GetFunction("expo")->GetParameter(1); 
+  fSg1TauE = h1->GetFunction("expo")->GetParError(1); 
+  h1->Draw("samehist");
+  h1->GetFunction("expo")->Draw("same");
+  cout << "  Contact Higgs count:      " << fSg1  << " fitted exponential slope = " << fSg1Tau << "+/-" << fSg1TauE << endl;
+  tl->SetTextColor(fDS["mcatnlo5"]->fColor); tl->DrawLatex(0.48, 0.70, Form("%6.1f", fSg1)); 
+  cout << "  Signal/Background:      " << fSg0/fBg << " and " << fSg1/fBg << endl;
+  tl->SetTextColor(fDS["mcatnlo5"]->fColor); tl->DrawLatex(0.60, 0.60, Form("S/B = %4.3f", fSg0/fBg)); 
+  tl->SetTextColor(fDS["mcatnlo0"]->fColor);  tl->DrawLatex(0.60, 0.55, Form("S/B = %4.3f", fSg1/fBg)); 
+
+
+  // -------
+  // -- LOPT
+  // -------
+  h1 = (TH1D*)fHists["pt_sherpa_lopt"]->Clone("h1");
+  normHist(h1, "sherpa", LUMI); 
+  h1->Draw("histsame");
+  fNormBg = h1->GetSumOfWeights(); 
+  cout << "  SHERPA norm background:   " << fNormBg << endl;
+  tl->SetTextColor(fDS["sherpa"]->fColor); tl->DrawLatex(0.7, 0.80, Form("%6.1f", fNormBg)); 
+
+  h1 = (TH1D*)fHists["pt_mcatnlo_lopt"]->Clone("h1");
+  normHist(h1, "mcatnlo0", LUMI); 
+  h1->Draw("histsame");
+  fNormSg0 = h1->GetSumOfWeights(); 
+  cout << "  SM Higgs norm count:      " << fNormSg0 << endl;
+  tl->SetTextColor(fDS["mcatnlo0"]->fColor); tl->DrawLatex(0.7, 0.75, Form("%6.1f", fNormSg0)); 
+
+  h1 = (TH1D*)fHists["pt_mcatnlo5_lopt"]->Clone("h1");
+  normHist(h1, "mcatnlo5", LUMI); 
+  h1->Draw("histsame");
+  fNormSg1 = h1->GetSumOfWeights(); 
+  cout << "  Contact Higgs norm count: " << fNormSg1 << endl;
+  tl->SetTextColor(fDS["mcatnlo5"]->fColor); tl->DrawLatex(0.7, 0.70, Form("%6.1f", fNormSg1)); 
+
+
+  // -- overlay mass histograms: hipt
+  TH1D *m0hipt = (TH1D*)fHists["m_sherpa_hipt"]->Clone("m0hipt");
+  TH1D *m1hipt = (TH1D*)fHists["m_sherpa_hipt"]->Clone("m1hipt");
+  TH1D *mshipt = (TH1D*)fHists["m_sherpa_hipt"]->Clone("mshipt");
+  m0hipt->SetTitle("HIPT"); 
+  normHist(m0hipt, "sherpa", LUMI); 
+  normHist(m1hipt, "sherpa", LUMI); 
+  normHist(mshipt, "sherpa", LUMI); 
+
+  h1 = (TH1D*)fHists["m_mcatnlo5_hipt"]->Clone("h1");
+  normHist(h1, "mcatnlo5", LUMI); 
+
+  m1hipt->Add(h1); 
+
+  c0->cd(4);
+  cuts->SetMinimum(0.);
+  cuts->Draw();
+  tl->SetTextSize(0.05);
+  tl->SetTextColor(kBlack); 
+  tl->DrawLatex(0.5, 0.80, Form("Lumi: %4.0f", fLumi)); 
+
+  tl->DrawLatex(0.5, 0.75, Form("pthi: %4.0f", pthi)); 
+  tl->DrawLatex(0.5, 0.70, Form("ptlo: %4.0f", ptlo)); 
+
+  tl->DrawLatex(0.5, 0.65, Form("g0pt: %4.0f", g0pt)); 
+  tl->DrawLatex(0.5, 0.60, Form("g1pt: %4.0f", g1pt)); 
+
+  tl->DrawLatex(0.5, 0.55, Form("ptnh: %4.0f", ptnh)); 
+  tl->DrawLatex(0.5, 0.50, Form("ptnl: %4.0f", ptnl)); 
+
+  tl->DrawLatex(0.5, 0.45, Form("g0ptlo: %4.0f", g0ptlo)); 
+  tl->DrawLatex(0.5, 0.40, Form("g1ptlo: %4.0f", g1ptlo)); 
+
+  
+
+
+  h1 = (TH1D*)fHists["m_mcatnlo_hipt"]->Clone("h1");
+  normHist(h1, "mcatnlo0", LUMI); 
+  m0hipt->Add(h1); 
+
+  c0->cd(5);
+  m1hipt->Draw(); 
+  m0hipt->SetMinimum(0.);
+  m0hipt->SetMarkerColor(kBlue);
+  m0hipt->SetLineColor(kBlue);
+  m0hipt->Draw("same");
+
+  mshipt->SetMarkerColor(kBlack);
+  mshipt->SetLineColor(kBlack);
+  mshipt->Draw("same");
+
+
+  c0->cd(6);
+  // -- overlay mass histograms: lopt
+  TH1D *mlopt = (TH1D*)fHists["m_sherpa_lopt"]->Clone("mlopt");
+  normHist(mlopt, "sherpa", LUMI); 
+  mlopt->SetTitle("LOPT"); 
+
+  h1 = (TH1D*)fHists["m_mcatnlo_lopt"]->Clone("h1");
+  normHist(h1, "mcatnlo0", LUMI); 
+
+  mlopt->Add(h1); 
+  mlopt->SetMinimum(0.);
+
+
+  // -- Fit normalization mass
+  RooRealVar nm("nm", "m", MGGLO, MGGHI, "GeV"); 
+  RooRealVar nsgP("nsgP", "signal peak mass", fNormHiggsMpeak, 100, 150);  
+  nsgP.setConstant(kTRUE);
+  RooRealVar nsgS("nsgS", "signal sigma mass", fNormHiggsMres, 0., 15.);  
+  nsgS.setConstant(kTRUE);
+  RooGaussian nsgM("nsgM", "signal mass", nm, nsgP, nsgS); 
+
+  double bgc0  = 0.0245329; // FIXME!!!
+  RooRealVar nC0("nC0", "coefficient #0", bgc0, -1., 1.); 
+  RooPolynomial nbgM("nbgM", "background gamma gamma mass", nm, RooArgList(nC0)); 
+
+  RooRealVar nnSg("nnSg", "signal events", h1->Integral(), 0., 100*h1->Integral());
+  RooRealVar nnBg("nnBg", "background events", mlopt->Integral(), 0., 100.*mlopt->Integral());
+
+  RooAddPdf nmodelM("nmodelM", "model for mass", RooArgList(nsgM, nbgM), RooArgList(nnSg, nnBg));
+
+  RooDataHist nmloptRdh("nmloptRdh","lopt mass distribution", RooArgList(nm), mlopt);
+  nmodelM.fitTo(nmloptRdh, Range(80., 160.)); 
+
+  RooPlot *nf0M = nm.frame(); 
+  nf0M->SetTitle("normalization region");
+  nmloptRdh.plotOn(nf0M);  
+  nmodelM.plotOn(nf0M); 
+  nmodelM.plotOn(nf0M, Components("bgM"), LineStyle(kDashed)) ;
+  nf0M->Draw("hist");
+
+  double f0 = fSg0/fNormSg0; 
+  double f1 = fSg1/fNormSg1; 
+
+  tl->SetTextSize(0.08);
+  tl->SetTextColor(kBlack); 
+  tl->DrawLatex(0.25, 0.5, Form("SG: %4.1f +/- %3.1f", nnSg.getVal(), nnSg.getError())); 
+  tl->DrawLatex(0.25, 0.4, Form("BG: %4.1f +/- %3.1f", nnBg.getVal(), nnBg.getError())); 
+  tl->DrawLatex(0.25, 0.3, Form("f0: %4.3f", f0));
+  tl->DrawLatex(0.25, 0.2, Form("f1: %4.3f", f1)); 
+  tl->SetTextSize(0.05);
+  
+
+  // -- do the analysis
+  int NBINS(11); 
+
+  RooRealVar m("m", "m", MGGLO, MGGHI, "GeV"); 
+  RooRealVar sgP("sgP", "signal peak mass", 125., MGGLO, MGGHI);  
+  sgP.setConstant(kTRUE);
+  RooRealVar sgS("sgS", "signal sigma mass", fHiggsMres, 0., 15.);  
+  sgS.setConstant(kTRUE);
+  RooGaussian sg0M("sg0M", "signal mass", m, sgP, sgS); 
+  RooGaussian sg1M("sg1M", "signal mass", m, sgP, sgS); 
+
+  // -- Background
+  //FIXME  double bgc0  = 0.0245329; // FIXME!!!
+  //  double bgc0e = 0.00418385;  // derived from the normalized unscaled fit! 
+  RooRealVar C0("C0", "coefficient #0", bgc0, -1., 1.); 
+
+  RooPolynomial bg0M("bg0M", "background 0 gamma gamma mass", m, RooArgList(C0)); 
+  RooPolynomial bg1M("bg1M", "background 1 gamma gamma mass", m, RooArgList(C0)); 
+
+  RooRealVar sg0N("sg0N","Number of Higgs 0 signal events", fSg0, 0., 1.e4);
+  RooRealVar sg1N("sg1N","Numberof Higgs 1 signal events", fSg1, 0., 1.e4);
+  RooRealVar bgN("bgN","Number of background events", fBg, 0., 1.e5);
+
+  RooAddPdf model0("model0M", "model 0 for mass", RooArgList(sg0M, bg0M), RooArgList(sg0N, bgN));
+  RooAddPdf model1("model1M", "model 1 for mass", RooArgList(sg1M, bg1M), RooArgList(sg1N, bgN));
+
+ 
+  RooDataSet *data1 = model1.generate(m, fBg+fSg1); 
+
+  RooMCStudy* mcstudy = new RooMCStudy(model1, m, Binned(), Silence(), Extended(kTRUE),
+				       FitOptions(Save(kTRUE), Extended(kTRUE), PrintEvalErrors(-1))
+				       );
+
+  double nullHypo = fSg0; 
+  RooDLLSignificanceMCSModule sigModule(sg1N, nullHypo);
+  mcstudy->addModule(sigModule);
+
+  // Generate and fit 1000 samples of Poisson(nExpected) events
+  if (ntoy > 0) fNtoy = ntoy; 
+  mcstudy->generateAndFit(fNtoy);
+  
+  TH1 *hdll = mcstudy->fitParDataSet().createHistogram("dll_nullhypo_sg1N") ;
+  TH1 *hz = mcstudy->fitParDataSet().createHistogram("significance_nullhypo_sg1N") ;
+  
+  RooPlot* frame1 = mcstudy->plotParam(sg1N, Bins(40)) ;
+  RooPlot* frame2 = mcstudy->plotError(sg1N, Bins(40)) ;
+  RooPlot* frame3 = mcstudy->plotPull(sg1N, Bins(40), FitGauss(kTRUE)) ;
+
+  delete mcstudy; 
+  delete data1;
+
+  gStyle->SetPalette(1) ;
+  gStyle->SetOptStat(0) ;
+
+  c0->cd(7) ; gPad->SetLeftMargin(0.15) ; frame1->GetYaxis()->SetTitleOffset(1.4) ; frame1->Draw() ;
+  c0->cd(8) ; gPad->SetLeftMargin(0.15) ; frame2->GetYaxis()->SetTitleOffset(1.4) ; frame2->Draw() ;
+  c0->cd(9) ; gPad->SetLeftMargin(0.15) ; frame3->GetYaxis()->SetTitleOffset(1.4) ; frame3->Draw() ;
+
+  c0->cd(10) ; gPad->SetLeftMargin(0.15) ; hdll->GetYaxis()->SetTitleOffset(1.6) ; hdll->Draw("") ;
+  c0->cd(11) ; gPad->SetLeftMargin(0.15) ; hz->GetYaxis()->SetTitleOffset(1.6) ; hz->Draw("") ;
+
+  double zMean = hz->GetMean();
+  double zMedian = median(hz); 
+  double zRMS  = hz->GetRMS(); 
+
+  tl->SetNDC(kTRUE);
+  tl->SetTextColor(kBlack);
+  tl->SetTextSize(0.05);
+  tl->DrawLatex(0.2, 0.8, Form("Null Hypo: %4.0f", nullHypo)); 
+  tl->DrawLatex(0.2, 0.7, Form("Mean: %4.3f +/- %4.3f", zMedian, zRMS)); 
+  
+
+  
+  c0->SaveAs(Form("%s/allNumbers-%s.pdf", fDirectory.c_str(), fSetup.c_str())); 
+  
+  fTEX.open(fTexFileName.c_str(), ios::app);
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  fTEX << formatTex(g0pt, Form("%s:g0pt:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(g1pt, Form("%s:g1pt:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(ptlo, Form("%s:ptlo:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(pthi, Form("%s:pthi:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(ptnl, Form("%s:ptnl:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(ptnh, Form("%s:ptnh:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(g0ptlo, Form("%s:g0ptlo:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(g1ptlo, Form("%s:g1ptlo:val", fSetup.c_str()), 2) << endl;
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  fTEX << formatTex(fSg0, Form("%s:sg0:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fSg1, Form("%s:sg1:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fBg, Form("%s:bg:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fSg0/fBg, Form("%s:sb0:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fSg1/fBg, Form("%s:sb1:val", fSetup.c_str()), 2) << endl;
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  fTEX << formatTex(fBgTau, Form("%s:bgTau:val", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fBgTauE, Form("%s:bgTau:err", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fSg0Tau, Form("%s:sg0Tau:val", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fSg0TauE, Form("%s:sg0Tau:err", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fSg1Tau, Form("%s:sg1Tau:val", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fSg1TauE, Form("%s:sg1Tau:err", fSetup.c_str()), 6) << endl;
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  fTEX << formatTex(zMedian, Form("%s:zMedian:val", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(zMean, Form("%s:zMean:val", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(zRMS, Form("%s:zRMS:val", fSetup.c_str()), 6) << endl;
+  fTEX.close();
+
+} 
+
+
+
+// ----------------------------------------------------------------------
+void plotHpt::allNumbers2(int ntoy) {
+  
+  tl->SetNDC(kTRUE);
+  tl->SetTextColor(kBlack);
+  tl->SetTextSize(0.05);
+  
+  TH1D *h1(0); 
+
+  readHistograms();
+
+  double ptlo(0.), pthi(0.), ptnl(0.), ptnh(0.), g0pt(0.), g1pt(0.), g0ptlo(0.), g1ptlo(0.); 
+
+  cout << "allNumbers1: " << endl;
+  TH1 *cuts = (TH1D*)fHists["cuts"]; 
+  cout << "cuts = " << cuts << endl;
+  ptnl = cuts->GetBinContent(1); 
+  ptnh = cuts->GetBinContent(2); 
+  ptlo = cuts->GetBinContent(3); 
+  pthi = cuts->GetBinContent(4); 
+
+  g0ptlo = cuts->GetBinContent(10); 
+  g1ptlo = cuts->GetBinContent(11); 
+  g0pt   = cuts->GetBinContent(12); 
+  g1pt   = cuts->GetBinContent(13); 
+  
+  cout << " signal region: " << ptlo << " < pT < " << pthi << endl;
+  cout << " norm   region: " << ptnl << " < pT < " << ptnh << endl;
+  cout << "  Gamma0 pT > " << g0pt << endl;
+  cout << "  Gamma1 pT > " << g1pt << endl;
+
+  zone(3,4);
+
+  // -- mass fits in hipt and lopt region
+  h1 = (TH1D*)fHists["m_mcatnlo_hipt"]; 
+  h1->SetTitle("HIPT"); 
+  h1->Fit("gaus", "", "e"); 
+  cout << " SM Higgs high-mass fitted resolution: " << h1->GetFunction("gaus")->GetParameter(2) 
+       << " +/- " << h1->GetFunction("gaus")->GetParError(2) 
+       << " RMS: " << h1->GetRMS() << " +/- " << h1->GetRMSError()
+       << endl;
+  cout << " SM Higgs mass peak: "       << h1->GetFunction("gaus")->GetParameter(1) 
+       << " +/- " << h1->GetFunction("gaus")->GetParError(1) << endl;
+  tl->DrawLatex(0.16, 0.8, Form("resolution: %4.1f GeV", h1->GetFunction("gaus")->GetParameter(2))); 
+  fHiggsMres  = h1->GetFunction("gaus")->GetParameter(2);
+  fHiggsMpeak = h1->GetFunction("gaus")->GetParameter(1);
+
+  
+  c0->cd(2);
+  h1 = (TH1D*)fHists["m_mcatnlo_lopt"]; 
+  h1->SetTitle("LOPT"); 
+  h1->Fit("gaus", "", "e"); 
+  cout << " SM Higgs low-mass fitted resolution:  " << h1->GetFunction("gaus")->GetParameter(2) 
+       << " +/- " << h1->GetFunction("gaus")->GetParError(2) 
+       << " RMS: " << h1->GetRMS() << " +/- " << h1->GetRMSError()
+       << endl;
+  cout << " SM Higgs mass peak: "       << h1->GetFunction("gaus")->GetParameter(1) 
+       << " +/- " << h1->GetFunction("gaus")->GetParError(1) << endl;
+  tl->DrawLatex(0.16, 0.8, Form("resolution: %4.1f GeV", h1->GetFunction("gaus")->GetParameter(2))); 
+  fNormHiggsMpeak = h1->GetFunction("gaus")->GetParameter(1);
+  fNormHiggsMres = h1->GetFunction("gaus")->GetParameter(2); 
+
+  // -------
+  // -- HIPT
+  // -------
+  // -- Background 
+  c0->cd(3);
+  gPad->SetLogy(1);
+  h1 = (TH1D*)fHists["pt_sherpa_hipt"]->Clone("h1");
+  normHist(h1, "sherpa", LUMI); 
+  fBg = h1->GetSumOfWeights(); 
+  h1->SetMinimum(0.001); 
+  h1->SetMaximum(10000.); 
+  h1->Fit("expo", "r", "", PTLO, PTHI); 
+  h1->GetFunction("expo")->SetLineColor(fDS["sherpa"]->fColor); 
+  fBgTau  = h1->GetFunction("expo")->GetParameter(1); 
+  fBgTauE = h1->GetFunction("expo")->GetParError(1); 
+  h1->Draw("hist");
+  h1->GetFunction("expo")->Draw("same");
+  cout << "  SHERPA background:        " << fBg << " fitted exponential slope = " << fBgTau << "+/-" << fBgTauE << endl;
+  tl->SetTextColor(fDS["sherpa"]->fColor); tl->DrawLatex(0.48, 0.80, Form("%6.1f", fBg)); 
+
+  // -- SM Higgs (Sg0)
+  h1 = (TH1D*)fHists["pt_mcatnlo_hipt"]->Clone("h1");
+  normHist(h1, "mcatnlo0", LUMI); 
+  fSg0 = h1->GetSumOfWeights(); 
+  h1->Fit("expo", "r", "histsame", PTLO, PTHI); 
+  h1->GetFunction("expo")->SetLineColor(fDS["mcatnlo0"]->fColor); 
+  fSg0Tau  = h1->GetFunction("expo")->GetParameter(1); 
+  fSg0TauE = h1->GetFunction("expo")->GetParError(1); 
+  h1->Draw("histsame");
+  h1->GetFunction("expo")->Draw("same");
+  cout << "  SM Higgs count:           " << fSg0  << " fitted exponential slope = " << fSg0Tau << "+/-" << fSg0TauE << endl;
+   tl->SetTextColor(fDS["mcatnlo0"]->fColor); tl->DrawLatex(0.48, 0.75, Form("%6.1f", fSg0)); 
+  // -- Contact Higgs (Sg1)
+  h1 = (TH1D*)fHists["pt_mcatnlo5_hipt"]->Clone("h1");
+  normHist(h1, "mcatnlo5", LUMI); 
+  fSg1 = h1->GetSumOfWeights(); 
+  h1->Fit("expo", "r", "histsame", PTLO, PTHI); 
+  h1->GetFunction("expo")->SetLineColor(fDS["mcatnlo5"]->fColor); 
+  fSg1Tau  = h1->GetFunction("expo")->GetParameter(1); 
+  fSg1TauE = h1->GetFunction("expo")->GetParError(1); 
+  h1->Draw("samehist");
+  h1->GetFunction("expo")->Draw("same");
+  cout << "  Contact Higgs count:      " << fSg1  << " fitted exponential slope = " << fSg1Tau << "+/-" << fSg1TauE << endl;
+  tl->SetTextColor(fDS["mcatnlo5"]->fColor); tl->DrawLatex(0.48, 0.70, Form("%6.1f", fSg1)); 
+  cout << "  Signal/Background:      " << fSg0/fBg << " and " << fSg1/fBg << endl;
+  tl->SetTextColor(fDS["mcatnlo5"]->fColor); tl->DrawLatex(0.60, 0.60, Form("S/B = %4.3f", fSg0/fBg)); 
+  tl->SetTextColor(fDS["mcatnlo0"]->fColor);  tl->DrawLatex(0.60, 0.55, Form("S/B = %4.3f", fSg1/fBg)); 
+
+
+  // -------
+  // -- LOPT
+  // -------
+  h1 = (TH1D*)fHists["pt_sherpa_lopt"]->Clone("h1");
+  normHist(h1, "sherpa", LUMI); 
+  h1->Draw("histsame");
+  fNormBg = h1->GetSumOfWeights(); 
+  cout << "  SHERPA norm background:   " << fNormBg << endl;
+  tl->SetTextColor(fDS["sherpa"]->fColor); tl->DrawLatex(0.7, 0.80, Form("%6.1f", fNormBg)); 
+
+  h1 = (TH1D*)fHists["pt_mcatnlo_lopt"]->Clone("h1");
+  normHist(h1, "mcatnlo0", LUMI); 
+  h1->Draw("histsame");
+  fNormSg0 = h1->GetSumOfWeights(); 
+  cout << "  SM Higgs norm count:      " << fNormSg0 << endl;
+  tl->SetTextColor(fDS["mcatnlo0"]->fColor); tl->DrawLatex(0.7, 0.75, Form("%6.1f", fNormSg0)); 
+
+  h1 = (TH1D*)fHists["pt_mcatnlo5_lopt"]->Clone("h1");
+  normHist(h1, "mcatnlo5", LUMI); 
+  h1->Draw("histsame");
+  fNormSg1 = h1->GetSumOfWeights(); 
+  cout << "  Contact Higgs norm count: " << fNormSg1 << endl;
+  tl->SetTextColor(fDS["mcatnlo5"]->fColor); tl->DrawLatex(0.7, 0.70, Form("%6.1f", fNormSg1)); 
+
+
+  // -- overlay mass histograms: hipt
+  TH1D *m0hipt = (TH1D*)fHists["m_sherpa_hipt"]->Clone("m0hipt");
+  TH1D *m1hipt = (TH1D*)fHists["m_sherpa_hipt"]->Clone("m1hipt");
+  TH1D *mshipt = (TH1D*)fHists["m_sherpa_hipt"]->Clone("mshipt");
+  m0hipt->SetTitle("HIPT"); 
+  normHist(m0hipt, "sherpa", LUMI); 
+  normHist(m1hipt, "sherpa", LUMI); 
+  normHist(mshipt, "sherpa", LUMI); 
+
+  h1 = (TH1D*)fHists["m_mcatnlo5_hipt"]->Clone("h1");
+  normHist(h1, "mcatnlo5", LUMI); 
+
+  m1hipt->Add(h1); 
+
+  c0->cd(4);
+  cuts->SetMinimum(0.);
+  cuts->Draw();
+  tl->SetTextSize(0.05);
+  tl->SetTextColor(kBlack); 
+  tl->DrawLatex(0.5, 0.80, Form("Lumi: %4.0f", fLumi)); 
+
+  tl->DrawLatex(0.5, 0.75, Form("pthi: %4.0f", pthi)); 
+  tl->DrawLatex(0.5, 0.70, Form("ptlo: %4.0f", ptlo)); 
+
+  tl->DrawLatex(0.5, 0.65, Form("g0pt: %4.0f", g0pt)); 
+  tl->DrawLatex(0.5, 0.60, Form("g1pt: %4.0f", g1pt)); 
+
+  tl->DrawLatex(0.5, 0.55, Form("ptnh: %4.0f", ptnh)); 
+  tl->DrawLatex(0.5, 0.50, Form("ptnl: %4.0f", ptnl)); 
+
+  tl->DrawLatex(0.5, 0.45, Form("g0ptlo: %4.0f", g0ptlo)); 
+  tl->DrawLatex(0.5, 0.40, Form("g1ptlo: %4.0f", g1ptlo)); 
+
+  
+
+
+  h1 = (TH1D*)fHists["m_mcatnlo_hipt"]->Clone("h1");
+  normHist(h1, "mcatnlo0", LUMI); 
+  m0hipt->Add(h1); 
+
+  c0->cd(5);
+  m1hipt->Draw();
+  m0hipt->SetMinimum(0.);
+  m0hipt->SetMarkerColor(kBlue);
+  m0hipt->SetLineColor(kBlue);
+  m0hipt->Draw("same");
+
+  mshipt->SetMarkerColor(kBlack);
+  mshipt->SetLineColor(kBlack);
+  mshipt->Fit("pol1", "", "same");
+  mshipt->GetFunction("pol1")->SetLineColor(kBlack);
+  fBgMp1  = mshipt->GetFunction("pol1")->GetParameter(1); 
+  fBgMp1E = mshipt->GetFunction("pol1")->GetParError(1); 
+  cout << "fBgMp1 = " << fBgMp1 << " +/- " << fBgMp1E << endl;
+  
+  // -- overlay mass histograms: lopt
+  TH1D *mlopt = (TH1D*)fHists["m_sherpa_lopt"]->Clone("mlopt");
+  normHist(mlopt, "sherpa", LUMI); 
+  mlopt->SetTitle("LOPT"); 
+
+  h1 = (TH1D*)fHists["m_mcatnlo_lopt"]->Clone("h1");
+  normHist(h1, "mcatnlo0", LUMI); 
+
+  mlopt->Add(h1); 
+  mlopt->SetMinimum(0.);
+
+  c0->cd(6);
+
+  // -- Fit normalization mass
+  RooRealVar nm("nm", "m", MGGLO, MGGHI, "GeV"); 
+  RooRealVar nsgP("nsgP", "signal peak mass", fNormHiggsMpeak, 100, 150);  
+  nsgP.setConstant(kTRUE);
+  RooRealVar nsgS("nsgS", "signal sigma mass", fNormHiggsMres, 0., 15.);  
+  nsgS.setConstant(kTRUE);
+  RooGaussian nsgM("nsgM", "signal mass", nm, nsgP, nsgS); 
+
+  double bgc0  = 0.0245329; // this is just the start value
+  RooRealVar nC0("nC0", "coefficient #0", bgc0, -1., 1.); 
+  RooPolynomial nbgM("nbgM", "background gamma gamma mass", nm, RooArgList(nC0)); 
+
+  RooRealVar nnSg("nnSg", "signal events", h1->Integral(), 0., 100*h1->Integral());
+  RooRealVar nnBg("nnBg", "background events", mlopt->Integral(), 0., 100.*mlopt->Integral());
+
+  RooAddPdf nmodelM("nmodelM", "model for mass", RooArgList(nsgM, nbgM), RooArgList(nnSg, nnBg));
+
+  RooDataHist nmloptRdh("nmloptRdh","lopt mass distribution", RooArgList(nm), mlopt);
+  nmodelM.fitTo(nmloptRdh, Range(80., 160.)); 
+
+  RooPlot *nf0M = nm.frame(); 
+  nf0M->SetTitle("normalization region");
+  nmloptRdh.plotOn(nf0M);  
+  nmodelM.plotOn(nf0M); 
+  nmodelM.plotOn(nf0M, Components("nbgM"), LineStyle(kDashed)) ;
+  nf0M->Draw("hist");
+
+  double f0 = fSg0/fNormSg0; 
+  double f1 = fSg1/fNormSg1; 
+
+  tl->SetTextSize(0.08);
+  tl->SetTextColor(kBlack); 
+  tl->DrawLatex(0.25, 0.5, Form("SG: %4.1f +/- %3.1f", nnSg.getVal(), nnSg.getError())); 
+  tl->DrawLatex(0.25, 0.4, Form("BG: %4.1f +/- %3.1f", nnBg.getVal(), nnBg.getError())); 
+  tl->DrawLatex(0.25, 0.3, Form("f0: %4.3f", f0));
+  tl->DrawLatex(0.25, 0.2, Form("f1: %4.3f", f1)); 
+  tl->SetTextSize(0.05);
+  
+
+  // ======================================================================
+  // -- DO THE ANALYSIS: 2D extendend unbinned maximum likelihood fit
+  // ======================================================================
+
+  int NBINS(11); 
+
+  // -- SIGNAL variables
+  RooRealVar m("m", "m", MGGLO, MGGHI, "GeV"); 
+  RooRealVar sgP("sgP", "signal peak mass", 125., MGGLO, MGGHI);  
+  sgP.setConstant(kTRUE);
+  RooRealVar sgS("sgS", "signal sigma mass", fHiggsMres, 0., 15.);  
+  sgS.setConstant(kTRUE);
+
+  double sg0tau = fSg0Tau; 
+  double sg0taue = fSg0TauE;
+  RooRealVar sg0Tau("sg0Tau", "signal 0 tau", sg0tau, -10., 10.); 
+
+  double sg1tau = fSg1Tau; 
+  double sg1taue = fSg1TauE;
+  RooRealVar sg1Tau("sg1Tau", "signal 1 tau", sg1tau, -10., 10.); 
+  
+  RooRealVar pt("pt", "pt", 200., 1000., "GeV"); 
+
+  // -- SM Higgs 1D pdfs
+  RooGaussian sg0M("sg0M", "signal mass", m, sgP, sgS); 
+  RooExponential sg0Pt("sg0Pt", "signal 0 pT", pt, sg0Tau);   
+
+  // -- "contact" Higgs 1D pdfs
+  RooGaussian sg1M("sg1M", "signal mass", m, sgP, sgS); 
+  RooExponential sg1Pt("sg1Pt", "signal 1 pT", pt, sg1Tau);   
+
+
+  // -- BACKGROUND variables and 1D pdfs
+  RooRealVar C0("C0", "coefficient #0", fBgMp1, -10., 10.); 
+
+  double bgtau = fBgTau; 
+  RooRealVar bgTau("bgTau", "background gamma gamma tau", bgtau, -10., 10.); 
+
+  RooPolynomial bg0M("bg0M", "background 0 gamma gamma mass", m, RooArgList(C0)); 
+  RooExponential bg0Pt("bg0Pt", "background 0 gamma gamma pT", pt, bgTau);   
+
+  RooPolynomial bg1M("bg1M", "background 1 gamma gamma mass", m, RooArgList(C0)); 
+  RooExponential bg1Pt("bg1Pt", "background 1 gamma gamma pT", pt, bgTau);   
+
+
+  // -- signal and background 2D pdfs
+  RooProdPdf sg0Pdf = RooProdPdf("sg0Pdf", "sg0Pdf", RooArgSet(sg0M, sg0Pt));
+  RooProdPdf sg1Pdf = RooProdPdf("sg1Pdf", "sg1Pdf", RooArgSet(sg1M, sg1Pt));
+
+  RooProdPdf bg0Pdf = RooProdPdf("bg0Pdf", "bg0Pdf", RooArgSet(bg0M, bg0Pt));
+  RooProdPdf bg1Pdf = RooProdPdf("bg1Pdf", "bg1Pdf", RooArgSet(bg1M, bg1Pt));
+
+
+  // -- final extended pdf
+  RooRealVar sg0N("sg0N","Number of Higgs 0 signal events", fSg0, 0., 1.e4);
+  RooRealVar sg1N("sg1N","Number of Higgs 1 signal events", fSg1, 0., 1.e4);
+  RooRealVar bgN("bgN","Number of background events", fBg, 0., 1.e5);
+
+  RooAddPdf model0("model0", "model 0", RooArgList(sg0Pdf, bg0Pdf), RooArgList(sg0N, bgN));
+  RooAddPdf model1("model1", "model 1", RooArgList(sg1Pdf, bg1Pdf), RooArgList(sg1N, bgN));
+
+  // -- run toys 
+  if (ntoy > 0) fNtoy = ntoy; 
+  RooDataSet *data1(0);
+  RooFitResult *fr1(0), *fr0(0);
+
+  RooCmdArg fitargs; 
+  if (1) {
+    fitargs.addArg(Minos(kTRUE)); 
+    fitargs.addArg(PrintLevel(-1));
+    fitargs.addArg(PrintEvalErrors(-1));
+    fitargs.addArg(Verbose(kFALSE));
+    fitargs.addArg(Save()); 
+    fitargs.addArg(Minimizer("Minuit2")); 
+  }
+
+  TH1D *h1Sig = new TH1D("h1Sig", "", 100, 0., 7.);
+  TH1D *h2Sig = new TH1D("h2Sig", "", 100, 0., 7.);
+
+
+  // -- suppress RooFit messages!
+  RooMsgService::instance().setStreamStatus(1, false);
+
+  for (int i = 0; i < fNtoy; ++i) {
+    sg0N.setConstant(kFALSE);
+    sg0N.setVal(fSg0); 
+    sg1N.setConstant(kFALSE);
+    sg1N.setVal(fSg1); 
+    bgN.setVal(fBg); 
+
+    sg0Tau.setConstant(kFALSE);
+    sg0Tau.setVal(fSg0Tau);
+    sg1Tau.setConstant(kFALSE);
+    sg1Tau.setVal(fSg1Tau);
+    bgTau.setConstant(kFALSE);
+    bgTau.setVal(fBgTau);
+    
+    //    cout << "==========> generate events! " << endl;
+    data1 = model1.generate(RooArgSet(m, pt), fBg+fSg1); 
+    RooNLLVar nlk("nlk", "nlk", model1, *data1, Extended());
+    double nlk1 = nlk.getVal();
+    //    cout << "==========> fit events! " << endl;
+    model1.fitTo(*data1, PrintEvalErrors(-1), PrintLevel(-3)); 
+    RooNLLVar nll("nll", "nll", model1, *data1, Extended());
+    double nll1 = nll.getVal();
+//     cout << "nsg1: " << sg1N.getVal() << " with NLL = " << nll.getVal() 
+// 	 << " (original NLL = " << nlk1 << ")"
+// 	 << endl;
+
+    // -- NULL 0 
+    sg1N.setVal(fSg0); 
+    sg1N.setConstant(kTRUE);
+    model1.fitTo(*data1, PrintEvalErrors(-1), PrintLevel(-3)); 
+    
+    RooNLLVar nlm("nlm", "nlm", model1, *data1);
+    double nll0 = nll.getVal(); 
+    cout << "nsg1: " << sg1N.getVal() << " with NLL = " << nll.getVal() << " or NLL = " << nlm.getVal() 
+	 << " (against: " << nll1 << ")" 
+      ;
+
+    double sig =  TMath::Sqrt(2.*(nll0 - nll1));
+    cout << " sig(NULL0): " << sig;
+    h1Sig->Fill(sig); 
+
+    // -- NULL 1
+    sg1Tau.setVal(fSg0Tau);
+    sg1Tau.setConstant(kTRUE);
+    model1.fitTo(*data1, PrintEvalErrors(-1), PrintLevel(-3)); 
+    double nll2 = nll.getVal(); 
+    sig =  TMath::Sqrt(2.*(nll2 - nll1));
+    cout << " sig(NULL1): " << sig << endl;
+    h2Sig->Fill(sig); 
+
+    delete data1; 
+  }
+
+  c0->cd(7); 
+  h1Sig->Draw();
+  double zh1Median = median(h1Sig); 
+  double zh1Mean = h1Sig->GetMean(); 
+  double zh1RMS = h1Sig->GetRMS(); 
+
+  tl->DrawLatex(0.2, 0.70, Form("Median: %4.3f", zh1Median)); 
+  tl->DrawLatex(0.2, 0.60, Form("Mean: %4.3f", zh1Mean)); 
+
+  c0->cd(8); 
+  h2Sig->Draw();
+  double zh2Median = median(h2Sig); 
+  double zh2Mean = h2Sig->GetMean(); 
+  double zh2RMS = h2Sig->GetRMS(); 
+
+  tl->DrawLatex(0.2, 0.70, Form("Median: %4.3f", zh2Median)); 
+  tl->DrawLatex(0.2, 0.60, Form("Mean: %4.3f", zh2Mean)); 
+
+
+  c0->cd(10);
+
+  sg0N.setConstant(kFALSE);
+  sg0N.setVal(fSg0); 
+  sg1N.setConstant(kFALSE);
+  sg1N.setVal(fSg1); 
+  bgN.setVal(fBg); 
+  
+  sg0Tau.setConstant(kFALSE);
+  sg0Tau.setVal(fSg0Tau);
+  sg1Tau.setConstant(kFALSE);
+  sg1Tau.setVal(fSg1Tau);
+  bgTau.setConstant(kFALSE);
+  bgTau.setVal(fBgTau);
+
+  c0->SaveAs(Form("%s/allNumbers2-%s.pdf", fDirectory.c_str(), fSetup.c_str())); 
+  
+  fTEX.open(fTexFileName.c_str(), ios::app);
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  fTEX << formatTex(g0pt, Form("%s:g0pt:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(g1pt, Form("%s:g1pt:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(ptlo, Form("%s:ptlo:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(pthi, Form("%s:pthi:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(ptnl, Form("%s:ptnl:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(ptnh, Form("%s:ptnh:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(g0ptlo, Form("%s:g0ptlo:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(g1ptlo, Form("%s:g1ptlo:val", fSetup.c_str()), 2) << endl;
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  fTEX << formatTex(fSg0, Form("%s:sg0:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fSg1, Form("%s:sg1:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fBg, Form("%s:bg:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fSg0/fBg, Form("%s:sb0:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fSg1/fBg, Form("%s:sb1:val", fSetup.c_str()), 2) << endl;
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  fTEX << formatTex(fBgTau, Form("%s:bgTau:val", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fBgTauE, Form("%s:bgTau:err", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fSg0Tau, Form("%s:sg0Tau:val", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fSg0TauE, Form("%s:sg0Tau:err", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fSg1Tau, Form("%s:sg1Tau:val", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fSg1TauE, Form("%s:sg1Tau:err", fSetup.c_str()), 6) << endl;
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  fTEX << formatTex(zh1Median, Form("%s:z1Median:val", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(zh1Mean, Form("%s:z1Mean:val", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(zh1RMS, Form("%s:z1RMS:val", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(zh2Median, Form("%s:z2Median:val", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(zh2Mean, Form("%s:z2Mean:val", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(zh2RMS, Form("%s:z2RMS:val", fSetup.c_str()), 6) << endl;
+  fTEX.close();
+
 } 
 
 
@@ -2678,3 +2336,5 @@ void plotHpt::setCuts(string cuts) {
     }
   }
 }
+
+

@@ -34,9 +34,9 @@ sub runAllNumbers() {
 	for ($g1pt = 50; $g1pt < $G0PT[$g0pt]; $g1pt += 20) {
 	    $cuts = "PTLO=$ptlo,G0PT=$G0PT[$g0pt],G1PT=$g1pt";
 	    $completeCommand = $command . " -c \"$cuts\" " . " -s $idx";
-	    print "$completeCommand\n";
+	    print "$completeCommand  >& $idx.log\n";
 	    if (!$opt_d) {
-		system("$completeCommand");
+		system("$completeCommand >& $idx.log");
 	    }
 	    $idx++; 
 	}
