@@ -52,8 +52,8 @@ public :
   //     - background is diphoton + Higgs(mtop = 173.5GeV)
   void   toy4(double nsg0 = 50, double nsg1 = 100, double nbg = 450, int ntoy = -1); 
 
-  // toy5 introduces the LLR
-  //     - extended UML
+  // toy5 introduces the delta LogLikelihood as a significance estimate using RooFit tools
+  //     - extended UML for mass ONLY
   //     - signal is     Higgs(mtop -> infty)
   //     - background is diphoton + Higgs(mtop = 173.5GeV)
   void   toy5(double nsg0 = 50, double nsg1 = 100, double nbg = 450, int ntoy = 200); 
