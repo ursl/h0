@@ -74,8 +74,11 @@ public :
   //     - all required histograms
   void allNumbers(int ntoy = 100); 
 
-  // -- next version
+  // -- 1D eUML mass fit with DLL
   void allNumbers1(int ntoy = -1); 
+
+  // -- 2D eUML mass-pT fit wtih DLL
+  void allNumbers2(int ntoy = -1); 
 
   virtual void   bookHist(std::string name, std::string cuts); 
   void   readHistograms();
