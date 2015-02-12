@@ -2,6 +2,7 @@
 #define PLOTHPT_h
 
 #include "RooWorkspace.h"
+#include "RooRealVar.h"
 
 #include "plotClass.hh"
 #include "dataset.hh"
@@ -26,9 +27,13 @@ public :
   // -- Main analysis methods 
   void   makeAll(int bitmask = 0);
   virtual void treeAnalysis(int nevts = -1); 
+  void   massResolution(std::string hname = "mpt_mcatnlo5_nopt");
+  // -- these two are historic 
   void   optimizeCuts(std::string fname = "opt.root", double lumi = 1000., int nevts = -1);
   void   optAnalysis(int mode = 1, std::string filename = "opt.root", std::string treename = "opt");
-  void   massResolution(std::string hname = "mpt_mcatnlo5_nopt");
+  // -- this parses the output of running the complete analysis
+  void   anaOptimization(); 
+
 
   // toy1 is an UML implementation: 2d UML fit of Higgs signal against a gg background
   //      - fixed m resolution
@@ -58,6 +63,10 @@ public :
   //     - background is diphoton + Higgs(mtop = 173.5GeV)
   void   toy5(double nsg0 = 50, double nsg1 = 100, double nbg = 450, int ntoy = 200); 
 
+  // -- this has nothing to do with Higgs!
+  void   toy6();   
+  void   toy7(); 
+
   // validation produces the simple plots
   //     - pT for various components
   //     - mass for various selections
@@ -80,6 +89,17 @@ public :
   // -- 2D eUML mass-pT fit wtih DLL
   void allNumbers2(int ntoy = -1); 
 
+  // -- now start to factorize the preprocessing
+  void fitMass(TH1D *hs, double &peak, double &reso); 
+  void ptDistributions();
+  void displayCuts();
+  void massHistograms(TH1D *hb, TH1D *hs0, TH1D *hs1);
+
+  // -- 2D eUML mass-pT fit with LLR
+  void allNumbers3(int ntoy = -1); 
+  // -- 2D eUML mass-pT fit with PROFILED LLR
+  void allNumbers4(int ntoy = -1); 
+
   virtual void   bookHist(std::string name, std::string cuts); 
   void   readHistograms();
   void   setupTree(TTree *t); 
@@ -88,25 +108,37 @@ public :
   void   loopFunction1(); // treeAnalysis
   void   loopFunction2(); // optimizeCuts
   void   loopFunction3(); // bgShape
+  // hq0 = SM (model0), hq1 = model1
+  void   findMidPoint(TH1D* hq0, TH1D* hq1, double &midpoint, double &tailprob);
+  double oneSidedGaussianSigma(double prob); 
 
   TH1*   combMCAtNLOHist(TH1 *h0, TH1 *h1);
 
   void setNtoy(int ntoy) {fNtoy = ntoy;} 
-
+  void shutup();
 
 private: 
 
   // -- essential analysis numbers
   double fSg0, fSg1, fBg; 
-  double fNormSg0, fNormSg0E; 
-  double fNormSg1, fNormSg1E; 
-  double fNormBg;
   double fHiggsMpeak, fHiggsMres;
-  double fNormHiggsMpeak, fNormHiggsMres;
   double fBgMp1, fBgMp1E;
   double fBgTau, fBgTauE;
   double fSg0Tau, fSg0TauE;
   double fSg1Tau, fSg1TauE;
+
+  // -- and the corresponding RooVars
+  void iniRooVars(); 
+  RooRealVar *fRm, *fRpt; // the variables
+  RooRealVar *fRsgP, *fRsgS; // signal mass peak and sigma
+  RooRealVar *fRsg0Tau, *fRsg1Tau; // signal pT slope
+  RooRealVar *fRC0, *fRbgTau; // bg mass and pt shapes
+  RooRealVar *fRsg0N, *fRsg1N, *fRbgN; // the event numbers for the extended LH
+  
+  double fNormSg0, fNormSg0E; 
+  double fNormSg1, fNormSg1E; 
+  double fNormBg;
+  double fNormHiggsMpeak, fNormHiggsMres;
   
   // -- setup
   int    NBINS, NPTBINS; 
@@ -120,6 +152,9 @@ private:
   double PTNL, PTNH; 
   double PTLO, PTHI; 
   double MGGLO, MGGHI; 
+
+  // -- variables
+  double fptnl, fptnh, fptlo, fpthi, fg0ptlo, fg1ptlo, fg0pt, fg1pt; 
 
   bool fGoodCand, fGoodCandNoPtCuts; 
 

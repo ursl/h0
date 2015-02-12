@@ -15,7 +15,6 @@
 #include "TF1.h"
 #include "TFitResult.h"
 
-#include "RooRealVar.h"
 #include "RooGaussian.h"
 #include "RooPlot.h"
 #include "RooDataSet.h"
@@ -25,15 +24,21 @@
 #include "RooFitResult.h"
 #include "RooExponential.h"
 #include "RooChebychev.h"
+#include "RooGaussian.h"
+#include "RooPoisson.h"
 #include "RooPolynomial.h"
 #include "RooHistPdf.h"
 #include "RooKeysPdf.h"
 #include "RooDataHist.h"
 #include "RooAddPdf.h"
+#include "RooAddition.h"
+#include "RooProduct.h"
 #include "RooProdPdf.h"
 #include "RooExtendPdf.h"
 #include "RooMCStudy.h"
 #include "RooMsgService.h"
+#include "RooConstVar.h"
+#include "RooMinuit.h"
 
 #include "RooStats/ModelConfig.h"
 #include "RooStats/ProfileLikelihoodCalculator.h"
@@ -92,8 +97,8 @@ plotHpt::plotHpt(string dir,  string files, string setup): plotClass(dir, files,
   G1ISOR = 0.010; 
 
   PTNL = 100.;
-  PTNH = 300.;
-  PTLO = 400.;
+  PTNH = 250.;
+  PTLO = 300.;
   PTHI = 10000.;
   
   NBINS = 55;  
@@ -102,8 +107,8 @@ plotHpt::plotHpt(string dir,  string files, string setup): plotClass(dir, files,
 
   fLumi = 1000.;
   
-  G0PT = 150.;
-  G1PT =  70.;
+  G0PT =  80.;
+  G1PT =  50.;
   
   G0PTLO = 60.; 
   G1PTLO = 40.;
@@ -2142,7 +2147,7 @@ void plotHpt::allNumbers2(int ntoy) {
 
   // -- run toys 
   if (ntoy > 0) fNtoy = ntoy; 
-  RooDataSet *data1(0);
+  RooDataSet *data1(0), *data0(0);
   RooFitResult *fr1(0), *fr0(0);
 
   RooCmdArg fitargs; 
@@ -2157,6 +2162,11 @@ void plotHpt::allNumbers2(int ntoy) {
 
   TH1D *h1Sig = new TH1D("h1Sig", "", 100, 0., 7.);
   TH1D *h2Sig = new TH1D("h2Sig", "", 100, 0., 7.);
+
+  TH1D *hq0 = new TH1D("hq0", "", 100, -100., 100.);
+  setHist(hq0, kBlue); 
+  TH1D *hq1 = new TH1D("hq1", "", 100, -100., 100.);
+  setHist(hq1, kRed); 
 
 
   // -- suppress RooFit messages!
@@ -2184,9 +2194,9 @@ void plotHpt::allNumbers2(int ntoy) {
     model1.fitTo(*data1, PrintEvalErrors(-1), PrintLevel(-3)); 
     RooNLLVar nll("nll", "nll", model1, *data1, Extended());
     double nll1 = nll.getVal();
-//     cout << "nsg1: " << sg1N.getVal() << " with NLL = " << nll.getVal() 
-// 	 << " (original NLL = " << nlk1 << ")"
-// 	 << endl;
+    //     cout << "nsg1: " << sg1N.getVal() << " with NLL = " << nll.getVal() 
+    // 	 << " (original NLL = " << nlk1 << ")"
+    // 	 << endl;
 
     // -- NULL 0 
     sg1N.setVal(fSg0); 
@@ -2213,9 +2223,23 @@ void plotHpt::allNumbers2(int ntoy) {
     h2Sig->Fill(sig); 
 
     delete data1; 
+
+    sg0N.setConstant(kFALSE);
+    sg0N.setVal(fSg0); 
+    sg1N.setConstant(kFALSE);
+    sg1N.setVal(fSg1); 
+    bgN.setVal(fBg); 
+    
+    sg0Tau.setConstant(kFALSE);
+    sg0Tau.setVal(fSg0Tau);
+    sg1Tau.setConstant(kFALSE);
+    sg1Tau.setVal(fSg1Tau);
+    bgTau.setConstant(kFALSE);
+    bgTau.setVal(fBgTau);
+
   }
 
-  c0->cd(7); 
+  c0->cd(2); 
   h1Sig->Draw();
   double zh1Median = median(h1Sig); 
   double zh1Mean = h1Sig->GetMean(); 
@@ -2234,20 +2258,12 @@ void plotHpt::allNumbers2(int ntoy) {
   tl->DrawLatex(0.2, 0.60, Form("Mean: %4.3f", zh2Mean)); 
 
 
+  c0->cd(9); 
+  hq0->Draw(); 
+  hq1->Draw("same");
+
   c0->cd(10);
 
-  sg0N.setConstant(kFALSE);
-  sg0N.setVal(fSg0); 
-  sg1N.setConstant(kFALSE);
-  sg1N.setVal(fSg1); 
-  bgN.setVal(fBg); 
-  
-  sg0Tau.setConstant(kFALSE);
-  sg0Tau.setVal(fSg0Tau);
-  sg1Tau.setConstant(kFALSE);
-  sg1Tau.setVal(fSg1Tau);
-  bgTau.setConstant(kFALSE);
-  bgTau.setVal(fBgTau);
 
   c0->SaveAs(Form("%s/allNumbers2-%s.pdf", fDirectory.c_str(), fSetup.c_str())); 
   
@@ -2281,6 +2297,393 @@ void plotHpt::allNumbers2(int ntoy) {
   fTEX << formatTex(zh2Median, Form("%s:z2Median:val", fSetup.c_str()), 6) << endl;
   fTEX << formatTex(zh2Mean, Form("%s:z2Mean:val", fSetup.c_str()), 6) << endl;
   fTEX << formatTex(zh2RMS, Form("%s:z2RMS:val", fSetup.c_str()), 6) << endl;
+  fTEX.close();
+
+} 
+
+
+
+// ----------------------------------------------------------------------
+void plotHpt::allNumbers3(int ntoy) {
+  
+  tl->SetNDC(kTRUE);
+  tl->SetTextColor(kBlack);
+  tl->SetTextSize(0.05);
+  
+  readHistograms();
+
+  cout << "allNumbers3: " << endl;
+
+  zone(2, 3);
+  fitMass((TH1D*)fHists["m_mcatnlo_hipt"], fHiggsMres, fHiggsMpeak); 
+  
+  c0->cd(2);
+  fitMass((TH1D*)fHists["m_mcatnlo_lopt"], fNormHiggsMres, fNormHiggsMpeak); 
+
+  c0->cd(3);
+  ptDistributions();
+
+  c0->cd(4); 
+  displayCuts(); 
+
+  c0->cd(5);
+  TH1D *hb(0), *hs0(0), *hs1(0); 
+  massHistograms(hb, hs0, hs1);
+  
+
+  // ======================================================================
+  // -- DO THE ANALYSIS: try the setup of 1310.1397
+  // ======================================================================
+
+  int NBINS(11); 
+
+  // -- SIGNAL variables
+  //  RooRealVar m("m", "m", MGGLO, MGGHI, "GeV"); 
+  fRm = new RooRealVar("m", "m", MGGLO, MGGHI, "GeV"); 
+  fRsgP = new RooRealVar("sgP", "signal peak mass", 125., MGGLO, MGGHI);  
+  fRsgP->setConstant(kTRUE);
+  fRsgS = new RooRealVar("sgS", "signal sigma mass", fHiggsMres, 0., 15.);  
+  fRsgS->setConstant(kTRUE);
+
+  fRsg0Tau = new RooRealVar("sg0Tau", "signal 0 tau", fSg0Tau, -10., 10.); 
+  fRsg1Tau = new RooRealVar("sg1Tau", "signal 1 tau", fSg1Tau, -10., 10.); 
+  
+  fRpt = new RooRealVar("pt", "pt", 200., 1000., "GeV"); 
+
+  // -- SM Higgs 1D pdfs
+  RooGaussian sg0M("sg0M", "signal mass", *fRm, *fRsgP, *fRsgS); 
+  RooExponential sg0Pt("sg0Pt", "signal 0 pT", *fRpt, *fRsg0Tau);   
+
+  // -- "contact" Higgs 1D pdfs
+  RooGaussian sg1M("sg1M", "signal mass", *fRm, *fRsgP, *fRsgS); 
+  RooExponential sg1Pt("sg1Pt", "signal 1 pT", *fRpt, *fRsg1Tau);   
+
+
+  // -- BACKGROUND variables and 1D pdfs
+  fRC0 = new RooRealVar("C0", "coefficient #0", fBgMp1, -10., 10.); 
+
+  fRbgTau = new RooRealVar("bgTau", "background gamma gamma tau", fBgTau, -10., 10.); 
+
+  RooPolynomial bg0M("bg0M", "background 0 gamma gamma mass", *fRm, RooArgList(*fRC0)); 
+  RooExponential bg0Pt("bg0Pt", "background 0 gamma gamma pT", *fRpt, *fRbgTau);   
+
+  RooPolynomial bg1M("bg1M", "background 1 gamma gamma mass", *fRm, RooArgList(*fRC0)); 
+  RooExponential bg1Pt("bg1Pt", "background 1 gamma gamma pT", *fRpt, *fRbgTau);   
+
+
+  // -- signal and background 2D pdfs
+  RooProdPdf sg0Pdf = RooProdPdf("sg0Pdf", "sg0Pdf", RooArgSet(sg0M, sg0Pt));
+  RooProdPdf sg1Pdf = RooProdPdf("sg1Pdf", "sg1Pdf", RooArgSet(sg1M, sg1Pt));
+
+  RooProdPdf bg0Pdf = RooProdPdf("bg0Pdf", "bg0Pdf", RooArgSet(bg0M, bg0Pt));
+  RooProdPdf bg1Pdf = RooProdPdf("bg1Pdf", "bg1Pdf", RooArgSet(bg1M, bg1Pt));
+
+
+  // -- final extended pdf
+  fRsg0N = new RooRealVar("sg0N","Number of Higgs 0 signal events", fSg0, 0., 1.e4);
+  fRsg1N = new RooRealVar("sg1N","Number of Higgs 1 signal events", fSg1, 0., 1.e4);
+  fRbgN  = new RooRealVar("bgN","Number of background events", fBg, 0., 1.e5);
+
+  RooAddPdf model0("model0", "model 0", RooArgList(sg0Pdf, bg0Pdf), RooArgList(*fRsg0N, *fRbgN));
+  RooAddPdf model1("model1", "model 1", RooArgList(sg1Pdf, bg1Pdf), RooArgList(*fRsg1N, *fRbgN));
+
+  // -- run toys 
+  if (ntoy > 0) fNtoy = ntoy; 
+  RooDataSet *bgData(0), *sg0Data(0), *sg1Data(0), *data1(0), *data0(0);
+  RooFitResult *fr1(0), *fr0(0);
+
+  RooCmdArg fitargs; 
+  if (1) {
+    fitargs.addArg(Minos(kTRUE)); 
+    fitargs.addArg(PrintLevel(-1));
+    fitargs.addArg(PrintEvalErrors(-1));
+    fitargs.addArg(Verbose(kFALSE));
+    fitargs.addArg(Save()); 
+    fitargs.addArg(Minimizer("Minuit2")); 
+  }
+
+  TH1D *hq0 = new TH1D("hq0", "", 100, -50., 50.);
+  setHist(hq0, kBlue); 
+  TH1D *hq1 = new TH1D("hq1", "", 100, -50., 50.);
+  setHist(hq1, kRed); 
+
+
+  // -- suppress RooFit messages!
+  RooMsgService::instance().setStreamStatus(1, false);
+
+  for (int i = 0; i < fNtoy; ++i) {
+    cout << "toy " << i << endl;
+    
+    bgData = bg0Pdf.generate(RooArgSet(*fRm, *fRpt), fBg); 
+    sg0Data = sg0Pdf.generate(RooArgSet(*fRm, *fRpt), fSg0);
+    sg1Data = sg1Pdf.generate(RooArgSet(*fRm, *fRpt), fSg1);
+
+    data0 = new RooDataSet(*bgData);
+    data0->append(*sg0Data);
+
+    data1 = new RooDataSet(*bgData);
+    data1->append(*sg1Data);
+
+    iniRooVars(); 
+    RooNLLVar d0s0("d0s0", "d0s0", model0, *data0, Extended());
+
+    iniRooVars(); 
+    RooNLLVar d0s1("d0s1", "d0s1", model1, *data0, Extended());
+
+    iniRooVars(); 
+    RooNLLVar d1s0("d1s0", "d1s0", model0, *data1, Extended());
+
+    iniRooVars(); 
+    RooNLLVar d1s1("d1s1", "d1s1", model1, *data1, Extended());
+
+    hq0->Fill(2.*(d0s1.getVal() - d0s0.getVal())); 
+    hq1->Fill(2.*(d1s1.getVal() - d1s0.getVal())); 
+
+    delete data0; 
+    delete data1; 
+
+    delete bgData;
+    delete sg0Data;
+    delete sg1Data; 
+
+  }
+
+  c0->cd(6); 
+  hq0->Draw(); 
+  hq1->Draw("same");
+
+  double midpoint, tailprob; 
+  findMidPoint(hq0, hq1, midpoint, tailprob); 
+  double sigma = 2.*oneSidedGaussianSigma(tailprob);
+  tl->DrawLatex(0.2, 0.80, Form("midpoint: %4.3f", midpoint)); 
+  tl->DrawLatex(0.2, 0.70, Form("tailprob: %4.3f", tailprob)); 
+  tl->DrawLatex(0.2, 0.60, Form("Sep: %4.3f", sigma)); 
+    
+
+
+  c0->SaveAs(Form("%s/allNumbers3-%s.pdf", fDirectory.c_str(), fSetup.c_str())); 
+  
+  fTEX.open(fTexFileName.c_str(), ios::app);
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  fTEX << formatTex(fg0pt, Form("%s:g0pt:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fg1pt, Form("%s:g1pt:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fptlo, Form("%s:ptlo:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fpthi, Form("%s:pthi:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fptnl, Form("%s:ptnl:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fptnh, Form("%s:ptnh:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fg0ptlo, Form("%s:g0ptlo:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fg1ptlo, Form("%s:g1ptlo:val", fSetup.c_str()), 2) << endl;
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  fTEX << formatTex(fSg0, Form("%s:sg0:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fSg1, Form("%s:sg1:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fBg, Form("%s:bg:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fSg0/fBg, Form("%s:sb0:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fSg1/fBg, Form("%s:sb1:val", fSetup.c_str()), 2) << endl;
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  fTEX << formatTex(fBgTau, Form("%s:bgTau:val", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fBgTauE, Form("%s:bgTau:err", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fSg0Tau, Form("%s:sg0Tau:val", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fSg0TauE, Form("%s:sg0Tau:err", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fSg1Tau, Form("%s:sg1Tau:val", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fSg1TauE, Form("%s:sg1Tau:err", fSetup.c_str()), 6) << endl;
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  fTEX.close();
+
+} 
+
+
+
+// ----------------------------------------------------------------------
+void plotHpt::allNumbers4(int ntoy) {
+  
+  tl->SetNDC(kTRUE);
+  tl->SetTextColor(kBlack);
+  tl->SetTextSize(0.05);
+  
+  readHistograms();
+
+  cout << "allNumbers4: " << endl;
+
+  zone(2, 3);
+  fitMass((TH1D*)fHists["m_mcatnlo_hipt"], fHiggsMres, fHiggsMpeak); 
+  
+  c0->cd(2);
+  fitMass((TH1D*)fHists["m_mcatnlo_lopt"], fNormHiggsMres, fNormHiggsMpeak); 
+
+  c0->cd(3);
+  ptDistributions();
+
+  c0->cd(4); 
+  displayCuts(); 
+
+  c0->cd(5);
+  TH1D *hb(0), *hs0(0), *hs1(0); 
+  massHistograms(hb, hs0, hs1);
+  
+
+  // ======================================================================
+  // -- DO THE ANALYSIS: try the setup of 1310.1397
+  // ======================================================================
+
+  int NBINS(11); 
+
+  // -- SIGNAL variables
+  //  RooRealVar m("m", "m", MGGLO, MGGHI, "GeV"); 
+  fRm = new RooRealVar("m", "m", MGGLO, MGGHI, "GeV"); 
+  fRsgP = new RooRealVar("sgP", "signal peak mass", 125., MGGLO, MGGHI);  
+  fRsgP->setConstant(kTRUE);
+  fRsgS = new RooRealVar("sgS", "signal sigma mass", fHiggsMres, 0., 15.);  
+  fRsgS->setConstant(kTRUE);
+
+  fRsg0Tau = new RooRealVar("sg0Tau", "signal 0 tau", fSg0Tau, -10., 10.); 
+  fRsg1Tau = new RooRealVar("sg1Tau", "signal 1 tau", fSg1Tau, -10., 10.); 
+  
+  fRpt = new RooRealVar("pt", "pt", 200., 1000., "GeV"); 
+
+  // -- SM Higgs 1D pdfs
+  RooGaussian sg0M("sg0M", "signal mass", *fRm, *fRsgP, *fRsgS); 
+  RooExponential sg0Pt("sg0Pt", "signal 0 pT", *fRpt, *fRsg0Tau);   
+
+  // -- "contact" Higgs 1D pdfs
+  RooGaussian sg1M("sg1M", "signal mass", *fRm, *fRsgP, *fRsgS); 
+  RooExponential sg1Pt("sg1Pt", "signal 1 pT", *fRpt, *fRsg1Tau);   
+
+
+  // -- BACKGROUND variables and 1D pdfs
+  fRC0 = new RooRealVar("C0", "coefficient #0", fBgMp1, -10., 10.); 
+
+  fRbgTau = new RooRealVar("bgTau", "background gamma gamma tau", fBgTau, -10., 10.); 
+
+  RooPolynomial bg0M("bg0M", "background 0 gamma gamma mass", *fRm, RooArgList(*fRC0)); 
+  RooExponential bg0Pt("bg0Pt", "background 0 gamma gamma pT", *fRpt, *fRbgTau);   
+
+  RooPolynomial bg1M("bg1M", "background 1 gamma gamma mass", *fRm, RooArgList(*fRC0)); 
+  RooExponential bg1Pt("bg1Pt", "background 1 gamma gamma pT", *fRpt, *fRbgTau);   
+
+
+  // -- signal and background 2D pdfs
+  RooProdPdf sg0Pdf = RooProdPdf("sg0Pdf", "sg0Pdf", RooArgSet(sg0M, sg0Pt));
+  RooProdPdf sg1Pdf = RooProdPdf("sg1Pdf", "sg1Pdf", RooArgSet(sg1M, sg1Pt));
+
+  RooProdPdf bg0Pdf = RooProdPdf("bg0Pdf", "bg0Pdf", RooArgSet(bg0M, bg0Pt));
+  RooProdPdf bg1Pdf = RooProdPdf("bg1Pdf", "bg1Pdf", RooArgSet(bg1M, bg1Pt));
+
+
+  // -- final extended pdf
+  fRsg0N = new RooRealVar("sg0N","Number of Higgs 0 signal events", fSg0, 0., 1.e4);
+  fRsg1N = new RooRealVar("sg1N","Number of Higgs 1 signal events", fSg1, 0., 1.e4);
+  fRbgN  = new RooRealVar("bgN","Number of background events", fBg, 0., 1.e5);
+
+  RooAddPdf model0("model0", "model 0", RooArgList(sg0Pdf, bg0Pdf), RooArgList(*fRsg0N, *fRbgN));
+  RooAddPdf model1("model1", "model 1", RooArgList(sg1Pdf, bg1Pdf), RooArgList(*fRsg1N, *fRbgN));
+
+  // -- run toys 
+  if (ntoy > 0) fNtoy = ntoy; 
+  RooDataSet *bgData(0), *sg0Data(0), *sg1Data(0), *data1(0), *data0(0);
+  RooFitResult *fr1(0), *fr0(0);
+
+  RooCmdArg fitargs; 
+  if (1) {
+    fitargs.addArg(Minos(kTRUE)); 
+    fitargs.addArg(PrintLevel(-1));
+    fitargs.addArg(PrintEvalErrors(-1));
+    fitargs.addArg(Verbose(kFALSE));
+    fitargs.addArg(Save()); 
+    fitargs.addArg(Minimizer("Minuit2")); 
+  }
+
+  TH1D *hq0 = new TH1D("hq0", "", 100, -50., 50.);
+  setHist(hq0, kBlue); 
+  TH1D *hq1 = new TH1D("hq1", "", 100, -50., 50.);
+  setHist(hq1, kRed); 
+
+
+  // -- suppress RooFit messages!
+  RooMsgService::instance().setStreamStatus(1, false);
+  shutup();
+
+  for (int i = 0; i < fNtoy; ++i) {
+    cout << "==================> TOY " << i << endl;
+    
+    bgData = bg0Pdf.generate(RooArgSet(*fRm, *fRpt), fBg); 
+    sg0Data = sg0Pdf.generate(RooArgSet(*fRm, *fRpt), fSg0);
+    sg1Data = sg1Pdf.generate(RooArgSet(*fRm, *fRpt), fSg1);
+
+    data0 = new RooDataSet(*bgData);
+    data0->append(*sg0Data);
+
+    data1 = new RooDataSet(*bgData);
+    data1->append(*sg1Data);
+
+    iniRooVars(); 
+    RooAbsReal *d0s0 = model0.createNLL(*sg0Data, Extended());  // -- this is a (LH) FUNCTION!
+    RooMinuit(*d0s0).migrad() ;
+
+    iniRooVars(); 
+    RooNLLVar D0S0("D0S0", "D0S0", model0, *data0, Extended());
+
+    iniRooVars(); 
+    RooAbsReal *d0s1 = model1.createNLL(*sg0Data); 
+
+    iniRooVars(); 
+    RooAbsReal *d1s0 = model0.createNLL(*sg1Data); 
+
+    iniRooVars(); 
+    RooAbsReal *d1s1 = model1.createNLL(*sg1Data); 
+
+    cout << "  " << d0s0->getVal() << " .. " << D0S0.getVal() << endl;
+
+    hq0->Fill(2.*(d0s1->getVal() - d0s0->getVal())); 
+    hq1->Fill(2.*(d1s1->getVal() - d1s0->getVal())); 
+
+    delete data0; 
+    delete data1; 
+
+    delete bgData;
+    delete sg0Data;
+    delete sg1Data; 
+
+  }
+
+  c0->cd(6); 
+  hq0->Draw(); 
+  hq1->Draw("same");
+
+  double midpoint, tailprob; 
+  findMidPoint(hq0, hq1, midpoint, tailprob); 
+  double sigma = 2.*oneSidedGaussianSigma(tailprob);
+  tl->DrawLatex(0.2, 0.80, Form("midpoint: %4.3f", midpoint)); 
+  tl->DrawLatex(0.2, 0.70, Form("tailprob: %4.3f", tailprob)); 
+  tl->DrawLatex(0.2, 0.60, Form("Sep: %4.3f", sigma)); 
+    
+
+
+  c0->SaveAs(Form("%s/allNumbers4-%s.pdf", fDirectory.c_str(), fSetup.c_str())); 
+  
+  fTEX.open(fTexFileName.c_str(), ios::app);
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  fTEX << formatTex(fg0pt, Form("%s:g0pt:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fg1pt, Form("%s:g1pt:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fptlo, Form("%s:ptlo:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fpthi, Form("%s:pthi:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fptnl, Form("%s:ptnl:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fptnh, Form("%s:ptnh:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fg0ptlo, Form("%s:g0ptlo:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fg1ptlo, Form("%s:g1ptlo:val", fSetup.c_str()), 2) << endl;
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  fTEX << formatTex(fSg0, Form("%s:sg0:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fSg1, Form("%s:sg1:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fBg, Form("%s:bg:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fSg0/fBg, Form("%s:sb0:val", fSetup.c_str()), 2) << endl;
+  fTEX << formatTex(fSg1/fBg, Form("%s:sb1:val", fSetup.c_str()), 2) << endl;
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  fTEX << formatTex(fBgTau, Form("%s:bgTau:val", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fBgTauE, Form("%s:bgTau:err", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fSg0Tau, Form("%s:sg0Tau:val", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fSg0TauE, Form("%s:sg0Tau:err", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fSg1Tau, Form("%s:sg1Tau:val", fSetup.c_str()), 6) << endl;
+  fTEX << formatTex(fSg1TauE, Form("%s:sg1Tau:err", fSetup.c_str()), 6) << endl;
+  fTEX << "% ----------------------------------------------------------------------" << endl;
   fTEX.close();
 
 } 
@@ -2338,3 +2741,465 @@ void plotHpt::setCuts(string cuts) {
 }
 
 
+
+// ----------------------------------------------------------------------
+void plotHpt::anaOptimization() {
+
+  
+
+
+}
+
+
+// ----------------------------------------------------------------------
+void plotHpt::fitMass(TH1D *hs, double &peak, double &reso) {
+  hs->Fit("gaus", "", "e"); 
+  cout << " SM Higgs high-mass fitted resolution: " << hs->GetFunction("gaus")->GetParameter(2) 
+       << " +/- " << hs->GetFunction("gaus")->GetParError(2) 
+       << " RMS: " << hs->GetRMS() << " +/- " << hs->GetRMSError()
+       << endl;
+  cout << " SM Higgs mass peak: "       << hs->GetFunction("gaus")->GetParameter(1) 
+       << " +/- " << hs->GetFunction("gaus")->GetParError(1) << endl;
+  tl->DrawLatex(0.16, 0.8, Form("resolution: %4.1f GeV", hs->GetFunction("gaus")->GetParameter(2))); 
+  peak  = hs->GetFunction("gaus")->GetParameter(2);
+  reso = hs->GetFunction("gaus")->GetParameter(1);
+}
+
+
+// ----------------------------------------------------------------------
+void plotHpt::ptDistributions() {
+  gPad->SetLogy(1);
+  TH1D *h1 = (TH1D*)fHists["pt_sherpa_hipt"]->Clone("h1");
+  normHist(h1, "sherpa", LUMI); 
+  fBg = h1->GetSumOfWeights(); 
+  h1->SetMinimum(0.001); 
+  h1->SetMaximum(10000.); 
+  h1->Fit("expo", "r", "", PTLO, PTHI); 
+  h1->GetFunction("expo")->SetLineColor(fDS["sherpa"]->fColor); 
+  fBgTau  = h1->GetFunction("expo")->GetParameter(1); 
+  fBgTauE = h1->GetFunction("expo")->GetParError(1); 
+  h1->Draw("hist");
+  h1->GetFunction("expo")->Draw("same");
+  cout << "  SHERPA background:        " << fBg << " fitted exponential slope = " << fBgTau << "+/-" << fBgTauE << endl;
+  tl->SetTextColor(fDS["sherpa"]->fColor); tl->DrawLatex(0.48, 0.80, Form("%6.1f", fBg)); 
+
+  // -- SM Higgs (Sg0)
+  h1 = (TH1D*)fHists["pt_mcatnlo_hipt"]->Clone("h1");
+  normHist(h1, "mcatnlo0", LUMI); 
+  fSg0 = h1->GetSumOfWeights(); 
+  h1->Fit("expo", "r", "histsame", PTLO, PTHI); 
+  h1->GetFunction("expo")->SetLineColor(fDS["mcatnlo0"]->fColor); 
+  fSg0Tau  = h1->GetFunction("expo")->GetParameter(1); 
+  fSg0TauE = h1->GetFunction("expo")->GetParError(1); 
+  h1->Draw("histsame");
+  h1->GetFunction("expo")->Draw("same");
+  cout << "  SM Higgs count:           " << fSg0  << " fitted exponential slope = " << fSg0Tau << "+/-" << fSg0TauE << endl;
+  tl->SetTextColor(fDS["mcatnlo0"]->fColor); tl->DrawLatex(0.48, 0.75, Form("%6.1f", fSg0)); 
+  // -- Contact Higgs (Sg1)
+  h1 = (TH1D*)fHists["pt_mcatnlo5_hipt"]->Clone("h1");
+  normHist(h1, "mcatnlo5", LUMI); 
+  fSg1 = h1->GetSumOfWeights(); 
+  h1->Fit("expo", "r", "histsame", PTLO, PTHI); 
+  h1->GetFunction("expo")->SetLineColor(fDS["mcatnlo5"]->fColor); 
+  fSg1Tau  = h1->GetFunction("expo")->GetParameter(1); 
+  fSg1TauE = h1->GetFunction("expo")->GetParError(1); 
+  h1->Draw("samehist");
+  h1->GetFunction("expo")->Draw("same");
+  cout << "  Contact Higgs count:      " << fSg1  << " fitted exponential slope = " << fSg1Tau << "+/-" << fSg1TauE << endl;
+  tl->SetTextColor(fDS["mcatnlo5"]->fColor); tl->DrawLatex(0.48, 0.70, Form("%6.1f", fSg1)); 
+  cout << "  Signal/Background:      " << fSg0/fBg << " and " << fSg1/fBg << endl;
+  tl->SetTextColor(fDS["mcatnlo5"]->fColor); tl->DrawLatex(0.60, 0.60, Form("S/B = %4.3f", fSg0/fBg)); 
+  tl->SetTextColor(fDS["mcatnlo0"]->fColor);  tl->DrawLatex(0.60, 0.55, Form("S/B = %4.3f", fSg1/fBg)); 
+
+
+  // -------
+  // -- LOPT
+  // -------
+  h1 = (TH1D*)fHists["pt_sherpa_lopt"]->Clone("h1");
+  normHist(h1, "sherpa", LUMI); 
+  h1->Draw("histsame");
+  fNormBg = h1->GetSumOfWeights(); 
+  cout << "  SHERPA norm background:   " << fNormBg << endl;
+  tl->SetTextColor(fDS["sherpa"]->fColor); tl->DrawLatex(0.7, 0.80, Form("%6.1f", fNormBg)); 
+
+  h1 = (TH1D*)fHists["pt_mcatnlo_lopt"]->Clone("h1");
+  normHist(h1, "mcatnlo0", LUMI); 
+  h1->Draw("histsame");
+  fNormSg0 = h1->GetSumOfWeights(); 
+  cout << "  SM Higgs norm count:      " << fNormSg0 << endl;
+  tl->SetTextColor(fDS["mcatnlo0"]->fColor); tl->DrawLatex(0.7, 0.75, Form("%6.1f", fNormSg0)); 
+
+  h1 = (TH1D*)fHists["pt_mcatnlo5_lopt"]->Clone("h1");
+  normHist(h1, "mcatnlo5", LUMI); 
+  h1->Draw("histsame");
+  fNormSg1 = h1->GetSumOfWeights(); 
+  cout << "  Contact Higgs norm count: " << fNormSg1 << endl;
+  tl->SetTextColor(fDS["mcatnlo5"]->fColor); tl->DrawLatex(0.7, 0.70, Form("%6.1f", fNormSg1)); 
+}
+
+
+// ----------------------------------------------------------------------
+void plotHpt::displayCuts() {
+
+  TH1 *cuts = (TH1D*)fHists["cuts"]; 
+  cout << "cuts = " << cuts << endl;
+  fptnl = cuts->GetBinContent(1); 
+  fptnh = cuts->GetBinContent(2); 
+  fptlo = cuts->GetBinContent(3); 
+  fpthi = cuts->GetBinContent(4); 
+  
+  fg0ptlo = cuts->GetBinContent(10); 
+  fg1ptlo = cuts->GetBinContent(11); 
+  fg0pt   = cuts->GetBinContent(12); 
+  fg1pt   = cuts->GetBinContent(13); 
+  
+  
+  cuts->SetMinimum(0.);
+  cuts->Draw();
+  tl->SetTextSize(0.05);
+  tl->SetTextColor(kBlack); 
+  tl->DrawLatex(0.5, 0.80, Form("Lumi: %4.0f", fLumi)); 
+
+  tl->DrawLatex(0.5, 0.75, Form("pthi: %4.0f", fpthi)); 
+  tl->DrawLatex(0.5, 0.70, Form("ptlo: %4.0f", fptlo)); 
+
+  tl->DrawLatex(0.5, 0.65, Form("g0pt: %4.0f", fg0pt)); 
+  tl->DrawLatex(0.5, 0.60, Form("g1pt: %4.0f", fg1pt)); 
+
+  tl->DrawLatex(0.5, 0.55, Form("ptnh: %4.0f", fptnh)); 
+  tl->DrawLatex(0.5, 0.50, Form("ptnl: %4.0f", fptnl)); 
+
+  tl->DrawLatex(0.5, 0.45, Form("g0ptlo: %4.0f", fg0ptlo)); 
+  tl->DrawLatex(0.5, 0.40, Form("g1ptlo: %4.0f", fg1ptlo)); 
+
+  
+  cout << " signal region: " << fptlo << " < pT < " << fpthi << endl;
+  cout << " norm   region: " << fptnl << " < pT < " << fptnh << endl;
+  cout << "  Gamma0 pT > " << fg0pt << endl;
+  cout << "  Gamma1 pT > " << fg1pt << endl;
+}
+
+
+// ----------------------------------------------------------------------
+void plotHpt::massHistograms(TH1D *hb, TH1D *hs0, TH1D *hs1) {
+  hs0 = (TH1D*)fHists["m_sherpa_hipt"]->Clone("hs0");
+  hs1 = (TH1D*)fHists["m_sherpa_hipt"]->Clone("hs1");
+  hb = (TH1D*)fHists["m_sherpa_hipt"]->Clone("hb");
+  hs0->SetTitle("HIPT"); 
+  normHist(hs0, "sherpa", LUMI); 
+  normHist(hs1, "sherpa", LUMI); 
+  normHist(hb, "sherpa", LUMI); 
+
+  TH1D *h1 = (TH1D*)fHists["m_mcatnlo5_hipt"]->Clone("h1");
+  normHist(h1, "mcatnlo5", LUMI); 
+
+  hs1->Add(h1); 
+
+  h1 = (TH1D*)fHists["m_mcatnlo_hipt"]->Clone("h1");
+  normHist(h1, "mcatnlo0", LUMI); 
+  hs0->Add(h1); 
+
+  hs1->Draw();
+  hs0->SetMinimum(0.);
+  hs0->SetMarkerColor(kBlue);
+  hs0->SetLineColor(kBlue);
+  hs0->Draw("same");
+
+  hb->SetMarkerColor(kBlack);
+  hb->SetLineColor(kBlack);
+  hb->Fit("pol1", "", "same");
+  hb->GetFunction("pol1")->SetLineColor(kBlack);
+  fBgMp1  = hb->GetFunction("pol1")->GetParameter(1); 
+  fBgMp1E = hb->GetFunction("pol1")->GetParError(1); 
+  cout << "fBgMp1 = " << fBgMp1 << " +/- " << fBgMp1E << endl;
+  
+  // -- overlay mass histograms: lopt
+  TH1D *mlopt = (TH1D*)fHists["m_sherpa_lopt"]->Clone("mlopt");
+  normHist(mlopt, "sherpa", LUMI); 
+  mlopt->SetTitle("LOPT"); 
+
+  h1 = (TH1D*)fHists["m_mcatnlo_lopt"]->Clone("h1");
+  normHist(h1, "mcatnlo0", LUMI); 
+
+  mlopt->Add(h1); 
+  mlopt->SetMinimum(0.);
+}
+
+
+
+// ----------------------------------------------------------------------
+void  plotHpt::findMidPoint(TH1D* hq0, TH1D* hq1, double &midpoint, double &tailprob) {
+  double iq0(0), iq1(0), delta(0.); 
+  int nbinsx = hq0->GetNbinsX();
+  TH1D *nq0 = (TH1D*)hq0->Clone("nq0");
+  nq0->Scale(1./nq0->GetSumOfWeights());
+  TH1D *nq1 = (TH1D*)hq1->Clone("nq1");
+  nq1->Scale(1./nq1->GetSumOfWeights());
+  for (int i = 0; i < nbinsx; ++i) {
+    iq0 = nq0->Integral(0, i); 
+    iq1 = nq1->Integral(i, nbinsx); 
+    if (iq0 > iq1) {
+      midpoint = nq0->GetBinCenter(i); 
+      if ((iq0 - iq1) > delta) {
+	cout << "taking previous, delta = " << delta << " while this one has iq0 = " << iq0 << " and iq1 = " << iq1 << endl;
+	midpoint = nq0->GetBinCenter(i-1); 
+	iq0 = nq0->Integral(0, i-1); 
+	iq1 = nq1->Integral(i-1, nbinsx); 
+      }
+      break;
+    }
+    delta = iq1 - iq0; 
+  }
+    
+  cout << "found iq0 = " << iq0 << " iq1 = " << iq1 << " at midpoint = " << midpoint << endl;
+  iq0 = nq0->Integral(0, nq0->FindBin(midpoint)+1); 
+  iq1 = nq1->Integral(nq0->FindBin(midpoint)+1, nbinsx); 
+  cout << " next iq0 = " << iq0 << " iq1 = " << iq1 << endl;
+  iq0 = nq0->Integral(0, nq0->FindBin(midpoint)-1); 
+  iq1 = nq1->Integral(nq0->FindBin(midpoint)-1, nbinsx); 
+  cout << " prev iq0 = " << iq0 << " iq1 = " << iq1 << endl;
+
+  tailprob = 0.5*(iq0+iq1); 
+ 
+}
+
+
+// ----------------------------------------------------------------------
+double plotHpt::oneSidedGaussianSigma(double prob) {
+
+  RooRealVar x("x", "x", -10, 10) ;
+  RooGaussian gx("gx", "gx", x, RooConst(0), RooConst(1));
+  
+  RooAbsReal* igx(0);   
+  int i(0); 
+  double qold(0.),  eps(1.e-9); 
+  double delta(0.1);
+  double sigma(0.); 
+  double q(0.); 
+  while (1) {
+    
+    q = 0.5*TMath::Erfc(sigma/TMath::Sqrt(2));
+    if (q > prob) {
+      sigma += delta;
+    } else {
+      sigma -= delta;
+      delta /= 10.; 
+    }
+
+    //    cout << "tail prob " << Form("%4d", i) << ": " << q << " from sigma = " << sigma << endl;
+
+    if (TMath::Abs(qold - q) < eps) {
+      //      cout << "qold = " << qold << " q  = " << q << " ->  TMath::Abs(qold - q) = " << TMath::Abs(qold - q) << endl;
+      break;
+    }
+    if (i > 100) {
+      //      cout << "i = " << i << endl;
+      break;
+    }
+    ++i;
+    qold = q;
+  }
+  
+  cout << "tail probability " << prob << " with local prob = " << q
+       << " yields significance " << sigma << 0.5*TMath::Erfc(sigma/TMath::Sqrt(2)) << endl;
+
+  //   x.setRange("signal", sigma, 10);
+  //   igx = gx.createIntegral(x, NormSet(x), Range("signal")) ;
+  //   cout << gx.createIntegral(x, NormSet(x), Range("signal"))->getVal() << endl;
+  //  cout << "with formula: " <<  << endl;
+
+  return sigma;
+
+}
+
+
+// ----------------------------------------------------------------------
+void plotHpt::iniRooVars() {
+  fRsg0N->setConstant(kFALSE);
+  fRsg0N->setVal(fSg0); 
+  fRsg1N->setConstant(kFALSE);
+  fRsg1N->setVal(fSg1); 
+  fRbgN->setConstant(kFALSE);
+  fRbgN->setVal(fBg); 
+  
+  fRsg0Tau->setConstant(kFALSE);
+  fRsg0Tau->setVal(fSg0Tau);
+  fRsg1Tau->setConstant(kFALSE);
+  fRsg1Tau->setVal(fSg1Tau);
+  fRbgTau->setConstant(kFALSE);
+  fRbgTau->setVal(fBgTau);
+  
+
+}
+
+// ----------------------------------------------------------------------
+void plotHpt::shutup() {
+
+  RooMsgService::instance().getStream(0).removeTopic(Eval);
+  RooMsgService::instance().getStream(1).removeTopic(Fitting);
+  RooMsgService::instance().getStream(1).removeTopic(Minimization);
+  RooMsgService::instance().getStream(1).removeTopic(NumIntegration);
+  RooMsgService::instance().getStream(1).removeTopic(Eval);
+  RooMsgService::instance().getStream(0).removeTopic(Tracing);
+  //  RooMsgService::instance().Print() ;
+}
+
+
+
+// ----------------------------------------------------------------------
+void plotHpt::toy6() {
+  // based on https://twiki.cern.ch/twiki/bin/view/Main/LearningRoostats
+  
+  //construct the model
+  RooWorkspace w("w");
+  
+  w.factory("Gaussian::constraint_b(nuisance_b[41.7,0,100],41.7,4.6)"); //constrained b to be positive - "truncated gaussian"
+  w.factory("Gaussian::constraint_acc(nuisance_acc[0.71,0,1],0.71,0.09)"); //constrained acc in range 0-1
+  w.factory("Gaussian::constraint_lumi(nuisance_lumi[5.0,0.0,10.0],5.0,0.195)"); //constrained lumi from 0 to 10.0
+  w.factory("prod::s(sigma[0,100],nuisance_lumi,nuisance_acc)"); //constructs a function
+  w.factory("sum::mean(s,nuisance_b)"); //another function
+  w.factory("Poisson::pois(n[61,0,100],mean)"); //a pdf (special function)
+  w.factory("PROD::model(pois,constraint_b,constraint_lumi,constraint_acc)"); //another pdf
+  
+  //define RooArgSets for convenience
+  w.defineSet("obs","n"); //observables
+  w.defineSet("poi","sigma"); //parameters of interest
+  w.defineSet("np","nuisance_b,nuisance_lumi,nuisance_acc"); //nuisance parameters
+  
+  RooDataSet data("data", "data", *w.set("obs"));
+  data.add(*w.set("obs")); //actually add the data
+  
+  
+  cout << "xxxxx > create nll" << endl;
+  RooAbsReal* nll = w.pdf("model")->createNLL(data);
+  
+  
+  RooPlot* frame = w.var("sigma")->frame(Range(0., 12.));
+  nll->plotOn(frame, ShiftToZero()); //the ShiftToZero option puts the minimum at 0 on the y-axis
+  frame->Draw();
+  
+  if (1) {
+    cout << "xxxxx > create pll" << endl;
+    RooAbsReal* pll = nll->createProfile(*w.set("poi"));
+    pll->plotOn(frame,LineColor(kRed));
+    frame->Draw();
+  }
+
+  if (1) {
+    RooMinuit mini(*nll);
+    mini.minos(*w.set("poi")); //could give no arg list and it will calculate minos errors for all the parameters
+  
+    RooFitResult* res = mini.save("myResult","My Result");
+    res->status(); //should be 0 for success!
+  }
+  
+  TLine l; 
+  
+  l.DrawLine(w.var("sigma")->getVal()+w.var("sigma")->getErrorLo(),0,w.var("sigma")->getVal()+w.var("sigma")->getErrorLo(),0.5);
+  l.DrawLine(w.var("sigma")->getVal()+w.var("sigma")->getErrorHi(),0,w.var("sigma")->getVal()+w.var("sigma")->getErrorHi(),0.5);
+  l.DrawLine(0., 0.5, 12., 0.5);
+  
+  cout << "xxxxx > nll: " << endl;
+  nll->Print("tv");
+  cout << "xxxxx > nll_model_data: " << endl;
+  nll->getComponents()->find("nll_model_data")->Print("v");
+  cout << "xxxxx > nll_model_data_constr: " << endl;
+  nll->getComponents()->find("nll_model_data_constr")->Print("v");
+  cout << "xxxxx > sigma: " << endl;
+  w.var("sigma")->Print("v");
+  cout << "xxxxx > nuisance_b: " << endl;
+  w.var("nuisance_b")->Print("v");
+
+}
+
+
+// ----------------------------------------------------------------------
+void plotHpt::toy7() {
+
+  // based on https://twiki.cern.ch/twiki/bin/view/Main/LearningRoostats
+  double lumiVal = 5.0; 
+  double lumiErr = 0.039*5.0;
+  double nObs = 61; 
+  double sgEffVal = 0.71; 
+  double sgEffErr = 0.09; 
+  double bgVal = 41.7;
+  double bgErr = 4.6;
+
+  cout << "simple estimate = " << (nObs - bgVal)/lumiVal/sgEffVal << endl;
+
+  // -- variables, parameters and constraints
+  RooRealVar nuisance_b("nuisance_b", "nuisance_b", bgVal, 0, 100); 
+  RooRealVar nuisance_b0("nuisance_b0", "nuisance_b central value", bgVal); 
+  RooRealVar nuisance_bE("nuisance_bE", "nuisance_b error", bgErr); 
+
+  RooRealVar nuisance_lumi("nuisance_lumi", "nuisance_lumi", lumiVal, 0, 10); 
+  RooRealVar nuisance_lumi0("nuisance_lumi0", "nuisance_lumi central value", lumiVal); 
+  RooRealVar nuisance_lumiE("nuisance_lumiE", "nuisance_lumi error", lumiErr); 
+
+  RooRealVar nuisance_acc("nuisance_acc", "nuisance_acc", sgEffVal, 0, 1); 
+  RooRealVar nuisance_acc0("nuisance_acc0", "nuisance_acc central value", sgEffVal); 
+  RooRealVar nuisance_accE("nuisance_accE", "nuisance_acc error", sgEffErr); 
+
+  RooGaussian constraint_b("constraint_b", "constraint_b", nuisance_b, nuisance_b0, nuisance_bE); 
+  RooGaussian constraint_lumi("constraint_lumi", "constraint_lumi", nuisance_lumi, nuisance_lumi0, nuisance_lumiE); 
+  RooGaussian constraint_acc("constraint_acc", "constraint_acc", nuisance_acc, nuisance_acc0, nuisance_accE); 
+
+  RooRealVar sigma("sigma", "sigma", 0, 100); 
+  RooRealVar n("n", "n", nObs, 0, 100); 
+
+  // -- model: nObs = sigma*eff*lumi + bg
+  RooProduct s = RooProduct("s", "s", RooArgSet(sigma, nuisance_lumi, nuisance_acc));
+  RooAddition mean = RooAddition("mean", "mean", RooArgSet(s, nuisance_b));
+  RooPoisson  pois("pois", "pois", n, mean); 
+
+  RooProdPdf model = RooProdPdf("model", "model", RooArgList(pois, constraint_b, constraint_lumi, constraint_acc)); 
+
+  RooArgSet obs(n); 
+  RooArgSet poi(sigma); 
+  RooArgSet np(nuisance_b, nuisance_lumi, nuisance_acc); 
+
+  RooDataSet data("data", "data", obs); 
+  data.add(obs); 
+
+  cout << "xxxxx > create nll" << endl;
+  RooAbsReal *nll = model.createNLL(data);
+  
+  //  RooPlot* frame = sigma.frame();
+  RooPlot* frame = sigma.frame(Range(0., 12.));
+  nll->plotOn(frame, ShiftToZero()); 
+  frame->Draw();
+
+  if (1) {
+    cout << "xxxxx > create pll" << endl;
+    RooAbsReal* pll = nll->createProfile(poi);
+    pll->plotOn(frame,LineColor(kRed));
+    frame->Draw();
+  }
+
+  if (1) {
+    RooMinuit mini(*nll);
+    mini.minos(poi); //could give no arg list and it will calculate minos errors for all the parameters
+  
+    RooFitResult* res = mini.save("myResult","My Result");
+    res->status(); //should be 0 for success!
+  }
+  
+  TLine l; 
+  
+  l.DrawLine(sigma.getVal() + sigma.getErrorLo(), 0, sigma.getVal() + sigma.getErrorLo(), 0.5);
+  l.DrawLine(sigma.getVal() + sigma.getErrorHi(), 0, sigma.getVal() + sigma.getErrorHi(), 0.5);
+  l.DrawLine(0., 0.5, 12., 0.5);
+
+  cout << "xxxxx > nll: " << endl;
+  nll->Print("tv");
+  cout << "xxxxx > nll_model_data: " << endl;
+  nll->getComponents()->find("nll_model_data")->Print("v");
+  cout << "xxxxx > nll_model_data_constr: " << endl;
+  nll->getComponents()->find("nll_model_data_constr")->Print("v");
+  cout << "xxxxx > sigma: " << endl;
+  sigma.Print("v");
+  cout << "xxxxx > nuisance_b: " << endl;
+  nuisance_b.Print("v");
+
+
+}
