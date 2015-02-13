@@ -3,6 +3,7 @@
 
 #include "RooWorkspace.h"
 #include "RooRealVar.h"
+#include "RooFormulaVar.h"
 
 #include "plotClass.hh"
 #include "dataset.hh"
@@ -66,7 +67,13 @@ public :
   // -- this has nothing to do with Higgs!
   void   toy6();   
   void   toy7(); 
+  void   toy8(); 
 
+  void   toy9(int nsig = 50, int nbkg = 1000); 
+  void   toy10(int nsig0 = 50, int nbkg0 = 1000);
+
+  void   toy11(int nb0 = 1000, double start = 0.2);
+  
   // validation produces the simple plots
   //     - pT for various components
   //     - mass for various selections
@@ -100,6 +107,10 @@ public :
   // -- 2D eUML mass-pT fit with PROFILED LLR
   void allNumbers4(int ntoy = -1); 
 
+  // -- 2D eUML mass-pT with the official RooStats tools (this follows now after toy10()
+  void allNumbers5(int ntoy = -1); 
+
+
   virtual void   bookHist(std::string name, std::string cuts); 
   void   readHistograms();
   void   setupTree(TTree *t); 
@@ -120,11 +131,12 @@ public :
 private: 
 
   // -- essential analysis numbers
-  double fSg0, fSg1, fBg; 
+  double fMu, fSg, fSg0, fSg1, fBg; 
   double fHiggsMpeak, fHiggsMres;
-  double fBgMp1, fBgMp1E;
+  double fBgMp1, fBgMp1E; // pol1
+  double fBgMc0, fBgMc0E; // chebychev
   double fBgTau, fBgTauE;
-  double fSg0Tau, fSg0TauE;
+  double fSgTau, fSg0Tau, fSg0TauE;
   double fSg1Tau, fSg1TauE;
 
   // -- and the corresponding RooVars
@@ -132,8 +144,11 @@ private:
   RooRealVar *fRm, *fRpt; // the variables
   RooRealVar *fRsgP, *fRsgS; // signal mass peak and sigma
   RooRealVar *fRsg0Tau, *fRsg1Tau; // signal pT slope
-  RooRealVar *fRC0, *fRbgTau; // bg mass and pt shapes
-  RooRealVar *fRsg0N, *fRsg1N, *fRbgN; // the event numbers for the extended LH
+  RooRealVar *fRC0, *fRbg0Tau, *fRbg1Tau; // bg mass and pt shapes
+  RooRealVar *fRbg0Slope, *fRbg1Slope; // bg mass and pt shapes
+  RooRealVar *fRmu, *fRsg0N, *fRsg1N, *fRbg0N, *fRbg1N; // the event numbers for the extended LH
+  RooRealVar *fRbgN, *fRbgTau, *fRbgSlope;
+  RooFormulaVar *fRsgN, *fRsgTau;
   
   double fNormSg0, fNormSg0E; 
   double fNormSg1, fNormSg1E; 
