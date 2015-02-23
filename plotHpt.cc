@@ -2867,24 +2867,30 @@ void plotHpt::displayCuts() {
   fg1pt   = cuts->GetBinContent(13); 
   
   
-  cuts->SetMinimum(0.);
-  cuts->Draw();
-  tl->SetTextSize(0.05);
+  //   cuts->SetMinimum(0.);
+  //   cuts->Draw();
+  
+  double xpos(0.2); 
+  
+  tl->SetTextSize(0.04);
   tl->SetTextColor(kBlack); 
-  tl->DrawLatex(0.5, 0.80, Form("Lumi: %4.0f", fLumi)); 
+  tl->DrawLatex(xpos, 0.80, Form("Lumi: %4.0f", fLumi)); 
 
-  tl->DrawLatex(0.5, 0.75, Form("pthi: %4.0f", fpthi)); 
-  tl->DrawLatex(0.5, 0.70, Form("ptlo: %4.0f", fptlo)); 
+  tl->DrawLatex(xpos, 0.75, Form("pthi: %4.0f", fpthi)); 
+  tl->DrawLatex(xpos, 0.70, Form("ptlo: %4.0f", fptlo)); 
 
-  tl->DrawLatex(0.5, 0.65, Form("g0pt: %4.0f", fg0pt)); 
-  tl->DrawLatex(0.5, 0.60, Form("g1pt: %4.0f", fg1pt)); 
+  tl->DrawLatex(xpos, 0.65, Form("g0pt: %4.0f", fg0pt)); 
+  tl->DrawLatex(xpos, 0.60, Form("g1pt: %4.0f", fg1pt)); 
 
-  tl->DrawLatex(0.5, 0.55, Form("ptnh: %4.0f", fptnh)); 
-  tl->DrawLatex(0.5, 0.50, Form("ptnl: %4.0f", fptnl)); 
+  tl->DrawLatex(xpos, 0.55, Form("ptnh: %4.0f", fptnh)); 
+  tl->DrawLatex(xpos, 0.50, Form("ptnl: %4.0f", fptnl)); 
 
-  tl->DrawLatex(0.5, 0.45, Form("g0ptlo: %4.0f", fg0ptlo)); 
-  tl->DrawLatex(0.5, 0.40, Form("g1ptlo: %4.0f", fg1ptlo)); 
+  tl->DrawLatex(xpos, 0.45, Form("g0ptlo: %4.0f", fg0ptlo)); 
+  tl->DrawLatex(xpos, 0.40, Form("g1ptlo: %4.0f", fg1ptlo)); 
 
+  tl->DrawLatex(xpos, 0.40, Form("g1ptlo: %4.0f", fHiggsMres)); 
+
+  
   
   cout << " signal region: " << fptlo << " < pT < " << fpthi << endl;
   cout << " norm   region: " << fptnl << " < pT < " << fptnh << endl;
@@ -2929,7 +2935,7 @@ void plotHpt::massHistograms(TH1D *hb, TH1D *hs0, TH1D *hs1) {
   RooPlot *plotMh = m.frame(Title("mass"));
   hdata.plotOn(plotMh);
   bgM.plotOn(plotMh);
-  bgM.paramOn(plotMh, Layout(0.5,0.9,0.85));
+  bgM.paramOn(plotMh, Layout(0.5, 0.9, 0.98));
   plotMh->Draw("same");
 
   hb->SetMarkerColor(kBlack);
@@ -3050,43 +3056,70 @@ void plotHpt::iniRooVars() {
 
   cout << "########################################" << endl;
   fMu = 1.; 
-//   fRmu->setConstant(kFALSE);
-//   fRmu->setVal(fMu); 
-  cout << "# fMu = " << fMu << endl;
+
   fRsg0N->setConstant(kFALSE);
   fRsg0N->setVal(fSg0); 
-  cout << "# fSg0 = " << fSg0 << endl;
+
   fRsg1N->setConstant(kFALSE);
   fRsg1N->setVal(fSg1); 
-  cout << "# fSg1 = " << fSg1 << endl;
-//   fRbgN->setConstant(kFALSE);
-//   fRbgN->setVal(fBg); 
-//   cout << "# fRbg = " << fBg << endl;
+
+  fRsg2N->setConstant(kFALSE);
+  fRsg2N->setVal(fSg1); 
+
+  fRsg3N->setConstant(kFALSE);
+  fRsg3N->setVal(fSg1); 
+  fRsg3Tau->setConstant(kFALSE);
+  fRsg3Tau->setVal(fSg1Tau);
+
+  fRbg3N->setConstant(kFALSE);
+  fRbg3N->setVal(fBg); 
+  fRbg3Slope->setConstant(kFALSE);
+  fRbg3Slope->setVal(fBgMp1);
+  fRbg3Tau->setConstant(kFALSE);
+  fRbg3Tau->setVal(fBgTau);
+
+  fRsg4N->setConstant(kFALSE);
+  fRsg4N->setVal(fSg1); 
+  fRsg4Tau->setConstant(kFALSE);
+  fRsg4Tau->setVal(fSg1Tau);
+
+  fRbg4N->setConstant(kFALSE);
+  fRbg4N->setVal(fBg); 
+  fRbg4Slope->setConstant(kFALSE);
+  fRbg4Slope->setVal(fBgMp1);
+  fRbg4Tau->setConstant(kFALSE);
+  fRbg4Tau->setVal(fBgTau);
+
   fRbg0N->setConstant(kFALSE);
   fRbg0N->setVal(fBg); 
   cout << "# fRbg0 = " << fBg << endl;
   fRbg1N->setConstant(kFALSE);
   fRbg1N->setVal(fBg); 
   cout << "# fRbg1 = " << fBg << endl;
+  fRbg2N->setConstant(kFALSE);
+  fRbg2N->setVal(fBg); 
+  cout << "# fRbg2 = " << fBg << endl;
   
   fRsg0Tau->setConstant(kFALSE);
   fRsg0Tau->setVal(fSg0Tau);
-  cout << "# fRsg0Tau = " << fSg0Tau << endl;
+
   fRsg1Tau->setConstant(kFALSE);
   fRsg1Tau->setVal(fSg1Tau);
-  cout << "# fRsg1Tau = " << fSg1Tau << endl;
+
   fRbg0Tau->setConstant(kFALSE);
   fRbg0Tau->setVal(fBgTau);
-  cout << "# fRbg0Tau = " << fBgTau << endl;
+
   fRbg1Tau->setConstant(kFALSE);
   fRbg1Tau->setVal(fBgTau);
-  cout << "# fRbg1Tau = " << fBgTau << endl;
+
 //   fRbgSlope->setConstant(kFALSE);
 //   fRbgSlope->setVal(fBgMp1);
+
   fRbg0Slope->setConstant(kFALSE);
   fRbg0Slope->setVal(fBgMp1);
   fRbg1Slope->setConstant(kFALSE);
   fRbg1Slope->setVal(fBgMp1);
+
   cout << "# fBgMp1 = " << fBgMp1 << endl;
   cout << "########################################" << endl;
 
@@ -3657,21 +3690,17 @@ void plotHpt::allNumbers5(int ntoy) {
 
   cout << "allNumbers5: " << endl;
 
-  zone(3, 3);
   fitMass((TH1D*)fHists["m_mcatnlo_hipt"], fHiggsMres, fHiggsMpeak); 
-  
-  c0->cd(2);
   fitMass((TH1D*)fHists["m_mcatnlo_lopt"], fNormHiggsMres, fNormHiggsMpeak); 
 
-  c0->cd(3);
+  zone(3, 3);
+  c0->cd(1);
   ptDistributions();
 
-  c0->cd(4); 
-  displayCuts(); 
-
-  c0->cd(5);
+  c0->cd(4);
   TH1D *hb(0), *hs0(0), *hs1(0); 
   massHistograms(hb, hs0, hs1);
+  displayCuts(); 
   
   // -- SIGNAL variables
   fRm = new RooRealVar("m", "m", MGGLO, MGGHI, "GeV"); 
@@ -3685,6 +3714,7 @@ void plotHpt::allNumbers5(int ntoy) {
   // -- SM Higgs 1D pdfs
   fRsg0N = new RooRealVar("sg0N","Number of Higgs 0 signal events", fSg0, 0., 1.e4);
   fRsg1N = new RooRealVar("sg1N","Number of Higgs 1 signal events", fSg1, 0., 1.e4);
+  fRsg2N = new RooRealVar("sg2N","Number of Higgs 2 signal events", fSg1, 0., 1.e4);
 
   fRsg0Tau = new RooRealVar("sg0Tau", "signal 0 tau", fSg0Tau, -10., 10.); 
   fRsg1Tau = new RooRealVar("sg1Tau", "signal 1 tau", fSg1Tau, -10., 10.); 
@@ -3693,6 +3723,10 @@ void plotHpt::allNumbers5(int ntoy) {
 
   RooGaussian sg1M("sg1M", "signal 1 mass", *fRm, *fRsgP, *fRsgS); 
   RooExponential sg1Pt("sg1Pt", "signal 1 pT", *fRpt, *fRsg1Tau);   
+
+  RooGaussian sg2M("sg2M", "signal 2 mass", *fRm, *fRsgP, *fRsgS); 
+  fRbg2Slope = new RooRealVar("bg2Slope", "coefficient #0 for bg 2", fBgMp1, -10., 10.); 
+  RooPolynomial bg2M("bg2M", "background 2 gamma gamma mass", *fRm, RooArgList(*fRbg2Slope)); 
 
 
   // -- BACKGROUND variables and 1D pdfs
@@ -3704,6 +3738,7 @@ void plotHpt::allNumbers5(int ntoy) {
 
   fRbg0N   = new RooRealVar("bg0N","Number of background 0 events", fBg, 0., 1.e5);
   fRbg1N   = new RooRealVar("bg1N","Number of background 1 events", fBg, 0., 1.e5);
+  fRbg2N   = new RooRealVar("bg2N","Number of background 2 events", fBg, 0., 1.e5);
   fRbgN    = new RooRealVar("bgN","Number of background  events", fBg, 0., 1.e5);
   fRbg0Tau = new RooRealVar("bg0Tau", "background 0 gamma gamma tau", fBgTau, -10., 10.); 
   fRbg1Tau = new RooRealVar("bg1Tau", "background 1 gamma gamma tau", fBgTau, -10., 10.); 
@@ -3717,6 +3752,36 @@ void plotHpt::allNumbers5(int ntoy) {
   fRbg1Slope = new RooRealVar("bg1Slope", "coefficient #0 for bg 1", fBgMp1, -10., 10.); 
   RooPolynomial bg1M("bg1M", "background 1 gamma gamma mass", *fRm, RooArgList(*fRbg1Slope)); 
   RooExponential bg1Pt("bg1Pt", "background 1 gamma gamma pT", *fRpt, *fRbg1Tau);   
+
+
+  // -- model 3 setup: manual pLLR for Sig1
+  fRsg3N       = new RooRealVar("sg3N","Number of Higgs 3 signal events", fSg1, 0., 1.e4);
+  fRsg3Tau     = new RooRealVar("sg3Tau", "signal 3 tau", fSg1Tau, -10., 10.); 
+  fRbg3N       = new RooRealVar("bg3N","Number of background 3  events", fBg, 0., 1.e4);
+  fRbg3Slope   = new RooRealVar("bg3Slope", "coefficient #0 for bg 3", fBgMp1, -10., 10.); 
+  fRbg3Tau     = new RooRealVar("bg3Tau", "background 3 gamma gamma tau", fBgTau, -10., 10.); 
+  RooPolynomial  bg3M("bg3M", "background 3 gamma gamma mass", *fRm, RooArgList(*fRbg3Slope)); 
+  RooExponential bg3Pt("bg3Pt", "background 3 gamma gamma pT", *fRpt, *fRbg3Tau);   
+  RooGaussian    sg3M("sg3M", "signal 3 mass", *fRm, *fRsgP, *fRsgS); 
+  RooExponential sg3Pt("sg3Pt", "signal 3 pT", *fRpt, *fRsg3Tau);   
+  RooProdPdf     sg3Pdf("sg3Pdf", "sg3Pdf", RooArgSet(sg3M, sg3Pt));
+  RooProdPdf     bg3Pdf("bg3Pdf", "bg3Pdf", RooArgSet(bg3M, bg3Pt));
+  RooAddPdf      model3("model3", "model3", RooArgList(sg3Pdf, bg3Pdf), RooArgList(*fRsg3N, *fRbg3N));
+
+  // -- model 4 setup: manual pLLR for Sig0
+  fRsg4N       = new RooRealVar("sg4N","Number of Higgs 4 signal events", fSg1, 0., 1.e4);
+  fRsg4Tau     = new RooRealVar("sg4Tau", "signal 4 tau", fSg1Tau, -10., 10.); 
+  fRbg4N       = new RooRealVar("bg4N","Number of background 4  events", fBg, 0., 1.e4);
+  fRbg4Slope   = new RooRealVar("bg4Slope", "coefficient #0 for bg 4", fBgMp1, -10., 10.); 
+  fRbg4Tau     = new RooRealVar("bg4Tau", "background 4 gamma gamma tau", fBgTau, -10., 10.); 
+  RooPolynomial  bg4M("bg4M", "background 4 gamma gamma mass", *fRm, RooArgList(*fRbg4Slope)); 
+  RooExponential bg4Pt("bg4Pt", "background 4 gamma gamma pT", *fRpt, *fRbg4Tau);   
+  RooGaussian    sg4M("sg4M", "signal 4 mass", *fRm, *fRsgP, *fRsgS); 
+  RooExponential sg4Pt("sg4Pt", "signal 4 pT", *fRpt, *fRsg4Tau);   
+  RooProdPdf     sg4Pdf("sg4Pdf", "sg4Pdf", RooArgSet(sg4M, sg4Pt));
+  RooProdPdf     bg4Pdf("bg4Pdf", "bg4Pdf", RooArgSet(bg4M, bg4Pt));
+  RooAddPdf      model4("model4", "model4", RooArgList(sg4Pdf, bg4Pdf), RooArgList(*fRsg4N, *fRbg4N));
+  
 
 //   RooChebychev bgM("bgM", "background gamma gamma mass", *fRm, RooArgList(*fRbgSlope)); 
 //   RooExponential bgPt("bgPt", "background gamma gamma pT", *fRpt, *fRbgTau);   
@@ -3740,10 +3805,15 @@ void plotHpt::allNumbers5(int ntoy) {
 //   RooAddPdf model("model", "model", RooArgList(sgPdf, bgPdf), RooArgList(*fRsgN, *fRbgN));
   RooAddPdf model0("model0", "model0", RooArgList(sg0Pdf, bg0Pdf), RooArgList(*fRsg0N, *fRbg0N));
   RooAddPdf model1("model1", "model1", RooArgList(sg1Pdf, bg1Pdf), RooArgList(*fRsg1N, *fRbg1N));
+  
+  // -- 1D mass fit only
+  RooAddPdf model2("model2", "model2", RooArgList(sg2M, bg2M), RooArgList(*fRsg2N, *fRbg2N));
+
+
 
   // -- run toys 
   if (ntoy > 0) fNtoy = ntoy; 
-  RooDataSet *bgData(0), *sg0Data(0), *sg1Data(0), *data(0), *data1(0);
+  RooDataSet *bgData(0), *sg0Data(0), *sg1Data(0), *data(0), *data1(0), *data0(0);
   RooFitResult *fr1(0), *fr0(0);
   
   RooCmdArg fitargs; 
@@ -3756,18 +3826,26 @@ void plotHpt::allNumbers5(int ntoy) {
     fitargs.addArg(Minimizer("Minuit2")); 
   }
 
-  RooWorkspace w("w"); 
+  RooWorkspace *w(0); 
 
   RooRandom::randomGenerator()->SetSeed(111);
 
   TH1D *hsig1 = new TH1D("hsig1", "", 50, 0., 5.); hsig1->SetLineColor(kBlack); 
   TH1D *hsig2 = new TH1D("hsig2", "", 50, 0., 5.); hsig2->SetLineColor(kRed); 
+  TH1D *hsig3 = new TH1D("hsig3", "", 50, 0., 5.); hsig3->SetLineColor(kMagenta); 
+
+  TH1D *ht0 = new TH1D("ht0", "prof t = -2ln(lambda), lambda = L(t, v^^)/L(t^, v^)", 400, -40., 40.); ht0->SetLineColor(kBlue); 
+  TH1D *ht1 = new TH1D("ht1", "prof t = -2ln(lambda), lambda = L(t, v^^)/L(t^, v^)", 400, -40., 40.); ht1->SetLineColor(kRed); 
+
+  TH1D *hT0 = new TH1D("hT0", "unprof t = -2ln(lambda), lambda = L(t, v^^)/L(t^, v^)", 400, -40., 40.); hT0->SetLineColor(kBlue); 
+  TH1D *hT1 = new TH1D("hT1", "unprof t = -2ln(lambda), lambda = L(t, v^^)/L(t^, v^)", 400, -40., 40.); hT1->SetLineColor(kRed); 
+
 
   for (int i = 0; i < fNtoy; ++i) {
     cout << "==================> TOY " << i << endl;
-    
+    w = new RooWorkspace("w"); 
+
     iniRooVars(); 
-//     RooAbsPdf * pdf = &model;
     bgData = bg0Pdf.generate(RooArgSet(*fRm, *fRpt), fBg); 
     sg0Data = sg0Pdf.generate(RooArgSet(*fRm, *fRpt), fSg0);
     sg1Data = sg0Pdf.generate(RooArgSet(*fRm, *fRpt), fSg1);
@@ -3778,6 +3856,9 @@ void plotHpt::allNumbers5(int ntoy) {
     data1 = new RooDataSet(*bgData);
     data1->append(*sg1Data);
 
+    data0 = new RooDataSet(*bgData);
+    data0->append(*sg0Data);
+
     // -----------------------
     // -- mu parametrization?!
     // -----------------------
@@ -3786,6 +3867,7 @@ void plotHpt::allNumbers5(int ntoy) {
     //     fRsg0Tau->setConstant(kTRUE);
     //     fRsg1Tau->setConstant(kTRUE);
     
+    //     RooAbsPdf * pdf = &model;
     //     RooFitResult *r0 = pdf->fitTo(*data, RooFit::Save(true), RooFit::Minimizer("Minuit2","Migrad"));
     //     cout << "### RooFitResult r0 ###################################################################" << endl;
     //     r0->Print("v");
@@ -3809,117 +3891,317 @@ void plotHpt::allNumbers5(int ntoy) {
     
 
     // ----------------------------
-    // -- the usual parametrization
+    // -- "2D" mass-lifetime
     // ----------------------------
     iniRooVars(); 
     RooFitResult *r1 = model1.fitTo(*data1, RooFit::Save(true), RooFit::Minimizer("Minuit2","Migrad"));
     cout << "### RooFitResult r1 ###################################################################" << endl;
     r1->Print("v");
     cout << "#######################################################################################" << endl;
-    c0->cd(8);
-    RooPlot *plotM1 = fRm->frame(Title("mass"), Bins(NBINS));
-    data1->plotOn(plotM1);
-    model1.plotOn(plotM1);
-    model1.paramOn(plotM1, Layout(0.5,0.9,0.85));
-    plotM1->Draw();
-
+    c0->cd(2);
+    if (0 == i) {
+      RooPlot *plotM1 = fRm->frame(Title("mass"), Bins(NBINS));
+      plotM1->remove("", kTRUE);
+      data1->plotOn(plotM1);
+      model1.plotOn(plotM1);
+      model1.paramOn(plotM1, Layout(0.5, 0.8, 0.45));
+      plotM1->Draw();
+    }
     
-    c0->cd(9);
-    RooPlot *plotPt1 = fRpt->frame(Title("pt"));
-    data1->plotOn(plotPt1);
-    model1.plotOn(plotPt1);
-    model1.paramOn(plotPt1, Layout(0.5,0.9,0.85));
-    plotPt1->Draw();
+    c0->cd(3);
+    if (0 == i) {
+      RooPlot *plotPt1 = fRpt->frame(Title("pt"));
+      data1->plotOn(plotPt1);
+      model1.plotOn(plotPt1);
+      model1.paramOn(plotPt1, Layout(0.4,0.8,0.85));
+      plotPt1->Draw();
+    }
 
-    RooStats::ModelConfig mc("ModelConfig", &w);
-    mc.SetPdf(model1);
-    mc.SetObservables(RooArgSet(*fRm, *fRpt));
-    mc.SetParametersOfInterest(*fRsg1N);
+    RooStats::ModelConfig mc1("mc1", w);
+    mc1.SetPdf(model1);
+    mc1.SetObservables(RooArgSet(*fRm, *fRpt));
+    mc1.SetParametersOfInterest(*fRsg1N);
     RooArgList nuisParams(*fRbg1Tau, *fRbg1N, *fRbg1Slope); 
-    mc.SetNuisanceParameters(nuisParams);
+    mc1.SetNuisanceParameters(nuisParams);
 
 
-    // -- plot 1: PLL
-    c0->cd(7);
-    ProfileLikelihoodCalculator pl(*data1, mc);
-    pl.SetConfidenceLevel(0.683); // 68% interval
-    LikelihoodInterval* interval0 = pl.GetInterval();
-  
-    // find the iterval on the first Parameter of Interest
-    RooRealVar* firstPOI = (RooRealVar*) mc.GetParametersOfInterest()->first();
+    //     // -- plot 1: PLL
+    //     if (0) {
+    //       ProfileLikelihoodCalculator pl(*data1, mc1);
+    //       pl.SetConfidenceLevel(0.683); // 68% interval
+    //       LikelihoodInterval* interval0 = pl.GetInterval();
     
-    double lowerLimit = interval0->LowerLimit(*firstPOI);
-    double upperLimit = interval0->UpperLimit(*firstPOI);
-  
+    //       // find the iterval on the first Parameter of Interest
+    //       RooRealVar* firstPOI = (RooRealVar*) mc1.GetParametersOfInterest()->first();
     
-    cout << "### 68% interval on " << firstPOI->GetName()<< " ###################################" << endl
-	 << "### [" << lowerLimit << ", " << upperLimit << "] "
-	 << endl;
+    //       double lowerLimit = interval0->LowerLimit(*firstPOI);
+    //       double upperLimit = interval0->UpperLimit(*firstPOI);
     
-    LikelihoodIntervalPlot *liplot = new LikelihoodIntervalPlot(interval0);
-    liplot->SetRange(50., 200.); 
-    liplot->Draw("");  
     
+    //       cout << "### 68% interval on " << firstPOI->GetName()<< " ###################################" << endl
+    // 	   << "### [" << lowerLimit << ", " << upperLimit << "] "
+    // 	   << endl;
+    
+    //       c0->cd(5);
+    //       LikelihoodIntervalPlot *liplot = new LikelihoodIntervalPlot(interval0);
+    //       liplot->SetRange(50., 200.); 
+    //       liplot->Draw("");  
+    //     }
+
+    // ----------------------------------------------------------------------
     // -- Asymptotic significance: works for one POI only!
-    ModelConfig *sbModel = (ModelConfig*)mc.Clone();
+    // ----------------------------------------------------------------------
+    ModelConfig *sbModel = (ModelConfig*)mc1.Clone();
     sbModel->SetName("S+B Model");      
     RooRealVar *poi = (RooRealVar*)sbModel->GetParametersOfInterest()->first();
     poi->setVal(fSg1);  // set POI snapshot in S+B model for expected significance
     sbModel->SetSnapshot(*poi);
     
-    ModelConfig *bModel = (ModelConfig*)mc.Clone();
+    ModelConfig *bModel = (ModelConfig*)mc1.Clone();
     bModel->SetName("B Model");      
     poi->setVal(fSg0);
     bModel->SetSnapshot(*poi);
 
-    // create the AsymptoticCalculator from data, alt model, null model
     AsymptoticCalculator  ac(*data1, *sbModel, *bModel);
     ac.SetOneSidedDiscovery(true);  // for one-side discovery test
-    //ac.SetPrintLevel(-1);  // to suppress print level 
     
-    HypoTestResult * asResult = ac.GetHypoTest();
+    HypoTestResult *asResult = ac.GetHypoTest();
     cout << "-------------------------------------------------" << endl;
     asResult->Print();
     cout << "-------------------------------------------------" << endl;
     hsig1->Fill(asResult->Significance()); 
     
 
+    // ----------------------------------------------------------------------
     // -- profile likelihood, from tutorials/roostats/rs102_hypotestwithshapes.C
+    //    https://root.cern.ch/root/html/RooStats__ProfileLikelihoodCalculator.html
+    // ----------------------------------------------------------------------
     ModelConfig mcpll; 
-    mcpll.SetWorkspace(w);
+    mcpll.SetWorkspace(*w);
     mcpll.SetPdf(model1);
     ProfileLikelihoodCalculator plc; 
     plc.SetData(*data1); 
     
-    // here we explicitly set the value of the parameters for the null.  
-    // We want no signal contribution, eg. mu = 0
     RooArgSet ras_poi(*fRsg1N);
+    //    RooArgSet ras_poi(*fRsg1N, *fRsg1Tau);
     RooArgSet *nullParams = (RooArgSet*) ras_poi.snapshot(); 
     nullParams->setRealValue("sg1N", fSg0); 
+    //    nullParams->setRealValue("sg1Tau", fSg0Tau); 
     
-    
-    //plc.SetNullParameters(*nullParams);
     plc.SetModel(mcpll);
-    // NOTE: using snapshot will import nullparams 
-    // in the WS and merge with existing "mu" 
-    // model.SetSnapshot(*nullParams);
-    
-    //use instead setNuisanceParameters
-    plc.SetNullParameters( *nullParams);
-    
-    
-    
-    // We get a HypoTestResult out of the calculator, and we can query it.
+    plc.SetNullParameters(*nullParams);
+
     HypoTestResult* htr = plc.GetHypoTest();
     cout << "-------------------------------------------------" << endl;
     cout << "The p-value for the null is " << htr->NullPValue() << endl;
-    cout << "Corresponding to a signifcance of " << htr->Significance() << endl;
+    cout << "Corresponding to a significance of " << htr->Significance() << endl;
     cout << "-------------------------------------------------\n\n" << endl;
     hsig2->Fill(htr->Significance()); 
 
 
+    // ----------------------------------------------------------------------
+    // -- profile likelihood, attempt with 2POI, but results in low significance?!
+    //    https://root.cern.ch/root/html/RooStats__ProfileLikelihoodCalculator.html
+    // ----------------------------------------------------------------------
+    ModelConfig mcpll2d; 
+    mcpll2d.SetWorkspace(*w);
+    mcpll2d.SetPdf(model1);
+    ProfileLikelihoodCalculator plc2d; 
+    plc2d.SetData(*data1); 
+    
+    //    RooArgSet ras_poi(*fRsg1N);
+    RooArgSet poi2d(*fRsg1N, *fRsg1Tau);
+    RooArgSet *nullParams2d = (RooArgSet*) poi2d.snapshot(); 
+    nullParams2d->setRealValue("sg1N", fSg0); 
+    nullParams2d->setRealValue("sg1Tau", fSg0Tau); 
+    
+    plc2d.SetModel(mcpll2d);
+    plc2d.SetNullParameters(*nullParams2d);
+
+    HypoTestResult* htr2d = plc2d.GetHypoTest();
+    cout << "-------------------------------------------------" << endl;
+    cout << "The p-value for the null is " << htr2d->NullPValue() << endl;
+    cout << "Corresponding to a significance of " << htr2d->Significance() << endl;
+    cout << "-------------------------------------------------\n\n" << endl;
+    hsig3->Fill(htr2d->Significance()); 
 
 
+    // ----------------------------------------------------------------------
+    // -- manual implementation of pLLR
+    // ----------------------------------------------------------------------
+    // http://www.hep.manchester.ac.uk/u/ukyang/chiggs/codes/Limit.cc ??
+
+
+    // ----------------------------------------------------------------------
+    // -- and now for SIG0
+    // ----------------------------------------------------------------------
+    RooArgSet m4poi(*fRsg4N, *fRsg4Tau); 
+    
+    iniRooVars(); 
+    fRsg4N->setConstant(kFALSE);
+    fRsg4Tau->setConstant(kFALSE);
+    cout << "xxxxx > create nll" << endl;
+    RooAbsReal *nll0 = model4.createNLL(*data0, Extended(kTRUE), Verbose(kFALSE));
+    RooMinuit tminuit0(*nll0);
+    tminuit0.setPrintLevel(-1);
+    tminuit0.setNoWarn();
+    tminuit0.migrad();
+    RooFitResult* tfitres0 = tminuit0.save();  
+
+    double fitRsg4N   = fRsg4N->getVal();
+    double fitRsg4Tau = fRsg4Tau->getVal();
+
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    cout << "XXXXXXXXXXXXXX tfitres0" << endl;
+    tfitres0->Print(); 
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+
+    double valNll0 = nll0->getVal(); 
+
+    cout << endl;
+    cout << "xxxxx > valNll0 = " << valNll0 << endl;
+
+    RooProfileLL* pll0 = dynamic_cast<RooProfileLL*>(nll0->createProfile(m4poi));
+    
+    // -- const-set SG0-hypothesis
+    fRsg4N->setVal(fSg0); 
+    fRsg4N->setConstant(kTRUE);
+    fRsg4Tau->setVal(fSg0Tau); 
+    fRsg4Tau->setConstant(kTRUE);
+    double val4Nll0   = nll0->getVal();
+    double val4Pll0   = pll0->getVal();
+
+    double fit2Rsg4N = fRsg4N->getVal();
+
+    cout << endl;
+    cout << "xxxxx > val4Nll0 = " << val4Nll0 << endl;
+    cout << "xxxxx > val4Pll0 = " << val4Pll0 << endl;
+
+    // -- const-set SG1-hypothesis
+    fRsg4N->setVal(fSg1); 
+    fRsg4N->setConstant(kTRUE);
+    fRsg4Tau->setVal(fSg1Tau); 
+    fRsg4Tau->setConstant(kTRUE);
+    double val4Nll1   = nll0->getVal();
+    double val4Pll1   = pll0->getVal();
+
+    cout << endl;
+    cout << "xxxxx > val4Nll1 = " << val4Nll1 << endl;
+    cout << "xxxxx > val4Pll1 = " << val4Pll1 << endl;
+
+    ht0->Fill(2.*(val4Pll1 - val4Pll0));    
+    hT0->Fill(2.*(val4Nll1 - val4Nll0));
+
+    cout << endl;
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    cout << " val4Nll0 = " << val4Nll0 << " val4Pll0 = " << val4Pll0 << " before const-setting null-hypo parameters Nsig = " << fitRsg4N << endl
+	 << " val4Nll1 = " << val4Nll1 << " val4Pll1 = " << val4Pll1 << " after const-setting null-hypo parameters Nsig = " << fit2Rsg4N << endl
+	 << "note: fSg0 = " << fSg0 
+	 << endl;
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    cout << endl;
+    
+    // -- reset
+    fRsg4N->setConstant(kFALSE);
+    fRsg4Tau->setConstant(kFALSE);
+
+
+    // ----------------------------------------------------------------------
+    // -- and now for SIG1
+    // ----------------------------------------------------------------------
+    RooArgSet m3poi(*fRsg3N, *fRsg3Tau); 
+    
+    cout << "xxxxx > create nll" << endl;
+    iniRooVars(); 
+    fRsg3N->setConstant(kFALSE);
+    fRsg3Tau->setConstant(kFALSE);
+    RooAbsReal *nll1 = model3.createNLL(*data1, Extended(kTRUE), Verbose(kFALSE));
+    RooMinuit tminuit(*nll1);
+    tminuit.setPrintLevel(-1);
+    tminuit.setNoWarn();
+    tminuit.migrad();
+    RooFitResult* tfitres = tminuit.save();  
+
+    double fitRsg3N   = fRsg3N->getVal();
+    double fitRsg3Tau = fRsg3Tau->getVal();
+
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    cout << "XXXXXXXXXXXXXX tfitres" << endl;
+    tfitres->Print(); 
+    cout << "fRsg3N->getVal() = " << fRsg3N->getVal()  << endl;
+    cout << "fRsg3Tau->getVal() = " << fRsg3Tau->getVal()  << endl;
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+
+    double valNll1 = nll1->getVal(); 
+
+    cout << endl;
+    cout << "xxxxx > valNll1 = " << valNll1 << endl;
+    // https://root.cern.ch/root/html/RooProfileLL.html:
+    // The value return by RooProfileLL is the input likelihood nll minimized w.r.t all nuisance parameters 
+    // (which are all parameters except for those listed in the constructor) minus the -log(L) of the best fit.
+    // -> i.e. the return value is 0.5 * test statistic t
+    RooProfileLL* pll1 = dynamic_cast<RooProfileLL*>(nll1->createProfile(m3poi));
+    
+    double val3Nll = nll1->getVal(); 
+    double val3Pll = pll1->getVal(); 
+    cout << endl;
+    cout << "xxxxx > val3Nll = " << val3Nll << endl;
+    cout << "xxxxx > val3Pll = " << val3Pll << endl;
+
+    // -- const-set SG0-hypothesis
+    fRsg3N->setVal(fSg0); 
+    fRsg3N->setConstant(kTRUE);
+    fRsg3Tau->setVal(fSg0Tau); 
+    fRsg3Tau->setConstant(kTRUE);
+    double val3Nll0   = nll1->getVal(); 
+    double val3Pll0   = pll1->getVal();
+
+    cout << endl;
+    cout << "xxxxx > val3Nll0 = " << val3Nll0 << endl;
+    cout << "xxxxx > val3Pll0 = " << val3Pll0 << endl;
+
+
+    // -- const-set SG1-hypothesis
+    fRsg3N->setVal(fSg1); 
+    fRsg3N->setConstant(kTRUE);
+    fRsg3Tau->setVal(fSg1Tau); 
+    fRsg3Tau->setConstant(kTRUE);
+    double val3Nll1   = nll1->getVal(); 
+    double val3Pll1   = pll1->getVal();
+
+    cout << endl;
+    cout << "xxxxx > val3Nll1 = " << val3Nll1 << endl;
+    cout << "xxxxx > val3Pll1 = " << val3Pll1 << endl;
+
+    double fit2Rsg3N = fRsg3N->getVal();
+    ht1->Fill(2.*(val3Pll1 - val3Pll0));
+    hT1->Fill(2.*(val3Nll1 - val3Nll0));
+    c0->cd(7);
+    RooPlot *frame2 = fRsg3N->frame(Name("plot2"), Range(0., 200.));
+    nll1->plotOn(frame2, LineColor(kBlack), ShiftToZero());
+    pll1->plotOn(frame2, LineColor(kBlue), ShiftToZero());
+    frame2->Draw();
+    
+    // -- reset
+    fRsg3N->setConstant(kFALSE);
+    fRsg3Tau->setConstant(kFALSE);
+
+    cout << endl;
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    cout << " val3Nll0 = " << val3Nll0 << " val3Pll0 = " << val3Pll0 << " before const-setting null-hypo parameters Nsig = " << fitRsg3N << endl
+	 << " val3Nll1 = " << val3Nll1 << " val3Pll1 = " << val3Pll1 << " after const-setting null-hypo parameters Nsig = " << fit2Rsg3N  << endl
+	 << "note: fSg0 = " << fSg0 
+	 << endl;
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    cout << endl;
+
+
+
+    // ----------------------------------------------------------------------
+    // -- this is consistent with the other tests 
+    //    (AsymptoticCalculator, ProfileLikelihoodCalculator),
+    //    but takes much more time
+    // ----------------------------------------------------------------------
     if (0) {
       FrequentistCalculator   fc(*data1, *sbModel, *bModel);
       fc.SetToys(2000,500);    // 2000 for null (B) and 500 for alt (S+B) 
@@ -3949,21 +4231,122 @@ void plotHpt::allNumbers5(int ntoy) {
 
 
 
+    delete w;
+    delete r1; 
 
+    delete pll1; 
+    delete pll0; 
 
     delete data; 
+    delete data1; 
+    delete data0; 
 
     delete bgData;
     delete sg0Data;
     delete sg1Data; 
 
+    delete nullParams; 
+    delete bModel; 
+    delete sbModel; 
+
+    delete asResult; 
+    delete htr; 
+
+    c0->cd(5);
+    gStyle->SetOptStat(0); 
+    hsig2->Draw();
+    hsig1->Draw("same");
+    
+    tl->SetTextSize(0.05);
+    tl->SetTextColor(kBlack); 
+    tl->DrawLatex(0.10, 0.92, Form("Asymp: %3.2f", median(hsig1))); 
+    tl->SetTextColor(kRed); 
+    tl->DrawLatex(0.4, 0.92, Form("ProfL: %3.2f", median(hsig2))); 
+    tl->SetTextColor(kBlack); 
+    tl->DrawLatex(0.67, 0.92, Form("ntoys: %4d", i+1)); 
+
+    hsig3->Draw("same");
+    tl->SetTextColor(kMagenta); 
+    tl->DrawLatex(0.55, 0.82, Form("ProfL2d: %3.2f", median(hsig3))); 
+
+    c0->cd(6); 
+    gStyle->SetOptStat(0); 
+    if (ht0->GetMaximum() > ht1->GetMaximum()) {
+      ht0->Draw();
+      ht1->Draw("same");
+    } else {
+      ht1->Draw();
+      ht0->Draw("same");
+    }
+    double midpoint, tailprob; 
+    findMidPoint(ht0, ht1, midpoint, tailprob); 
+    double sigma = 2.*oneSidedGaussianSigma(tailprob);
+    tl->SetTextSize(0.04);
+    tl->DrawLatex(0.6, 0.80, Form("midpoint: %4.3f", midpoint)); 
+    tl->DrawLatex(0.6, 0.70, Form("tailprob: %4.3f", tailprob)); 
+    tl->DrawLatex(0.6, 0.60, Form("Sep: %4.3f", sigma)); 
+
+
+    tl->SetTextSize(0.05);
+    tl->SetTextColor(kRed); 
+    tl->DrawLatex(0.10, 0.92, Form("pLLR1: %3.2f", median(ht1))); 
+
+    tl->SetTextSize(0.05);
+    tl->SetTextColor(kBlue); 
+    tl->DrawLatex(0.50, 0.92, Form("pLLR0: %3.2f", median(ht0))); 
+
+
+    c0->cd(9); 
+    gStyle->SetOptStat(0); 
+    if (hT0->GetMaximum() > hT1->GetMaximum()) {
+      hT0->Draw();
+      hT1->Draw("same");
+    } else {
+      hT1->Draw();
+      hT0->Draw("same");
+    }
+    findMidPoint(hT0, hT1, midpoint, tailprob); 
+    sigma = 2.*oneSidedGaussianSigma(tailprob);
+    tl->SetTextSize(0.04);
+    tl->DrawLatex(0.6, 0.80, Form("midpoint: %4.3f", midpoint)); 
+    tl->DrawLatex(0.6, 0.70, Form("tailprob: %4.3f", tailprob)); 
+    tl->DrawLatex(0.6, 0.60, Form("Sep: %4.3f", sigma)); 
+
+
+    tl->SetTextSize(0.05);
+    tl->SetTextColor(kRed); 
+    tl->DrawLatex(0.10, 0.92, Form("LLR1: %3.2f", median(hT1))); 
+
+    tl->SetTextSize(0.05);
+    tl->SetTextColor(kBlue); 
+    tl->DrawLatex(0.50, 0.92, Form("LLR0: %3.2f", median(hT0))); 
+
+
     c0->SaveAs(Form("%s/allNumbers5-toy-%d.pdf", fDirectory.c_str(), i)); 
 
   }
 
-  c0->cd(6);
-  hsig1->Draw();
-  hsig2->Draw("same");
+
+  // -- 1d hypothesis test with RooDLLSignificanceMCSModule
+  if (0) {
+    c0->cd(7);
+    iniRooVars();
+    RooDataSet *data2 = model2.generate(*fRm, fBg + fSg1); 
+    RooMCStudy* mcstudy = new RooMCStudy(model2, *fRm, Binned(), Silence(), Extended(kTRUE),
+					 FitOptions(Save(kTRUE), Extended(kTRUE), PrintEvalErrors(-1))
+					 );
+    double nullHypo = fSg0; 
+    RooDLLSignificanceMCSModule sigModule(*fRsg2N, nullHypo);
+    mcstudy->addModule(sigModule);
+    mcstudy->generateAndFit(1000);
+    
+    TH1 *hz = mcstudy->fitParDataSet().createHistogram("significance_nullhypo_sg2N") ;
+    hz->Draw("hist");
+    tl->SetTextColor(kBlack); 
+    tl->DrawLatex(0.2, 0.92, Form("RooDLLSig: %3.2f", median(hz))); 
+  }
+
+
 
 
   c0->SaveAs(Form("%s/allNumbers5-%s.pdf", fDirectory.c_str(), fSetup.c_str())); 
@@ -4036,4 +4419,45 @@ void plotHpt::toy11(int nbg0, double astart) {
   pdf->paramOn(plotMh, Layout(0.5,0.9,0.85));
   plotMh->Draw();
 
+}
+
+
+// ----------------------------------------------------------------------
+void plotHpt::toy12(int nbg0, double astart) {
+
+  readHistograms();
+
+  zone(1,2);
+  TH1D *h1 = (TH1D*)fHists["pt_sherpa_hipt"]->Clone("h1");
+  normHist(h1, "sherpa", LUMI); 
+  h1->SetLineColor(kBlack); 
+  gPad->SetLogy(1); 
+  h1->SetMaximum(2000.); 
+  h1->SetMinimum(0.001); 
+
+  fBg = h1->GetSumOfWeights(); 
+  h1->Fit("expo", "r", "", PTLO, PTHI); 
+  h1->GetFunction("expo")->SetLineColor(fDS["sherpa"]->fColor); 
+  fBgTau  = h1->GetFunction("expo")->GetParameter(1); 
+  fBgTauE = h1->GetFunction("expo")->GetParError(1); 
+  h1->Draw("hist");
+  h1->GetFunction("expo")->Draw("same");
+  tl->DrawLatex(0.5, 0.6, Form("tau = %5.4f", fBgTau)); 
+
+  c0->cd(2);
+  gPad->SetLogy(1); 
+
+  RooRealVar pt("pt", "pt", 200., 1000.); 
+  RooRealVar tau("tau", "tau", fBgTau, -10., 10.); 
+  RooExponential sg1Pt("sg1Pt", "signal 1 pT", pt, tau);   
+
+  RooDataHist hdata("hdata","hdata", pt, h1);
+  RooFitResult *r1 = sg1Pt.fitTo(hdata, Range(300., 1000.), RooFit::Save(true), RooFit::Minimizer("Minuit2","Migrad"));
+
+  RooPlot *plotPt = pt.frame(Title("pt"));
+  hdata.plotOn(plotPt);
+  sg1Pt.plotOn(plotPt);
+  sg1Pt.paramOn(plotPt, Layout(0.5,0.9,0.85));
+  plotPt->Draw();
+  
 }

@@ -73,6 +73,7 @@ public :
   void   toy10(int nsig0 = 50, int nbkg0 = 1000);
 
   void   toy11(int nb0 = 1000, double start = 0.2);
+  void   toy12(int nb0 = 1000, double start = 0.2);
   
   // validation produces the simple plots
   //     - pT for various components
@@ -104,7 +105,7 @@ public :
 
   // -- 2D eUML mass-pT fit with LLR
   void allNumbers3(int ntoy = -1); 
-  // -- 2D eUML mass-pT fit with PROFILED LLR
+  // -- 2D eUML mass-pT fit with PROFILED LLR, try the setup of 1310.1397
   void allNumbers4(int ntoy = -1); 
 
   // -- 2D eUML mass-pT with the official RooStats tools (this follows now after toy10()
@@ -145,10 +146,14 @@ private:
   RooRealVar *fRsgP, *fRsgS; // signal mass peak and sigma
   RooRealVar *fRsg0Tau, *fRsg1Tau; // signal pT slope
   RooRealVar *fRC0, *fRbg0Tau, *fRbg1Tau; // bg mass and pt shapes
-  RooRealVar *fRbg0Slope, *fRbg1Slope; // bg mass and pt shapes
-  RooRealVar *fRmu, *fRsg0N, *fRsg1N, *fRbg0N, *fRbg1N; // the event numbers for the extended LH
+  RooRealVar *fRbg0Slope, *fRbg1Slope, *fRbg2Slope; // bg mass and pt shapes
+  RooRealVar *fRmu, *fRsg0N, *fRsg1N, *fRsg2N, *fRbg0N, *fRbg1N, *fRbg2N; // the event numbers for the extended LH
   RooRealVar *fRbgN, *fRbgTau, *fRbgSlope;
   RooFormulaVar *fRsgN, *fRsgTau;
+
+  RooRealVar *fRsg3N, *fRsg3Tau, *fRbg3N, *fRbg3Tau, *fRbg3Slope;
+  RooRealVar *fRsg4N, *fRsg4Tau, *fRbg4N, *fRbg4Tau, *fRbg4Slope;
+
   
   double fNormSg0, fNormSg0E; 
   double fNormSg1, fNormSg1E; 
