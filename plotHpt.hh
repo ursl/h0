@@ -27,7 +27,7 @@ public :
 
   // -- Main analysis methods 
   void   makeAll(int bitmask = 0);
-  virtual void treeAnalysis(int nevts = -1); 
+  virtual void treeAnalysis(int mask = 1, int nevts = -1); 
   void   massResolution(std::string hname = "mpt_mcatnlo5_nopt");
   // -- these two are historic 
   void   optimizeCuts(std::string fname = "opt.root", double lumi = 1000., int nevts = -1);
