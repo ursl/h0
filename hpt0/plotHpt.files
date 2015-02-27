@@ -1,9 +1,13 @@
-#type=mc,sherpa,1    xsec=0.62   file=/scratch/ursl/h/csherpa_131_chain.root 
-type=mc,sherpa,1    xsec=1.60   file=/scratch/ursl/h/csherpa_132_chain.root 
-type=mc,mcatnlo,0   xsec=49.50  file=/scratch/ursl/h/cmcatnlo_150_chain.root
-type=mc,mcatnlo,1   xsec=49.50  file=/scratch/ursl/h/cmcatnlo_151_chain.root
-type=mc,mcatnlo,5   xsec=49.50  file=/scratch/ursl/h/cmcatnlo_155_chain.root
-#
+# -- basic input
+type=mc,sherpa,1             xsec=1.60   file=/scratch/ursl/h/csherpa_132_chain.root 
+type=mc,mcatnlo,mcatnlo0     xsec=49.50  file=/scratch/ursl/h/cmcatnlo_150_chain.root
+type=mc,mcatnlo,mcatnlo1     xsec=49.50  file=/scratch/ursl/h/cmcatnlo_151_chain.root
+type=mc,mcatnlo,mcatnlo5     xsec=49.50  file=/scratch/ursl/h/cmcatnlo_155_chain.root
+# -- signal systematics
+type=mc,mcatnlo,mcatnlo0v5 xsec=49.50  file=/scratch/ursl/h/cmcatnlo_v5_150_chain.root
+type=mc,mcatnlo,mcatnlo1v5 xsec=49.50  file=/scratch/ursl/h/cmcatnlo_v5_151_chain.root
+type=mc,mcatnlo,mcatnlo5v5 xsec=49.50  file=/scratch/ursl/h/cmcatnlo_v5_155_chain.root
+# -- background systematics
 type=mc,sherpa,132  xsec=1.60  file=/scratch/ursl/h/csherpa_132_sys.root
 type=mc,sherpa,133  xsec=0.31  file=/scratch/ursl/h/csherpa_133_sys.root
 type=mc,sherpa,134  xsec=0.12  file=/scratch/ursl/h/csherpa_134_sys.root
