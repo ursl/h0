@@ -34,46 +34,6 @@ public :
   void   optAnalysis(int mode = 1, std::string filename = "opt.root", std::string treename = "opt");
   // -- this parses the output of running the complete analysis
   void   anaOptimization(); 
-
-
-  // toy1 is an UML implementation: 2d UML fit of Higgs signal against a gg background
-  //      - fixed m resolution
-  //      - pT is modeled with RooHistPdf
-  //      - no reference to normalization anywhere
-  void   toy1(int nsg = 50, int nbg = 500); 
-
-  // toy2 is another UML implementation: 2d UML fit of Higgs signal against a gg background
-  //     - fixed m resolution
-  //     - pT is modeled with RooHistPdf
-  //     - extended UML
-  void   toy2(int nsg = 50, int nbg = 500); 
-
-  // toy3 is another UML implementation: 2d UML fit of contact Higgs signal against a gg+SM Higgs bg
-  //     - signal is     Higgs(mtop -> infty)
-  //     - background is diphoton + Higgs(mtop = 173.5GeV)
-  void   toy3(int nsg = 100, double nbgH = 50, double nbg = 450); 
-
-  // toy4 adds a sensitivity calculation
-  //     - signal is     Higgs(mtop -> infty)
-  //     - background is diphoton + Higgs(mtop = 173.5GeV)
-  void   toy4(double nsg0 = 50, double nsg1 = 100, double nbg = 450, int ntoy = -1); 
-
-  // toy5 introduces the delta LogLikelihood as a significance estimate using RooFit tools
-  //     - extended UML for mass ONLY
-  //     - signal is     Higgs(mtop -> infty)
-  //     - background is diphoton + Higgs(mtop = 173.5GeV)
-  void   toy5(double nsg0 = 50, double nsg1 = 100, double nbg = 450, int ntoy = 200); 
-
-  // -- this has nothing to do with Higgs!
-  void   toy6();   
-  void   toy7(); 
-  void   toy8(); 
-
-  void   toy9(int nsig = 50, int nbkg = 1000); 
-  void   toy10(int nsig0 = 50, int nbkg0 = 1000);
-
-  void   toy11(int nb0 = 1000, double start = 0.2);
-  void   toy12(int nb0 = 1000, double start = 0.2);
   
   // validation produces the simple plots
   //     - pT for various components
@@ -85,28 +45,14 @@ public :
   void   bgShape(int nevts = -1);
   void   bgSyst(std::string ds0, std::string ds1, std::string ds2 = "nada");
 
-  // analysis: Everything after treeAnalysis and before toyX()
-  //     - event yields in lumi
-  //     - hi-pt diphoton resolution
-  //     - all required histograms
-  void allNumbers(int ntoy = 100); 
+  void   sgSyst(std::string ds0, std::string ds1, std::string ds2 = "nada");
 
-  // -- 1D eUML mass fit with DLL
-  void allNumbers1(int ntoy = -1); 
-
-  // -- 2D eUML mass-pT fit wtih DLL
-  void allNumbers2(int ntoy = -1); 
 
   // -- now start to factorize the preprocessing
   void fitMass(TH1D *hs, double &peak, double &reso); 
   void ptDistributions();
   void displayCuts();
   void massHistograms(TH1D *hb, TH1D *hs0, TH1D *hs1);
-
-  // -- 2D eUML mass-pT fit with LLR
-  void allNumbers3(int ntoy = -1); 
-  // -- 2D eUML mass-pT fit with PROFILED LLR, try the setup of 1310.1397
-  void allNumbers4(int ntoy = -1); 
 
   // -- 2D eUML mass-pT with the official RooStats tools (this follows now after toy10()
   void allNumbers5(int ntoy = -1); 

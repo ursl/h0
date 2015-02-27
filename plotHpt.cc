@@ -189,6 +189,7 @@ void plotHpt::bookHist(string name, string cuts) {
     fHists[hist]->Reset();
   } else {
     fHists.insert(make_pair(hist, new TH1D(hist, thist, 100, 0, 1000.))); 
+    cout << "name ->" << name << "<-" << " hist ->" << hist << "<-" << endl;
     setHistTitles(fHists[hist], fDS[name], ahist, "Entries/bin");
   }
 
@@ -349,6 +350,44 @@ void plotHpt::makeAll(int bitmask) {
 
 
 // ----------------------------------------------------------------------
+void plotHpt::sgSyst(string ds0, string ds1, string ds2) {
+  
+  vector<string> vds; 
+  vds.push_back(ds0);
+  vds.push_back(ds1);
+  if (string::npos == ds2.find("nada")) vds.push_back(ds2);
+
+  for (unsigned int i = 0; i < vds.size(); ++i) {
+    fCds = vds[i]; 
+    bookHist(vds[i], "nopt"); 
+    bookHist(vds[i], "goodcand"); 
+    bookHist(vds[i], "lopt"); 
+    bookHist(vds[i], "hipt"); 
+    TTree *t = getTree(vds[i]); 
+    setupTree(t); 
+    loopOverTree(t, 1); 
+  }
+
+  int OTYPE = LUMI;
+  string what("pt");
+  string sel("hipt");
+
+  zone();
+
+  TH1D *h0 = (TH1D*)fHists[Form("%s_%s_%s", what.c_str(), vds[0].c_str(), sel.c_str())];
+  TH1D *h1 = (TH1D*)fHists[Form("%s_%s_%s", what.c_str(), vds[1].c_str(), sel.c_str())];
+  TH1D *hr = (TH1D*)h1->Clone("ratio"); hr->Sumw2(); hr->Reset();
+  hr->Divide(h0, h1); 
+  
+  hr->Fit("pol1"); 
+  
+  tl->DrawLatex(0.6, 0.8, Form("%s/%s", vds[0].c_str(), vds[1].c_str()));
+  c0->SaveAs(Form("%s/sgSyst-%s-%s-%s.pdf", fDirectory.c_str(), what.c_str(), vds[0].c_str(), vds[1].c_str())); 
+
+}
+
+
+// ----------------------------------------------------------------------
 void plotHpt::bgSyst(string ds0, string ds1, string ds2) {
   
   vector<string> vds; 
@@ -386,6 +425,7 @@ void plotHpt::bgSyst(string ds0, string ds1, string ds2) {
     
   }
 }
+
 
 // ----------------------------------------------------------------------
 void plotHpt::bgShape(int nevts) {
@@ -539,7 +579,7 @@ void plotHpt::bgShape(int nevts) {
 
 
 // ----------------------------------------------------------------------
-void plotHpt::treeAnalysis(int nevts) {
+void plotHpt::treeAnalysis(int mask) {
 
   cout << "treeAnalysis: open " << fHistFileName << endl;
   cout << " cuts: " << endl;
@@ -562,53 +602,43 @@ void plotHpt::treeAnalysis(int nevts) {
   h->SetBinContent(12, G0PT); 
   h->SetBinContent(13, G1PT); 
 
+  vector<string> vds; 
+  if (mask & 0x1) {
+    vds.push_back("sherpa");
+    vds.push_back("mcatnlo5");
+    vds.push_back("mcatnlo1");
+    vds.push_back("mcatnlo0");
+  }
+
+  if (mask & 0x2) {
+    vds.push_back("mcatnlo0v5");
+    vds.push_back("mcatnlo1v5");
+    vds.push_back("mcatnlo5v5");
+  }
+
+  if (mask & 0x4) {
+    vds.push_back("sys132");
+    vds.push_back("sys133");
+    vds.push_back("sys134");
+    vds.push_back("sys135");
+    vds.push_back("sys141");
+    vds.push_back("sys150");
+    vds.push_back("sys151");
+    vds.push_back("sys152");
+  }
+
   
-  string ds("sherpa");
-  fCds = ds; 
-  bookHist(ds, "nopt"); 
-  bookHist(ds, "goodcand"); 
-  bookHist(ds, "lopt"); 
-  bookHist(ds, "hipt"); 
-  TTree *t = getTree(ds); 
-  setupTree(t); 
-  loopOverTree(t, 1, nevts); 
-
-
-  ds = "mcatnlo5"; 
-  fCds = ds; 
-  bookHist(ds, "nopt"); 
-  bookHist(ds, "goodcand"); 
-  bookHist(ds, "lopt"); 
-  bookHist(ds, "hipt"); 
-  t = getTree(ds); 
-  setupTree(t);
-  loopOverTree(t, 1, nevts); 
-
-
-  ds = "mcatnlo0"; 
-  fCds = ds; 
-  bookHist(ds, "nopt"); 
-  bookHist(ds, "goodcand"); 
-  bookHist(ds, "lopt"); 
-  bookHist(ds, "hipt"); 
-  t = getTree(ds); 
-  setupTree(t);
-  loopOverTree(t, 1, nevts); 
-  TH1D *hmcatnlo0 = new TH1D("hmcatnlo0", "hmcatnlo0", 100, 0., 1000.); 
-  t->Draw("gpt>>hmcatnlo0"); 
-
-  ds = "mcatnlo1"; 
-  fCds = ds; 
-  bookHist(ds, "nopt"); 
-  bookHist(ds, "goodcand"); 
-  bookHist(ds, "lopt"); 
-  bookHist(ds, "hipt"); 
-  t = getTree(ds); 
-  setupTree(t);
-  loopOverTree(t, 1, nevts); 
-  TH1D *hmcatnlo1 = new TH1D("hmcatnlo1", "hmcatnlo1", 100, 0., 1000.); 
-  t->Draw("gpt>>hmcatnlo1"); 
-
+  for (unsigned int i = 0; i < vds.size(); ++i) {
+    fCds = vds[i]; 
+    bookHist(vds[i], "nopt"); 
+    bookHist(vds[i], "goodcand"); 
+    bookHist(vds[i], "lopt"); 
+    bookHist(vds[i], "hipt"); 
+    TTree *t = getTree(vds[i]); 
+    setupTree(t); 
+    loopOverTree(t, 1); 
+  }
+  
   map<string, TH1*>::iterator hit = fHists.begin();
   map<string, TH1*>::iterator hite = fHists.end();
   string h0name(""), h1name("");
@@ -1149,6 +1179,7 @@ TH1* plotHpt::combMCAtNLOHist(TH1 *h0, TH1 *h1) {
 
   string h0name = h0->GetName(); 
   replaceAll(h0name, "mcatnlo0", "mcatnlo"); 
+  cout << "  combMCAtNLOHist:  " << h0->GetName() << " .. " << h1->GetName() << endl;
 
   TH1 *h(0);
   if (h0->InheritsFrom(TH2D::Class())) {
@@ -3141,541 +3172,6 @@ void plotHpt::shutup() {
 
 
 
-// ----------------------------------------------------------------------
-void plotHpt::toy6() {
-  // based on https://twiki.cern.ch/twiki/bin/view/Main/LearningRoostats
-  
-  //construct the model
-  RooWorkspace w("w");
-  
-  w.factory("Gaussian::constraint_b(nuisance_b[41.7,0,100],41.7,4.6)"); //constrained b to be positive - "truncated gaussian"
-  w.factory("Gaussian::constraint_acc(nuisance_acc[0.71,0,1],0.71,0.09)"); //constrained acc in range 0-1
-  w.factory("Gaussian::constraint_lumi(nuisance_lumi[5.0,0.0,10.0],5.0,0.195)"); //constrained lumi from 0 to 10.0
-  w.factory("prod::s(sigma[0,100],nuisance_lumi,nuisance_acc)"); //constructs a function
-  w.factory("sum::mean(s,nuisance_b)"); //another function
-  w.factory("Poisson::pois(n[61,0,100],mean)"); //a pdf (special function)
-  w.factory("PROD::model(pois,constraint_b,constraint_lumi,constraint_acc)"); //another pdf
-  
-  //define RooArgSets for convenience
-  w.defineSet("obs","n"); //observables
-  w.defineSet("poi","sigma"); //parameters of interest
-  w.defineSet("np","nuisance_b,nuisance_lumi,nuisance_acc"); //nuisance parameters
-  
-  RooDataSet data("data", "data", *w.set("obs"));
-  data.add(*w.set("obs")); //actually add the data
-  
-  
-  cout << "xxxxx > create nll" << endl;
-  RooAbsReal* nll = w.pdf("model")->createNLL(data);
-  
-  
-  RooPlot* frame = w.var("sigma")->frame(Range(0., 12.));
-  nll->plotOn(frame, ShiftToZero()); //the ShiftToZero option puts the minimum at 0 on the y-axis
-  frame->Draw();
-  
-  if (1) {
-    cout << "xxxxx > create pll" << endl;
-    RooAbsReal* pll = nll->createProfile(*w.set("poi"));
-    pll->plotOn(frame,LineColor(kRed));
-    frame->Draw();
-  }
-
-  if (1) {
-    RooMinuit mini(*nll);
-    mini.minos(*w.set("poi")); //could give no arg list and it will calculate minos errors for all the parameters
-  
-    RooFitResult* res = mini.save("myResult","My Result");
-    res->status(); //should be 0 for success!
-  }
-  
-  TLine l; 
-  
-  l.DrawLine(w.var("sigma")->getVal()+w.var("sigma")->getErrorLo(),0,w.var("sigma")->getVal()+w.var("sigma")->getErrorLo(),0.5);
-  l.DrawLine(w.var("sigma")->getVal()+w.var("sigma")->getErrorHi(),0,w.var("sigma")->getVal()+w.var("sigma")->getErrorHi(),0.5);
-  l.DrawLine(0., 0.5, 12., 0.5);
-  
-  cout << "xxxxx > nll: " << endl;
-  nll->Print("tv");
-  cout << "xxxxx > nll_model_data: " << endl;
-  nll->getComponents()->find("nll_model_data")->Print("v");
-  cout << "xxxxx > nll_model_data_constr: " << endl;
-  nll->getComponents()->find("nll_model_data_constr")->Print("v");
-  cout << "xxxxx > sigma: " << endl;
-  w.var("sigma")->Print("v");
-  cout << "xxxxx > nuisance_b: " << endl;
-  w.var("nuisance_b")->Print("v");
-
-}
-
-
-// ----------------------------------------------------------------------
-void plotHpt::toy7() {
-
-  // based on https://twiki.cern.ch/twiki/bin/view/Main/LearningRoostats
-  double lumiVal = 5.0; 
-  double lumiErr = 0.039*5.0;
-  //  lumiErr = 0.001; 
-  double nObs = 61; 
-  double sgEffVal = 0.71; 
-  double sgEffErr = 0.09; 
-  //  sgEffErr = 0.001; 
-  double bgVal = 41.7;
-  double bgErr = 4.6;
-  //  bgErr = 0.001; 
-
-  cout << "simple estimate = " << (nObs - bgVal)/lumiVal/sgEffVal << endl;
-
-  // -- variables, parameters and constraints
-  RooRealVar nuisance_b("nuisance_b", "nuisance_b", bgVal, 0, 100); 
-  RooRealVar nuisance_b0("nuisance_b0", "nuisance_b central value", bgVal); 
-  RooRealVar nuisance_bE("nuisance_bE", "nuisance_b error", bgErr); 
-
-  RooRealVar nuisance_lumi("nuisance_lumi", "nuisance_lumi", lumiVal, 0, 10); 
-  RooRealVar nuisance_lumi0("nuisance_lumi0", "nuisance_lumi central value", lumiVal); 
-  RooRealVar nuisance_lumiE("nuisance_lumiE", "nuisance_lumi error", lumiErr); 
-
-  RooRealVar nuisance_acc("nuisance_acc", "nuisance_acc", sgEffVal, 0, 1); 
-  RooRealVar nuisance_acc0("nuisance_acc0", "nuisance_acc central value", sgEffVal); 
-  RooRealVar nuisance_accE("nuisance_accE", "nuisance_acc error", sgEffErr); 
-
-  RooGaussian constraint_b("constraint_b", "constraint_b", nuisance_b, nuisance_b0, nuisance_bE); 
-  RooGaussian constraint_lumi("constraint_lumi", "constraint_lumi", nuisance_lumi, nuisance_lumi0, nuisance_lumiE); 
-  RooGaussian constraint_acc("constraint_acc", "constraint_acc", nuisance_acc, nuisance_acc0, nuisance_accE); 
-
-  RooRealVar sigma("sigma", "sigma", 0, 100); 
-  RooRealVar n("n", "n", nObs, 0, 100); 
-
-  // -- model: nObs = sigma*eff*lumi + bg
-//   RooProduct s = RooProduct("s", "s", RooArgSet(sigma, nuisance_lumi, nuisance_acc));
-//   RooAddition mean = RooAddition("mean", "mean", RooArgSet(s, nuisance_b));
-
-  RooFormulaVar mean("mean", "mean", "@0*@1*@2 + @3", RooArgList(sigma, nuisance_lumi, nuisance_acc, nuisance_b));
-
-  RooPoisson  pois("pois", "pois", n, mean); 
-
-  RooProdPdf model = RooProdPdf("model", "model", RooArgList(pois, constraint_b, constraint_lumi, constraint_acc)); 
-
-  RooArgSet obs(n); 
-  RooArgSet poi(sigma); 
-  RooArgSet np(nuisance_b, nuisance_lumi, nuisance_acc); 
-
-  RooDataSet data("data", "data", obs); 
-  data.add(obs); 
-
-  cout << "xxxxx > create nll" << endl;
-  RooAbsReal *nll = model.createNLL(data);
-  
-  zone(1);
-
-  //  RooPlot* frame = sigma.frame();
-  RooPlot* frame = sigma.frame(Range(0., 12.));
-  nll->plotOn(frame, ShiftToZero()); 
-  frame->Draw();
-
-  cout << "xxxxx > create pll" << endl;
-  RooAbsReal* pll = nll->createProfile(poi);
-
-  pll->plotOn(frame, LineColor(kRed), LineStyle(kDashed));
-  frame->Draw();
-
-  RooMinuit mini(*nll);
-  mini.minos(poi); //could give no arg list and it will calculate minos errors for all the parameters
-  
-  RooFitResult *res = mini.save("myResult","My Result");
-  
-  if (res->status() == 0 ) {
-    sigma.Print();
-  } else {
-    cout << "Likelihood maximization failed" << endl;
-  }
-  
-  cout << "XXXXXXXXXXXXXXXXXXXXXXXXXX second fit XXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
-  RooFitResult *res2 = model.fitTo(data, Minos(poi), Save(), Hesse(false));
-  
-  if (res2->status() == 0 ) {
-    sigma.Print();
-  } else {
-    cout << "Likelihood maximization failed" << endl;
-  }
-    
-  TLine l; 
-  
-  l.DrawLine(sigma.getVal() + sigma.getErrorLo(), 0, sigma.getVal() + sigma.getErrorLo(), 0.5);
-  l.DrawLine(sigma.getVal() + sigma.getErrorHi(), 0, sigma.getVal() + sigma.getErrorHi(), 0.5);
-  l.DrawLine(0., 0.5, 12., 0.5);
-
-  cout << "xxxxx > nll: " << endl;
-  nll->Print("tv");
-  cout << "xxxxx > nll_model_data: " << endl;
-  nll->getComponents()->find("nll_model_data")->Print("v");
-  cout << "xxxxx > nll_model_data_constr: " << endl;
-  nll->getComponents()->find("nll_model_data_constr")->Print("v");
-  cout << "xxxxx > sigma: " << endl;
-  sigma.Print("v");
-  cout << "xxxxx > nuisance_b: " << endl;
-  nuisance_b.Print("v");
-}
-
-
-// ----------------------------------------------------------------------
-void plotHpt::toy8() {
-
-  // based on https://twiki.cern.ch/twiki/bin/view/Main/LearningRoostats
-  double lumiVal = 5.0; 
-  double lumiErr = 0.039*5.0;
-  //  lumiErr = 0.001; 
-  double nObs = 61; 
-  double sgEffVal = 0.71; 
-  double sgEffErr = 0.09; 
-  //  sgEffErr = 0.001; 
-  double bgVal = 41.7;
-  double bgErr = 4.6;
-  //  bgErr = 0.001; 
-
-  cout << "simple estimate = " << (nObs - bgVal)/lumiVal/sgEffVal << endl;
-
-  // -- variables, parameters and constraints
-  RooRealVar nuisance_b("nuisance_b", "nuisance_b", bgVal, 0, 100); 
-  RooRealVar nuisance_b0("nuisance_b0", "nuisance_b central value", bgVal); 
-  RooRealVar nuisance_bE("nuisance_bE", "nuisance_b error", bgErr); 
-
-  RooRealVar nuisance_lumi("nuisance_lumi", "nuisance_lumi", lumiVal, 0, 10); 
-  RooRealVar nuisance_lumi0("nuisance_lumi0", "nuisance_lumi central value", lumiVal); 
-  RooRealVar nuisance_lumiE("nuisance_lumiE", "nuisance_lumi error", lumiErr); 
-
-  RooRealVar nuisance_acc("nuisance_acc", "nuisance_acc", sgEffVal, 0, 1); 
-  RooRealVar nuisance_acc0("nuisance_acc0", "nuisance_acc central value", sgEffVal); 
-  RooRealVar nuisance_accE("nuisance_accE", "nuisance_acc error", sgEffErr); 
-
-  RooGaussian constraint_b("constraint_b", "constraint_b", nuisance_b, nuisance_b0, nuisance_bE); 
-  RooGaussian constraint_lumi("constraint_lumi", "constraint_lumi", nuisance_lumi, nuisance_lumi0, nuisance_lumiE); 
-  RooGaussian constraint_acc("constraint_acc", "constraint_acc", nuisance_acc, nuisance_acc0, nuisance_accE); 
-
-  RooRealVar sigma("sigma", "sigma", 0, 100); 
-  RooRealVar n("n", "n", nObs, 0, 100); 
-
-  // -- model: nObs = sigma*eff*lumi + bg
-  RooProduct s = RooProduct("s", "s", RooArgSet(sigma, nuisance_lumi, nuisance_acc));
-  RooAddition mean = RooAddition("mean", "mean", RooArgSet(s, nuisance_b));
-  RooPoisson  pois("pois", "pois", n, mean); 
-
-  RooProdPdf model = RooProdPdf("model", "model", RooArgList(pois, constraint_b, constraint_lumi, constraint_acc)); 
-
-  RooArgSet obs(n); 
-  RooArgSet poi(sigma); 
-  RooArgSet np(nuisance_b, nuisance_lumi, nuisance_acc); 
-
-  RooDataSet data("data", "data", obs); 
-  data.add(obs); 
-
-  cout << "xxxxx > create nll" << endl;
-  RooAbsReal *nll = model.createNLL(data);
-  
-  zone(1);
-
-  //RooAbsReal* pll = nll->createProfile(poi);
-  cout << "xxxxx > create casted pll" << endl;
-  RooProfileLL* pll = dynamic_cast<RooProfileLL*>(nll->createProfile(poi));
-
-  RooFormulaVar p_mu_t("p_mu_t","p_{#mu} 2-sided pll asymp.","TMath::Prob(2*@0,1.)", RooArgList(*pll));
-
-  RooPlot* frame = sigma.frame(Name("plot1"), Range(0., 22.));
-  p_mu_t.plotOn(frame, LineColor(kGreen));
-  frame->Draw();
-
-  double limit = p_mu_t.findRoot(sigma, 4., 30, 0.05); //for example, to find the 95% limit
-
-  RooOneSidedProfileLL opll("opll","opll",*pll);
-
-  pll->plotOn(frame, LineColor(kRed));
-  opll.plotOn(frame, LineColor(kMagenta));
-
-  RooFormulaVar p_mu_q("p_mu_q","p_{#mu} 1-sided pll asymp.","ROOT::Math::normal_cdf_c(sqrt(2*@0),1.)", RooArgList(opll));
-  p_mu_q.plotOn(frame, LineColor(kCyan));
-  
-  frame->GetYaxis()->SetRangeUser(-0.1,1.1);
-  frame->Draw();
-  TLine l;l.SetLineStyle(2);
-  l.DrawLine(0,0.05,22,0.05);
-
-}
-
-
-// ----------------------------------------------------------------------
-void plotHpt::toy9(int nsig, int nbkg) {
-  // from https://twiki.cern.ch/twiki/bin/view/RooStats/RooStatsTutorialsJune2013
-
-  RooWorkspace w("w"); 
-  w.factory("Exponential:bkg_pdf(x[0,10], a[-0.5,-2,-0.2])");
-  w.factory("Gaussian:sig_pdf(x, mass[2], sigma[0.3])");
- 
-  w.factory("SUM:model(nsig[0,10000]*sig_pdf, nbkg[0,10000]*bkg_pdf)");  // for extended model
- 
-  RooAbsPdf * pdf = w.pdf("model");
-  RooRealVar * x = w.var("x");  // the observable
- 
-  // set the desired value of signal and background events
-  w.var("nsig")->setVal(nsig);
-  w.var("nbkg")->setVal(nbkg);
- 
-  // generate the data
-
-  // use fixed random numbers for reproducibility (use 0 for changing every time)
-  RooRandom::randomGenerator()->SetSeed(111);
-
-  // fix number of bins to 50 to plot or to generate data (default is 100 bins) 
-  x->setBins(50);
-
-  RooDataSet * data = pdf->generate( *x);  // will generate accordint to total S+B events
-  //RooDataSet * data = pdf->generate( *x, AllBinned());  // will generate accordint to total S+B events
-  data->SetName("data");
-  w.import(*data);
-
-  data->Print(); 
-
-  zone(2,2);
-  RooPlot * plot = x->frame(Title("Gaussian Signal over Exponential Background"));
-  data->plotOn(plot);
-  plot->Draw();
-
-  RooFitResult * r = pdf->fitTo(*data, RooFit::Save(true), RooFit::Minimizer("Minuit2","Migrad"));
-  r->Print();
-
-  pdf->plotOn(plot);
-  //draw the two separate pdf's
-  pdf->plotOn(plot, RooFit::Components("bkg_pdf"), RooFit::LineStyle(kDashed) );
-  pdf->plotOn(plot, RooFit::Components("sig_pdf"), RooFit::LineColor(kRed), RooFit::LineStyle(kDashed) );
-
-  pdf->paramOn(plot,Layout(0.5,0.9,0.85));
-
-  plot->Draw();
-
-  RooStats::ModelConfig mc("ModelConfig",&w);
-  mc.SetPdf(*pdf);
-  mc.SetParametersOfInterest(*w.var("nsig"));
-  mc.SetObservables(*w.var("x"));
-  // define set of nuisance parameters
-  w.defineSet("nuisParams","a,nbkg");
-
-  mc.SetNuisanceParameters(*w.set("nuisParams"));
-
-  // import model in the workspace 
-  w.import(mc);
-
-  // write the workspace in the file
-  TString fileName = "GausExpModel.root";
-  w.writeToFile(fileName,true);
-  cout << "model written to file " << fileName << endl;
-
-
-  // ######################################################################
-  // -- Asymptotic calculator Solution 
-
-
-  // get the modelConfig (S+B) out of the file
-  // and create the B model from the S+B model
-  ModelConfig*  sbModel = (RooStats::ModelConfig*) w.obj("ModelConfig");
-  sbModel->SetName("S+B Model");      
-  RooRealVar* poi = (RooRealVar*) sbModel->GetParametersOfInterest()->first();
-  poi->setVal(50);  // set POI snapshot in S+B model for expected significance
-  sbModel->SetSnapshot(*poi);
-  ModelConfig * bModel = (ModelConfig*) sbModel->Clone();
-  bModel->SetName("B Model");      
-  poi->setVal(0);
-  bModel->SetSnapshot( *poi  );
-
-  // create the AsymptoticCalculator from data,alt model, null model
-  AsymptoticCalculator  ac(*data, *sbModel, *bModel);
-  ac.SetOneSidedDiscovery(true);  // for one-side discovery test
-  //ac.SetPrintLevel(-1);  // to suppress print level 
-
-  // run the calculator
-  HypoTestResult * asResult = ac.GetHypoTest();
-  asResult->Print();
-
-  c0->cd(2);
-  HypoTestPlot *aplot = new HypoTestPlot(*asResult);
-  aplot->SetLogYaxis(true);
-  aplot->Draw();
-
-  std::cout << "\n\nRun now FrequentistCalculator.....\n";
-
-  FrequentistCalculator   fc(*data, *sbModel, *bModel);
-  fc.SetToys(2000,500);    // 2000 for null (B) and 500 for alt (S+B) 
-
-  // create the test statistics
-  ProfileLikelihoodTestStat profll(*sbModel->GetPdf());
-  // use one-sided profile likelihood
-  profll.SetOneSidedDiscovery(true);
-
-  // configure  ToyMCSampler and set the test statistics
-  ToyMCSampler *toymcs = (ToyMCSampler*)fc.GetTestStatSampler();
-  toymcs->SetTestStatistic(&profll);
-  
-  if (!sbModel->GetPdf()->canBeExtended())
-     toymcs->SetNEventsPerToy(1);
- 
-  // run the test
-  HypoTestResult * fqResult = fc.GetHypoTest();
-  fqResult->Print();
-
-  // plot test statistic distributions
-  c0->cd(3);
-  HypoTestPlot *hplot = new HypoTestPlot(*fqResult);
-  hplot->SetLogYaxis(true);
-  hplot->Draw();
-
-}
-
-
-// ----------------------------------------------------------------------
-void plotHpt::toy10(int nsig0, int nbkg0) {
-
-  RooRealVar     x("x", "x", 0., 10.); // observable
-  RooRealVar     a("a", "a", -0.5, -2., -0.2);
-  RooExponential bkg_pdf("bgk_pdf", "bgk_pdf", x, a);   
-
-
-  RooRealVar  mass("mass", "mass", 2.);
-  RooRealVar  sigma("sigma", "sigma", 0.3);
-  RooGaussian sig_pdf("sig_pdf", "sig_pdf", x, mass, sigma);
-    
-  RooRealVar nsig("nsig", "nsig", 0., 10000.); 
-  RooRealVar nbkg("nbkg", "nbkg", 0., 10000.); 
-  RooAddPdf model("model", "model", RooArgList(sig_pdf, bkg_pdf), RooArgList(nsig, nbkg));
-
-
-  RooAbsPdf * pdf = &model;
- 
-  // set the desired value of signal and background events
-  nsig.setVal(nsig0);
-  nbkg.setVal(nbkg0);
- 
-  // generate the data
-
-  // use fixed random numbers for reproducibility (use 0 for changing every time)
-  RooRandom::randomGenerator()->SetSeed(111);
-
-  // fix number of bins to 50 to plot or to generate data (default is 100 bins) 
-  x.setBins(50);
-
-  RooDataSet *data = pdf->generate(x);  // will generate accordint to total S+B events
-  data->SetName("data");
-  data->Print(); 
-
-  // -- plot 0
-  zone(2,2);
-  RooPlot *plot = x.frame(Title("Gaussian Signal over Exponential Background"));
-  data->plotOn(plot);
-  plot->Draw();
-
-  RooFitResult *r = pdf->fitTo(*data, RooFit::Save(true), RooFit::Minimizer("Minuit2","Migrad"));
-  r->Print();
-
-  pdf->plotOn(plot);
-  //draw the two separate pdf's
-  pdf->plotOn(plot, RooFit::Components("bkg_pdf"), RooFit::LineStyle(kDashed) );
-  pdf->plotOn(plot, RooFit::Components("sig_pdf"), RooFit::LineColor(kRed), RooFit::LineStyle(kDashed) );
-
-  pdf->paramOn(plot,Layout(0.5,0.9,0.85));
-
-  plot->Draw();
-
-
-  RooWorkspace w("w"); 
-  RooStats::ModelConfig mc("ModelConfig", &w);
-  mc.SetPdf(*pdf);
-  mc.SetParametersOfInterest(nsig);
-  mc.SetObservables(x);
-  RooArgSet nuisParams(a, nbkg); 
-
-  mc.SetNuisanceParameters(nuisParams);
-
-
-  // -- plot 1: PLL
-  c0->cd(2);
-  ProfileLikelihoodCalculator pl(*data, mc);
-  pl.SetConfidenceLevel(0.683); // 68% interval
-  LikelihoodInterval* interval = pl.GetInterval();
-  
-  // find the iterval on the first Parameter of Interest
-  RooRealVar* firstPOI = (RooRealVar*) mc.GetParametersOfInterest()->first();
-  
-  double lowerLimit = interval->LowerLimit(*firstPOI);
-  double upperLimit = interval->UpperLimit(*firstPOI);
-  
-  
-  cout << "\n68% interval on " <<firstPOI->GetName()<<" is : ["<<
-    lowerLimit << ", "<<
-    upperLimit <<"] "<<endl;
-  
-  
-  LikelihoodIntervalPlot * liplot = new LikelihoodIntervalPlot(interval);
-  liplot->SetRange(0., 150.); 
-  liplot->Draw("");  
-
-
-
-  // -- Asymptotic significance
-  ModelConfig *sbModel = (ModelConfig*)mc.Clone();
-  sbModel->SetName("S+B Model");      
-  RooRealVar *poi = (RooRealVar*)sbModel->GetParametersOfInterest()->first();
-  poi->setVal(50);  // set POI snapshot in S+B model for expected significance
-  sbModel->SetSnapshot(*poi);
-  
-  ModelConfig *bModel = (ModelConfig*)sbModel->Clone();
-  bModel->SetName("B Model");      
-  poi->setVal(20);
-  bModel->SetSnapshot(*poi);
-
-  // create the AsymptoticCalculator from data, alt model, null model
-  AsymptoticCalculator  ac(*data, *sbModel, *bModel);
-  ac.SetOneSidedDiscovery(true);  // for one-side discovery test
-  //ac.SetPrintLevel(-1);  // to suppress print level 
-
-  // run the calculator
-  HypoTestResult * asResult = ac.GetHypoTest();
-  asResult->Print();
-  
-  double expectedP0 = AsymptoticCalculator::GetExpectedPValues(asResult->NullPValue(), asResult->AlternatePValue(), 0, false);
-  std::cout << "expected p0 = " << expectedP0 << std::endl;
-
-  
-  // --------
-  return;
-  // --------
-
-
-
-  FrequentistCalculator   fc(*data, *sbModel, *bModel);
-  fc.SetToys(2000,500);    // 2000 for null (B) and 500 for alt (S+B) 
-
-  // create the test statistics
-  ProfileLikelihoodTestStat profll(*sbModel->GetPdf());
-  // use one-sided profile likelihood
-  profll.SetOneSidedDiscovery(true);
-
-  // configure  ToyMCSampler and set the test statistics
-  ToyMCSampler *toymcs = (ToyMCSampler*)fc.GetTestStatSampler();
-  toymcs->SetTestStatistic(&profll);
-  
-  if (!sbModel->GetPdf()->canBeExtended())
-    toymcs->SetNEventsPerToy(1);
- 
-  // run the test
-  HypoTestResult * fqResult = fc.GetHypoTest();
-  fqResult->Print();
-
-  // plot test statistic distributions
-  c0->cd(3);
-  HypoTestPlot *hplot = new HypoTestPlot(*fqResult);
-  hplot->SetLogYaxis(true);
-  hplot->Draw();
-
-  
-
-}
-
 
 
 
@@ -3963,7 +3459,7 @@ void plotHpt::allNumbers5(int ntoy) {
     bModel->SetSnapshot(*poi);
 
     AsymptoticCalculator  ac(*data1, *sbModel, *bModel);
-    ac.SetOneSidedDiscovery(true);  // for one-side discovery test
+    //T3    ac.SetOneSidedDiscovery(true);  // for one-side discovery test
     
     HypoTestResult *asResult = ac.GetHypoTest();
     cout << "-------------------------------------------------" << endl;
@@ -4381,83 +3877,3 @@ void plotHpt::allNumbers5(int ntoy) {
 
 
 
-// ----------------------------------------------------------------------
-void plotHpt::toy11(int nbg0, double astart) {
-
-
-  RooRealVar m("m", "m", 70., 180.); 
-  RooRealVar a0("a0","a0", astart, 0., 1.) ;
-  RooChebychev bgM("bgM","bgM", m, RooArgSet(a0)) ;
-
-  RooDataSet *data0 = bgM.generate(m, nbg0); 
-
-  TH1 *h1 = new TH1D("h1", "h1", 100, 70., 180.);   
-  data0->fillHistogram(h1, m); 
-
-  zone(2, 2);
-  RooAbsPdf *pdf = &bgM;
-  RooFitResult *r0 = pdf->fitTo(*data0, RooFit::Save(true), RooFit::Minimizer("Minuit2","Migrad"));
-
-  RooPlot *plotM = m.frame(Title("mass"));
-  data0->plotOn(plotM);
-  pdf->plotOn(plotM);
-  pdf->paramOn(plotM, Layout(0.5,0.9,0.85));
-  plotM->Draw();
-
-
-  c0->cd(2);
-  cout << h1 << endl;
-  h1->Fit("pol1");
-
-  RooDataHist hdata("hdata","hdata", m, h1);
-  RooFitResult *r1 = pdf->fitTo(hdata, RooFit::Save(true), RooFit::Minimizer("Minuit2","Migrad"));
-
-  c0->cd(3);
-  RooPlot *plotMh = m.frame(Title("mass"));
-  hdata.plotOn(plotMh);
-  pdf->plotOn(plotMh);
-  pdf->paramOn(plotMh, Layout(0.5,0.9,0.85));
-  plotMh->Draw();
-
-}
-
-
-// ----------------------------------------------------------------------
-void plotHpt::toy12(int nbg0, double astart) {
-
-  readHistograms();
-
-  zone(1,2);
-  TH1D *h1 = (TH1D*)fHists["pt_sherpa_hipt"]->Clone("h1");
-  normHist(h1, "sherpa", LUMI); 
-  h1->SetLineColor(kBlack); 
-  gPad->SetLogy(1); 
-  h1->SetMaximum(2000.); 
-  h1->SetMinimum(0.001); 
-
-  fBg = h1->GetSumOfWeights(); 
-  h1->Fit("expo", "r", "", PTLO, PTHI); 
-  h1->GetFunction("expo")->SetLineColor(fDS["sherpa"]->fColor); 
-  fBgTau  = h1->GetFunction("expo")->GetParameter(1); 
-  fBgTauE = h1->GetFunction("expo")->GetParError(1); 
-  h1->Draw("hist");
-  h1->GetFunction("expo")->Draw("same");
-  tl->DrawLatex(0.5, 0.6, Form("tau = %5.4f", fBgTau)); 
-
-  c0->cd(2);
-  gPad->SetLogy(1); 
-
-  RooRealVar pt("pt", "pt", 200., 1000.); 
-  RooRealVar tau("tau", "tau", fBgTau, -10., 10.); 
-  RooExponential sg1Pt("sg1Pt", "signal 1 pT", pt, tau);   
-
-  RooDataHist hdata("hdata","hdata", pt, h1);
-  RooFitResult *r1 = sg1Pt.fitTo(hdata, Range(300., 1000.), RooFit::Save(true), RooFit::Minimizer("Minuit2","Migrad"));
-
-  RooPlot *plotPt = pt.frame(Title("pt"));
-  hdata.plotOn(plotPt);
-  sg1Pt.plotOn(plotPt);
-  sg1Pt.paramOn(plotPt, Layout(0.5,0.9,0.85));
-  plotPt->Draw();
-  
-}
