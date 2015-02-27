@@ -39,14 +39,16 @@ setenv HEPMCLOCATION /shome/ursl/h/HepMC-2.06.0
 setenv LD_LIBRARY_PATH /swshare/cms/slc5_amd64_gcc462/external/gcc/4.6.2/lib64:/usr/local/lib:/usr/lib:/usr/X11/lib:
 setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/shome/ursl/h/yaml-cpp-0.5.1/lib
 
-setenv ROOTSYS /shome/ursl/root
-setenv LD_LIBRARY_PATH ${ROOTSYS}/lib:${LD_LIBRARY_PATH}
-setenv PATH ${ROOTSYS}/bin:${PATH}
-
 echo "--> source CMSSW_7_3_0"
 cd /shome/ursl/h/CMSSW_7_3_0
 cmsenv
 cd - 
+
+echo "--> switch to private ROOT"
+setenv ROOTSYS /shome/ursl/root
+setenv LD_LIBRARY_PATH ${ROOTSYS}/lib:${LD_LIBRARY_PATH}
+setenv PATH ${ROOTSYS}/bin:${PATH}
+
 
 echo "--> environment"
 df -kl 
