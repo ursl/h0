@@ -73,6 +73,13 @@ void plotHpt::loadFiles(string afiles) {
 	ds->fSize = 1; 
 	ds->fWidth = 2; 
 	fDS.insert(make_pair(sname, ds)); 
+	// -- add additionally the combined datasets derived from 0 and 1: 
+	if (!sname.compare("mcatnlo0")) fDS.insert(make_pair("mcatnlo", ds)); 
+	if (string::npos != sname.find("man") && string::npos != sname.find("0")) {
+	  string combined = sname.substr(0, sname.find("0")); 
+	  fDS.insert(make_pair(combined, ds)); 
+	  //cout << "combined: " << combined << endl;
+	 }	 
       }
 
 
