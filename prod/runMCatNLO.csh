@@ -55,13 +55,17 @@ df -kl
 printenv
 
 echo "--> extract tar ball #1"
-/bin/cp /shome/ursl/h/prod/jobs/mcatnlo/$JOB.input .
+/bin/cp /shome/ursl/h/prod/jobs/mcatnlo/*/$JOB.input .
 ls -l 
 date
 tar zxvf $JOB.tar.gz
 /bin/bash $JOB.input
 date
 ls -l 
+echo "--> cat $JOB.input"
+cat $JOB.input
+echo "--> cat LinuxPP/NLO.log"
+cat LinuxPP/NLO.log
 
 echo "--> extract tar ball #2"
 date
@@ -85,37 +89,22 @@ ls -l
 ./DelphesHepMC ./delphes_card_CMS.tcl $JOB.root ./$JOB.hepmc
 ls -l 
 
-# ----------------------------------------------------------------------
-# -- Save Output to NFS, not the SE
-# ----------------------------------------------------------------------
 setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/swshare/emi/emi-wn/usr/lib64
 echo "--> LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
 
-echo "--> Save hepmc to SE: $STORAGE1/hepmc"
-echo "--> Save root  to SE: $STORAGE1/delphes"
+echo "--> Save root  to SE: $STORAGE1"
 echo "--> srmcp command: $SRMCP"
 
 # several files possible if tree grows to big. copy them all
 set FILES=`ls $JOB*.root`
 echo "Found the following output root files: $FILES"
 foreach f ($FILES)
-  echo lcg-del  "$STORAGE1/delphes/$f"
-  lcg-del -b -D srmv2 -l "$STORAGE1/delphes/$f"
-  echo lcg-cp    file:///`pwd`/$f "$STORAGE1/delphes/$f"
-  lcg-cp -b -D srmv2  file:///`pwd`/$f "$STORAGE1/delphes/$f"
-  echo lcg-ls     "$STORAGE1/delphes/$f"
-  lcg-ls -b -D srmv2 -l "$STORAGE1/delphes/$f"
-end
-
-set FILES=`ls $JOB*.hepmc`
-echo "Found the following output hepmc files: $FILES"
-foreach f ($FILES)
-  echo lcg-del  "$STORAGE1/hepmc/$f"
-  lcg-del -b -D srmv2 -l "$STORAGE1/hepmc/$f"
-  echo lcg-cp    file:///`pwd`/$f "$STORAGE1/hepmc/$f"
-  lcg-cp -b -D srmv2  file:///`pwd`/$f "$STORAGE1/hepmc/$f"
-  echo lcg-ls     "$STORAGE1/hepmc/$f"
-  lcg-ls -b -D srmv2 -l "$STORAGE1/hepmc/$f"
+  echo lcg-del  "$STORAGE1/$f"
+  lcg-del -b -D srmv2 -l "$STORAGE1/$f"
+  echo lcg-cp    file:///`pwd`/$f "$STORAGE1/$f"
+  lcg-cp -b -D srmv2  file:///`pwd`/$f "$STORAGE1/$f"
+  echo lcg-ls     "$STORAGE1/$f"
+  lcg-ls -b -D srmv2 -l "$STORAGE1/$f"
 end
 
 date
