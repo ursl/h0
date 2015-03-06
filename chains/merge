@@ -42,12 +42,76 @@ if (!$opt_o) {
 tie %jobs, "Tie::IxHash";
 
 %jobs = (
-    "mcatnlo_150" => "cmcatnlo_150_chain", 
-    "mcatnlo_151" => "cmcatnlo_151_chain", 
-    "mcatnlo_155" => "cmcatnlo_155_chain", 
-    "mcatnlo_v5_150" => "cmcatnlo_v5_150_chain", 
-    "mcatnlo_v5_151" => "cmcatnlo_v5_151_chain", 
-    "mcatnlo_v5_155" => "cmcatnlo_v5_155_chain", 
+    "mcatnlo_is_150" => "cmcatnlo_150_chain", 
+    "mcatnlo_is_151" => "cmcatnlo_151_chain", 
+    "mcatnlo_is_155" => "cmcatnlo_155_chain", 
+#
+    "mcatnlo_150" => "cmcatnlo_v5_150_chain", 
+    "mcatnlo_151" => "cmcatnlo_v5_151_chain", 
+    "mcatnlo_155" => "cmcatnlo_v5_155_chain", 
+    "mcatnlo_160" => "cmcatnlo_v5_160_chain", 
+    "mcatnlo_161" => "cmcatnlo_v5_161_chain", 
+    "mcatnlo_165" => "cmcatnlo_v5_165_chain", 
+    "mcatnlo_170" => "cmcatnlo_v5_170_chain", 
+    "mcatnlo_171" => "cmcatnlo_v5_171_chain", 
+    "mcatnlo_175" => "cmcatnlo_v5_175_chain", 
+    "mcatnlo_180" => "cmcatnlo_v5_180_chain", 
+    "mcatnlo_181" => "cmcatnlo_v5_181_chain", 
+    "mcatnlo_185" => "cmcatnlo_v5_185_chain", 
+#
+    "mcatnlo_500" => "cmcatnlo_v5_500_chain", 
+    "mcatnlo_501" => "cmcatnlo_v5_501_chain", 
+    "mcatnlo_505" => "cmcatnlo_v5_505_chain", 
+    "mcatnlo_510" => "cmcatnlo_v5_510_chain", 
+    "mcatnlo_511" => "cmcatnlo_v5_511_chain", 
+    "mcatnlo_515" => "cmcatnlo_v5_515_chain", 
+    "mcatnlo_520" => "cmcatnlo_v5_520_chain", 
+    "mcatnlo_521" => "cmcatnlo_v5_521_chain", 
+    "mcatnlo_525" => "cmcatnlo_v5_525_chain", 
+    "mcatnlo_530" => "cmcatnlo_v5_530_chain", 
+    "mcatnlo_531" => "cmcatnlo_v5_531_chain", 
+    "mcatnlo_535" => "cmcatnlo_v5_535_chain", 
+    "mcatnlo_540" => "cmcatnlo_v5_540_chain", 
+    "mcatnlo_541" => "cmcatnlo_v5_541_chain", 
+    "mcatnlo_545" => "cmcatnlo_v5_545_chain", 
+    "mcatnlo_550" => "cmcatnlo_v5_550_chain", 
+    "mcatnlo_551" => "cmcatnlo_v5_551_chain", 
+    "mcatnlo_555" => "cmcatnlo_v5_555_chain", 
+    "mcatnlo_560" => "cmcatnlo_v5_560_chain", 
+    "mcatnlo_561" => "cmcatnlo_v5_561_chain", 
+    "mcatnlo_565" => "cmcatnlo_v5_565_chain", 
+    "mcatnlo_570" => "cmcatnlo_v5_570_chain", 
+    "mcatnlo_571" => "cmcatnlo_v5_571_chain", 
+    "mcatnlo_575" => "cmcatnlo_v5_575_chain", 
+#
+    "mcatnlo_600" => "cmcatnlo_v5_600_chain", 
+    "mcatnlo_601" => "cmcatnlo_v5_601_chain", 
+    "mcatnlo_605" => "cmcatnlo_v5_605_chain", 
+    "mcatnlo_610" => "cmcatnlo_v5_610_chain", 
+    "mcatnlo_611" => "cmcatnlo_v5_611_chain", 
+    "mcatnlo_615" => "cmcatnlo_v5_615_chain", 
+    "mcatnlo_620" => "cmcatnlo_v5_620_chain", 
+    "mcatnlo_621" => "cmcatnlo_v5_621_chain", 
+    "mcatnlo_625" => "cmcatnlo_v5_625_chain", 
+    "mcatnlo_630" => "cmcatnlo_v5_630_chain", 
+    "mcatnlo_631" => "cmcatnlo_v5_631_chain", 
+    "mcatnlo_635" => "cmcatnlo_v5_635_chain", 
+    "mcatnlo_640" => "cmcatnlo_v5_640_chain", 
+    "mcatnlo_641" => "cmcatnlo_v5_641_chain", 
+    "mcatnlo_645" => "cmcatnlo_v5_645_chain", 
+    "mcatnlo_650" => "cmcatnlo_v5_650_chain", 
+    "mcatnlo_651" => "cmcatnlo_v5_651_chain", 
+    "mcatnlo_655" => "cmcatnlo_v5_655_chain", 
+    "mcatnlo_660" => "cmcatnlo_v5_660_chain", 
+    "mcatnlo_661" => "cmcatnlo_v5_661_chain", 
+    "mcatnlo_665" => "cmcatnlo_v5_665_chain", 
+    "mcatnlo_670" => "cmcatnlo_v5_670_chain", 
+    "mcatnlo_671" => "cmcatnlo_v5_671_chain", 
+    "mcatnlo_675" => "cmcatnlo_v5_675_chain", 
+    "mcatnlo_680" => "cmcatnlo_v5_680_chain", 
+    "mcatnlo_681" => "cmcatnlo_v5_681_chain", 
+    "mcatnlo_685" => "cmcatnlo_v5_685_chain", 
+#
     "sherpa_131" => "csherpa_131_chain",
     "sherpa_132" => "csherpa_132_chain",
     "sherpa_132_sys" => "csherpa_132_sys",
@@ -74,7 +138,8 @@ foreach $j (keys %jobs) {
 	print "$opt_s does not correspond to $j, skipping\n";
 	next;
     }
-    $output = "$jobs{$j}".".root";
+    # $output = "$jobs{$j}".".root";
+    $output = "$j".".root";
     $frag = $jobs{$j};
     @rootfiles = grep{$_ =~ $frag} @lines; 
     @rootfiles = grep{$_ =~ /\.root/} @rootfiles; 
