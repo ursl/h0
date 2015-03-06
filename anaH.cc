@@ -42,6 +42,15 @@ void anaH::eventProcessing() {
 
   initVariables();
 
+  fW8 = getEvent(0)->Weight;
+  
+//   cout << "weight: " << getEvent(0)->Weight 
+//        << " scale: " << getEvent(0)->Scale 
+//        << " MPT: " << getEvent(0)->MPI 
+//        << " X1/2: " << getEvent(0)->X1 << "/" << getEvent(0)->X2
+//        << " PDF1/2: " << getEvent(0)->PDF1 << "/" << getEvent(0)->PDF2
+//        << endl;
+
 //   cout << "w8: " <<  getEvent(0)->Weight 
 //        << " total events = " << fbEvent->GetSize()
 //        << endl;
@@ -336,7 +345,6 @@ void anaH::bookHist() {
 
 // ----------------------------------------------------------------------
 void anaH::initVariables() {
-  fW8 = 0.;
   fH0 = fH1 = 0; 
   fG0 = fG1 = 0; 
   
