@@ -132,7 +132,10 @@ plotHpt::~plotHpt() {
 
 
 // ----------------------------------------------------------------------
-void plotHpt::readHistograms() {
+void plotHpt::readHistograms(vector<string> extrads) {
+
+  TH1::SetDefaultSumw2(kTRUE);
+
   fHists.clear();
   cout << "readHistograms from " << fHistFileName << endl;
   fHistFile = TFile::Open(fHistFileName.c_str()); 
@@ -141,6 +144,11 @@ void plotHpt::readHistograms() {
   ds.push_back("sherpa");
   ds.push_back("mcatnlo5");
   ds.push_back("mcatnlo");
+
+  if (extrads.size() > 0) {
+    copy(extrads.begin(), extrads.end(), back_inserter(ds));
+  }
+
   string dataset("");
 
   vector<string> hists;
@@ -167,7 +175,7 @@ void plotHpt::readHistograms() {
 	h1 = (TH1*)fHistFile->Get(hist);
 	fHists.insert(make_pair(hist, h1));
 	dataset = ds[id];
-	if (!dataset.compare("mcatnlo")) dataset = "mcatnlo0";
+	//	if (!dataset.compare("mcatnlo")) dataset = "mcatnlo0";
 	setHistTitles(fHists[hist], fDS[dataset], h1->GetXaxis()->GetTitle(), "Entries/bin");
       }
     }
@@ -351,37 +359,73 @@ void plotHpt::makeAll(int bitmask) {
 
 // ----------------------------------------------------------------------
 void plotHpt::sgSyst(string ds0, string ds1, string ds2) {
-  
+
+  static int first(1); 
+
+  vector<string> v; 
+  v.push_back("mcatnlov5");
+  v.push_back("mcatnlo5v5"); 
+  if (first) {
+    first = 0;
+    readHistograms(v); 
+  }
+
   vector<string> vds; 
   vds.push_back(ds0);
   vds.push_back(ds1);
   if (string::npos == ds2.find("nada")) vds.push_back(ds2);
 
-  for (unsigned int i = 0; i < vds.size(); ++i) {
-    fCds = vds[i]; 
-    bookHist(vds[i], "nopt"); 
-    bookHist(vds[i], "goodcand"); 
-    bookHist(vds[i], "lopt"); 
-    bookHist(vds[i], "hipt"); 
-    TTree *t = getTree(vds[i]); 
-    setupTree(t); 
-    loopOverTree(t, 1); 
-  }
+//   for (unsigned int i = 0; i < vds.size(); ++i) {
+//     fCds = vds[i]; 
+//     bookHist(vds[i], "nopt"); 
+//     bookHist(vds[i], "goodcand"); 
+//     bookHist(vds[i], "lopt"); 
+//     bookHist(vds[i], "hipt"); 
+//     TTree *t = getTree(vds[i]); 
+//     setupTree(t); 
+//     loopOverTree(t, 1); 
+//   }
 
   int OTYPE = LUMI;
   string what("pt");
   string sel("hipt");
 
-  zone();
+  zone(2,2);
 
   TH1D *h0 = (TH1D*)fHists[Form("%s_%s_%s", what.c_str(), vds[0].c_str(), sel.c_str())];
+  normHist(h0, vds[0], LUMI); 
   TH1D *h1 = (TH1D*)fHists[Form("%s_%s_%s", what.c_str(), vds[1].c_str(), sel.c_str())];
-  TH1D *hr = (TH1D*)h1->Clone("ratio"); hr->Sumw2(); hr->Reset();
-  hr->Divide(h0, h1); 
+  normHist(h1, vds[1], LUMI); 
+  TH1D *hr0 = (TH1D*)h1->Clone("ratio0"); hr0->Sumw2(); hr0->Reset();
+  hr0->Divide(h0, h1); 
+  hr0->SetMinimum(0.);
+  hr0->SetMaximum(2.);
+  TH1D *hr1 = (TH1D*)h1->Clone("ratio1"); hr1->Sumw2(); hr1->Reset();
+  hr1->Divide(h0, h1); 
+  hr1->SetMinimum(0.);
+  hr1->SetMaximum(2.);
+
+  tl->SetNDC(kTRUE); 
+  c0->cd(1); 
+  h0->Draw(); 
+
+  c0->cd(2); 
+  h1->Draw(); 
+
+  c0->cd(3); 
+  hr0->Fit("pol0", "R", "", 300., 700.); 
+  tl->DrawLatex(0.2, 0.8, Form("offset %5.4f+/-%5.4f", hr0->GetFunction("pol0")->GetParameter(0), 
+			       hr0->GetFunction("pol0")->GetParError(0))); 
+  tl->DrawLatex(0.2, 0.92, Form("%s/%s", vds[0].c_str(), vds[1].c_str()));
+
+  c0->cd(4); 
+  hr1->Fit("pol1", "R", "", 300., 700.); 
+  tl->DrawLatex(0.2, 0.80, Form("offset %5.4f+/-%5.4f", hr1->GetFunction("pol1")->GetParameter(0), 
+			       hr1->GetFunction("pol1")->GetParError(0))); 
+  tl->DrawLatex(0.2, 0.75, Form("slope  %5.4f+/-%5.4f", hr1->GetFunction("pol1")->GetParameter(1), 
+			       hr1->GetFunction("pol1")->GetParError(1))); 
+  tl->DrawLatex(0.2, 0.92, Form("%s/%s", vds[0].c_str(), vds[1].c_str()));
   
-  hr->Fit("pol1"); 
-  
-  tl->DrawLatex(0.6, 0.8, Form("%s/%s", vds[0].c_str(), vds[1].c_str()));
   c0->SaveAs(Form("%s/sgSyst-%s-%s-%s.pdf", fDirectory.c_str(), what.c_str(), vds[0].c_str(), vds[1].c_str())); 
 
 }
@@ -611,9 +655,21 @@ void plotHpt::treeAnalysis(int mask, int nevents) {
   }
 
   if (mask & 0x2) {
-    vds.push_back("mcatnlo0v5");
-    vds.push_back("mcatnlo1v5");
-    vds.push_back("mcatnlo5v5");
+    vds.push_back("man180");
+    vds.push_back("man181");
+    vds.push_back("man185");
+
+    vds.push_back("man170");
+    vds.push_back("man171");
+    vds.push_back("man175");
+
+    vds.push_back("man160");
+    vds.push_back("man161");
+    vds.push_back("man165");
+
+    vds.push_back("man150");
+    vds.push_back("man151");
+    vds.push_back("man155");
   }
 
   if (mask & 0x4) {
@@ -1000,18 +1056,18 @@ void plotHpt::loopFunction3() {
   if (!fGoodCand) return;
 
   if (fb.pt > PTLO && fb.g0pt > G0PT && fb.g1pt > G1PT) {
-    fHists["bgshape_hipt_pt"]->Fill(fb.pt); 
-    fHists["bgshape_hipt_m"]->Fill(fb.m); 
+    fHists["bgshape_hipt_pt"]->Fill(fb.pt, fb.w8); 
+    fHists["bgshape_hipt_m"]->Fill(fb.m, fb.w8); 
   }
 
   if (fb.pt > PTNL && fb.pt < PTNH && fb.g0pt > G0PTLO && fb.g1pt > G1PTLO)  { 
-    fHists["bgshape_lopt_pt"]->Fill(fb.pt); 
-    fHists["bgshape_lopt_m"]->Fill(fb.m); 
+    fHists["bgshape_lopt_pt"]->Fill(fb.pt, fb.w8); 
+    fHists["bgshape_lopt_m"]->Fill(fb.m, fb.w8); 
   }
 
   if (fb.pt > PTNH && fb.pt < PTLO && fb.g0pt > G0PTLO && fb.g1pt > G1PTLO)  { 
-    fHists["bgshape_inpt_pt"]->Fill(fb.pt); 
-    fHists["bgshape_inpt_m"]->Fill(fb.m); 
+    fHists["bgshape_inpt_pt"]->Fill(fb.pt, fb.w8); 
+    fHists["bgshape_inpt_m"]->Fill(fb.m, fb.w8); 
   }
 
 
@@ -1030,8 +1086,8 @@ void plotHpt::loopFunction3() {
 
 
   //  cout << "pt = " << fb.pt << " -> ptbin = " << ptbin << endl;
-fHists[Form("bgshape_ptbin%d_pt", ptbin)]->Fill(fb.pt); 
-  fHists[Form("bgshape_ptbin%d_m", ptbin)]->Fill(fb.m); 
+fHists[Form("bgshape_ptbin%d_pt", ptbin)]->Fill(fb.pt, fb.w8); 
+  fHists[Form("bgshape_ptbin%d_m", ptbin)]->Fill(fb.m, fb.w8); 
   
 }
 
@@ -1041,48 +1097,55 @@ void plotHpt::loopFunction1() {
 
   sprintf(cds, "%s", fCds.c_str());
   
-  fHists[Form("genpt_%s_goodcand", cds)]->Fill(fb.gpt); 
-  fHists[Form("genpt_g1pt_%s_goodcand", cds)]->Fill(fb.gpt, fb.gg1pt); 
+  fHists[Form("genpt_%s_goodcand", cds)]->Fill(fb.gpt, fb.w8); 
+  TH2D* h2(0); 
+  h2 = (TH2D*)(fHists[Form("genpt_g1pt_%s_goodcand", cds)]);
+  h2->Fill(fb.gpt, fb.gg1pt, fb.w8); 
 
   if (fGoodCandNoPtCuts) { 
-    fHists[Form("genpt_%s_nopt", cds)]->Fill(fb.gpt); 
-    fHists[Form("genpt_g1pt_%s_nopt", cds)]->Fill(fb.gpt, fb.gg1pt); 
-    fHists[Form("pt_%s_nopt", cds)]->Fill(fb.pt); 
-    fHists[Form("m_%s_nopt", cds)]->Fill(fb.m); 
-    fHists[Form("mpt_%s_nopt", cds)]->Fill(fb.pt, fb.m); 
+    fHists[Form("genpt_%s_nopt", cds)]->Fill(fb.gpt, fb.w8); 
+    h2 = (TH2D*)(fHists[Form("genpt_g1pt_%s_nopt", cds)]);
+    h2->Fill(fb.gpt, fb.gg1pt, fb.w8); 
+    fHists[Form("pt_%s_nopt", cds)]->Fill(fb.pt, fb.w8); 
+    fHists[Form("m_%s_nopt", cds)]->Fill(fb.m, fb.w8); 
+    h2 = (TH2D*)(fHists[Form("mpt_%s_nopt", cds)]);
+    h2->Fill(fb.pt, fb.m, fb.w8); 
   }
 
   if (fGoodCand) { 
-    fHists[Form("pt_%s_goodcand", cds)]->Fill(fb.pt); 
-    fHists[Form("m_%s_goodcand", cds)]->Fill(fb.m); 
-    fHists[Form("mpt_%s_goodcand", cds)]->Fill(fb.pt, fb.m); 
+    fHists[Form("pt_%s_goodcand", cds)]->Fill(fb.pt, fb.w8); 
+    fHists[Form("m_%s_goodcand", cds)]->Fill(fb.m, fb.w8); 
+    h2 = (TH2D*)(fHists[Form("mpt_%s_goodcand", cds)]);
+    h2->Fill(fb.pt, fb.m, fb.w8); 
     
     if (fb.pt < PTNL) return;
     if (fb.pt > PTNL && fb.pt < PTNH && fb.g0pt > G0PTLO && fb.g1pt > G1PTLO)  { 
       sprintf(cut, "lopt"); 
-      fHists[Form("m_%s_%s", cds, cut)]->Fill(fb.m); 
-      fHists[Form("pt_%s_%s", cds, cut)]->Fill(fb.pt); 
-      fHists[Form("mpt_%s_%s", cds, cut)]->Fill(fb.pt, fb.m); 
-      fHists[Form("eta_%s_%s", cds, cut)]->Fill(fb.eta); 
-      fHists[Form("g0pt_%s_%s", cds, cut)]->Fill(fb.g0pt); 
-      fHists[Form("g1pt_%s_%s", cds, cut)]->Fill(fb.g1pt); 
-      fHists[Form("g0iso_%s_%s", cds, cut)]->Fill(fb.g0iso); 
-      fHists[Form("g1iso_%s_%s", cds, cut)]->Fill(fb.g1iso); 
-      fHists[Form("g0isor_%s_%s", cds, cut)]->Fill(fb.g0iso/fb.g0pt); 
-      fHists[Form("g1isor_%s_%s", cds, cut)]->Fill(fb.g1iso/fb.g1pt); 
+      fHists[Form("m_%s_%s", cds, cut)]->Fill(fb.m, fb.w8); 
+      fHists[Form("pt_%s_%s", cds, cut)]->Fill(fb.pt, fb.w8); 
+      h2 = (TH2D*)(fHists[Form("mpt_%s_%s", cds, cut)]);
+      h2->Fill(fb.pt, fb.m, fb.w8); 
+      fHists[Form("eta_%s_%s", cds, cut)]->Fill(fb.eta, fb.w8); 
+      fHists[Form("g0pt_%s_%s", cds, cut)]->Fill(fb.g0pt, fb.w8); 
+      fHists[Form("g1pt_%s_%s", cds, cut)]->Fill(fb.g1pt, fb.w8); 
+      fHists[Form("g0iso_%s_%s", cds, cut)]->Fill(fb.g0iso, fb.w8); 
+      fHists[Form("g1iso_%s_%s", cds, cut)]->Fill(fb.g1iso, fb.w8); 
+      fHists[Form("g0isor_%s_%s", cds, cut)]->Fill(fb.g0iso/fb.g0pt, fb.w8); 
+      fHists[Form("g1isor_%s_%s", cds, cut)]->Fill(fb.g1iso/fb.g1pt, fb.w8); 
     } 
     if (fb.pt > PTLO && fb.pt < PTHI && fb.g0pt > G0PT && fb.g1pt > G1PT) {
       sprintf(cut, "hipt"); 
-      fHists[Form("m_%s_%s", cds, cut)]->Fill(fb.m); 
-      fHists[Form("pt_%s_%s", cds, cut)]->Fill(fb.pt); 
-      fHists[Form("mpt_%s_%s", cds, cut)]->Fill(fb.pt, fb.m); 
-      fHists[Form("eta_%s_%s", cds, cut)]->Fill(fb.eta); 
-      fHists[Form("g0pt_%s_%s", cds, cut)]->Fill(fb.g0pt); 
-      fHists[Form("g1pt_%s_%s", cds, cut)]->Fill(fb.g1pt); 
-      fHists[Form("g0iso_%s_%s", cds, cut)]->Fill(fb.g0iso); 
-      fHists[Form("g1iso_%s_%s", cds, cut)]->Fill(fb.g1iso); 
-      fHists[Form("g0isor_%s_%s", cds, cut)]->Fill(fb.g0iso/fb.g0pt); 
-      fHists[Form("g1isor_%s_%s", cds, cut)]->Fill(fb.g1iso/fb.g1pt); 
+      fHists[Form("m_%s_%s", cds, cut)]->Fill(fb.m, fb.w8); 
+      fHists[Form("pt_%s_%s", cds, cut)]->Fill(fb.pt, fb.w8); 
+      h2 = (TH2D*)(fHists[Form("mpt_%s_%s", cds, cut)]);
+      h2->Fill(fb.pt, fb.m, fb.w8); 
+      fHists[Form("eta_%s_%s", cds, cut)]->Fill(fb.eta, fb.w8); 
+      fHists[Form("g0pt_%s_%s", cds, cut)]->Fill(fb.g0pt, fb.w8); 
+      fHists[Form("g1pt_%s_%s", cds, cut)]->Fill(fb.g1pt, fb.w8); 
+      fHists[Form("g0iso_%s_%s", cds, cut)]->Fill(fb.g0iso, fb.w8); 
+      fHists[Form("g1iso_%s_%s", cds, cut)]->Fill(fb.g1iso, fb.w8); 
+      fHists[Form("g0isor_%s_%s", cds, cut)]->Fill(fb.g0iso/fb.g0pt, fb.w8); 
+      fHists[Form("g1isor_%s_%s", cds, cut)]->Fill(fb.g1iso/fb.g1pt, fb.w8); 
     }
   }
 
@@ -1175,7 +1238,7 @@ void plotHpt::setupTree(TTree *t) {
 
 // ----------------------------------------------------------------------
 TH1* plotHpt::combMCAtNLOHist(TH1 *h0, TH1 *h1) {
-  double xs0(36.44), xs1(-2.37); 
+  double xs0(36.44), xs1(2.37); 
 
   string h0name = h0->GetName(); 
   replaceAll(h0name, "mcatnlo0", "mcatnlo"); 

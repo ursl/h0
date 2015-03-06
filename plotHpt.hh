@@ -59,7 +59,7 @@ public :
 
 
   virtual void   bookHist(std::string name, std::string cuts); 
-  void   readHistograms();
+  void   readHistograms(std::vector<std::string> extrads = std::vector<std::string>());
   void   setupTree(TTree *t); 
   void   loopOverTree(TTree *t, int ifunc, int nevts = -1, int nstart = 0); 
   void   candAnalysis(); 
