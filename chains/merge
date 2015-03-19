@@ -1,6 +1,9 @@
 #!/usr/bin/env perl
 #
 # ----------------------------------------------------------------------
+#
+# Note: when merging a dataset with a new name, you MUST insert this into %jobs
+#
 # History   2013/10/21 first shot
 #           2014/06/17 fixed shortcomings which I don't understand (grep problems ...)
 #
@@ -42,6 +45,9 @@ tie %jobs, "Tie::IxHash";
     "mcatnlo_150" => "cmcatnlo_150_chain", 
     "mcatnlo_151" => "cmcatnlo_151_chain", 
     "mcatnlo_155" => "cmcatnlo_155_chain", 
+    "mcatnlo_v5_150" => "cmcatnlo_v5_150_chain", 
+    "mcatnlo_v5_151" => "cmcatnlo_v5_151_chain", 
+    "mcatnlo_v5_155" => "cmcatnlo_v5_155_chain", 
     "sherpa_131" => "csherpa_131_chain",
     "sherpa_132" => "csherpa_132_chain",
     "sherpa_132_sys" => "csherpa_132_sys",
