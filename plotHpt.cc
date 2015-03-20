@@ -79,6 +79,8 @@ plotHpt::plotHpt(string dir,  string files, string setup): plotClass(dir, files,
   fGGFXS = 49.5; 
 
   fNtoy = 1000; 
+  fRndmSeed = 111; 
+
   fSetup = setup;
 
   if (setup == "") {
@@ -1936,7 +1938,7 @@ void plotHpt::shutup() {
 
 
 // ----------------------------------------------------------------------
-void plotHpt::allNumbers5(int ntoy) {
+void plotHpt::allNumbers5(int ntoy, int rndmseed) {
   
   tl->SetNDC(kTRUE);
   tl->SetTextColor(kBlack);
@@ -2070,6 +2072,7 @@ void plotHpt::allNumbers5(int ntoy) {
 
   // -- run toys 
   if (ntoy > 0) fNtoy = ntoy; 
+  if (rndmseed != 111) fRndmSeed = rndmseed; 
   RooDataSet *bgData(0), *sg0Data(0), *sg1Data(0), *data(0), *data1(0), *data0(0);
   RooFitResult *fr1(0), *fr0(0);
   
@@ -2085,7 +2088,9 @@ void plotHpt::allNumbers5(int ntoy) {
 
   RooWorkspace *w(0); 
 
-  RooRandom::randomGenerator()->SetSeed(111);
+  RooRandom::randomGenerator()->SetSeed(fRndmSeed);
+
+  cout << "==> allNumbers5: ntoy = " << fNtoy << " random seed = " << fRndmSeed << endl;
 
   TH1D *hsig1 = new TH1D("hsig1", "", 50, 0., 5.); hsig1->SetLineColor(kBlack); 
   TH1D *hsig2 = new TH1D("hsig2", "", 50, 0., 5.); hsig2->SetLineColor(kRed); 
@@ -2098,6 +2103,7 @@ void plotHpt::allNumbers5(int ntoy) {
   TH1D *hT1 = new TH1D("hT1", "unprof t = -2ln(lambda), lambda = L(t, v^^)/L(t^, v^)", 400, -40., 40.); hT1->SetLineColor(kRed); 
 
 
+ 
   for (int i = 0; i < fNtoy; ++i) {
     cout << "==================> TOY " << i << endl;
     w = new RooWorkspace("w"); 
@@ -2580,7 +2586,7 @@ void plotHpt::allNumbers5(int ntoy) {
     tl->DrawLatex(0.50, 0.92, Form("LLR0: %3.2f", median(hT0))); 
 
 
-    c0->SaveAs(Form("%s/allNumbers5-toy-%d.pdf", fDirectory.c_str(), i)); 
+    c0->SaveAs(Form("%s/allNumbers5-toy-%d-%d.pdf", fDirectory.c_str(), fRndmSeed, i)); 
 
   }
 
@@ -2604,11 +2610,27 @@ void plotHpt::allNumbers5(int ntoy) {
     tl->DrawLatex(0.2, 0.92, Form("RooDLLSig: %3.2f", median(hz))); 
   }
 
+  TFile *f = TFile::Open(Form("%s/allNumbers5-%d.root", fDirectory.c_str(), fRndmSeed), "RECREATE");
+  
+  hsig1->SetDirectory(f); 
+  hsig2->SetDirectory(f); 
+  hsig3->SetDirectory(f); 
 
+  ht0->SetDirectory(f); 
+  ht0->Write();
+  ht1->SetDirectory(f); 
+  ht1->Write();						    
 
+  hT0->SetDirectory(f); 
+  hT0->Write();
+  hT1->SetDirectory(f); 
+  hT1->Write();
+  
+  f->Write();
+  f->Close();
 
   c0->SaveAs(Form("%s/allNumbers5-%s.pdf", fDirectory.c_str(), fSetup.c_str())); 
-  
+ 
   fTEX.open(fTexFileName.c_str(), ios::app);
   fTEX << "% ----------------------------------------------------------------------" << endl;
   fTEX << formatTex(fg0pt, Form("%s:g0pt:val", fSetup.c_str()), 2) << endl;
@@ -2636,6 +2658,98 @@ void plotHpt::allNumbers5(int ntoy) {
   fTEX.close();
 
 } 
+
+
+// ----------------------------------------------------------------------
+void plotHpt::summarizeToyRuns(string filename) {
+  TFile *f = TFile::Open(filename.c_str()); 
+
+  zone(2,2);
+  
+  gStyle->SetOptStat(0); 
+  TH1D *hsig1 = (TH1D*)f->Get("hsig1");
+  TH1D *hsig2 = (TH1D*)f->Get("hsig2");
+  TH1D *hsig3 = (TH1D*)f->Get("hsig3");
+
+  TH1D *ht0 = (TH1D*)f->Get("ht0");
+  TH1D *ht1 = (TH1D*)f->Get("ht1");
+
+  TH1D *hT0 = (TH1D*)f->Get("hT0");
+  TH1D *hT1 = (TH1D*)f->Get("hT1");
+
+  hsig2->Draw();
+  hsig1->Draw("same");
+
+  tl->SetNDC(kTRUE);
+
+  tl->SetTextSize(0.05);
+  tl->SetTextColor(kBlack); 
+  tl->DrawLatex(0.10, 0.92, Form("Asymp: %3.2f", median(hsig1))); 
+  tl->SetTextColor(kRed); 
+  tl->DrawLatex(0.4, 0.92, Form("ProfL: %3.2f", median(hsig2))); 
+  
+  hsig3->Draw("same");
+  tl->SetTextColor(kMagenta); 
+  tl->DrawLatex(0.55, 0.82, Form("ProfL2d: %3.2f", median(hsig3))); 
+
+
+  c0->cd(2);
+  gStyle->SetOptStat(0); 
+  if (ht0->GetMaximum() > ht1->GetMaximum()) {
+    ht0->Draw();
+    ht1->Draw("same");
+  } else {
+    ht1->Draw();
+    ht0->Draw("same");
+  }
+  double midpoint, tailprob; 
+  findMidPoint(ht0, ht1, midpoint, tailprob); 
+  double sigma = 2.*oneSidedGaussianSigma(tailprob);
+  tl->SetTextSize(0.04);
+  tl->DrawLatex(0.6, 0.80, Form("midpoint: %4.3f", midpoint)); 
+  tl->DrawLatex(0.6, 0.70, Form("tailprob: %4.3f", tailprob)); 
+  tl->DrawLatex(0.6, 0.60, Form("Sep: %4.3f", sigma)); 
+  
+  
+  tl->SetTextSize(0.05);
+  tl->SetTextColor(kRed); 
+  tl->DrawLatex(0.10, 0.92, Form("pLLR1: %3.2f", median(ht1))); 
+  
+  tl->SetTextSize(0.05);
+  tl->SetTextColor(kBlue); 
+  tl->DrawLatex(0.50, 0.92, Form("pLLR0: %3.2f", median(ht0))); 
+
+
+  c0->cd(4);
+  gStyle->SetOptStat(0); 
+  if (hT0->GetMaximum() > hT1->GetMaximum()) {
+    hT0->Draw();
+    hT1->Draw("same");
+  } else {
+    hT1->Draw();
+    hT0->Draw("same");
+  }
+  findMidPoint(hT0, hT1, midpoint, tailprob); 
+  sigma = 2.*oneSidedGaussianSigma(tailprob);
+  tl->SetTextSize(0.04);
+  tl->DrawLatex(0.6, 0.80, Form("midpoint: %4.3f", midpoint)); 
+  tl->DrawLatex(0.6, 0.70, Form("tailprob: %4.3f", tailprob)); 
+  tl->DrawLatex(0.6, 0.60, Form("Sep: %4.3f", sigma)); 
+  
+  
+  tl->SetTextSize(0.05);
+  tl->SetTextColor(kRed); 
+  tl->DrawLatex(0.10, 0.92, Form("pLLR1: %3.2f", median(hT1))); 
+  
+  tl->SetTextSize(0.05);
+  tl->SetTextColor(kBlue); 
+  tl->DrawLatex(0.50, 0.92, Form("pLLR0: %3.2f", median(hT0))); 
+  
+  c0->SaveAs(Form("%s/allNumbers5-toySummary.pdf", fDirectory.c_str())); 
+
+  //  f->Close();
+
+}
 
 
 // ----------------------------------------------------------------------
@@ -2786,3 +2900,5 @@ TH1* plotHpt::combMCAtNLOHist(TH1 *h0, TH1 *h1, string combName) {
   return h;
 }
 */
+
+

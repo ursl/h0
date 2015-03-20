@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
     setup(""), 
     cuts("nada");
   
-  int mode(-1), ntoy(200); 
+  int mode(-1), ntoy(200), rndms(111); 
   // -- command line arguments
   for (int i = 0; i < argc; i++){
     if (!strcmp(argv[i], "-c"))  {cuts   = string(argv[++i]);}
@@ -36,6 +36,7 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i], "-f"))  {ifiles = string(argv[++i]);}
     if (!strcmp(argv[i], "-m"))  {mode   = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-n"))  {ntoy   = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-r"))  {rndms  = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-s"))  {setup  = string(argv[++i]);}
   }
 
@@ -47,6 +48,7 @@ int main(int argc, char *argv[]) {
     a.setCuts(cuts);
   } 
   a.setNtoy(ntoy); 
+  a.setRndmSeed(rndms); 
   if (mode > -1) {
     a.makeAll(mode);
   } else {

@@ -57,8 +57,8 @@ public :
   void massHistograms(TH1D *hb, TH1D *hs0, TH1D *hs1);
 
   // -- 2D eUML mass-pT with the official RooStats tools (this follows now after toy10()
-  void allNumbers5(int ntoy = -1); 
-
+  void allNumbers5(int ntoy = -1, int rndmseed = 111); 
+  void summarizeToyRuns(std::string filename); 
 
   virtual void   bookHist(std::string name, std::string cuts); 
   void   readHistograms(std::vector<std::string> extrads = std::vector<std::string>());
@@ -79,6 +79,7 @@ public :
   void   norm2Lumi(); 
 
   void setNtoy(int ntoy) {fNtoy = ntoy;} 
+  void setRndmSeed(int rndms) {fRndmSeed = rndms;} 
   void shutup();
   std::string getVar(std::string name); 
   std::string getDs(std::string name); 
@@ -148,7 +149,7 @@ private:
   std::vector<ptbins>   fPtBins;
 
 
-  int fNtoy; 
+  int fNtoy, fRndmSeed; 
 
   // ----------------------------------------------------------------------
   ClassDef(plotHpt,1) 
