@@ -1708,6 +1708,7 @@ void plotHpt::massHistograms(TH1D *hb, TH1D *hs0, TH1D *hs1) {
   //  normHist(h1, "manx", LUMI); 
   hs0->Add(h1); 
 
+  hs1->SetMinimum(0.);
   hs1->Draw();
   hs0->SetMinimum(0.);
   hs0->SetMarkerColor(kBlue);
@@ -2165,6 +2166,7 @@ void plotHpt::allNumbers5(int ntoy) {
     }
     
     c0->cd(3);
+    gPad->SetLogy(1);
     if (0 == i) {
       RooPlot *plotPt1 = fRpt->frame(Title("pt"));
       data1->plotOn(plotPt1);
