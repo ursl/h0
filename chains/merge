@@ -2,6 +2,8 @@
 #
 # ----------------------------------------------------------------------
 #
+# t3ui16>./merge -r h/ana/v7/mcatnlo_sys1 -o /scratch/ursl/h/
+#
 # Note: when merging a dataset with a new name, you MUST insert this into %jobs
 #
 # History   2013/10/21 first shot
