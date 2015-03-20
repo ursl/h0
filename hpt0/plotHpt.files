@@ -1,18 +1,69 @@
+# -- NB: ALL MC@NLO files MUST have "man" as part of dataset name!!!
 # -- basic input
-type=mc,sherpa,1             xsec=1.60   file=/scratch/ursl/h/csherpa_132_chain.root 
-type=mc,mcatnlo,mcatnlo0     xsec=49.50  file=/scratch/ursl/h/cmcatnlo_150_chain.root
-type=mc,mcatnlo,mcatnlo1     xsec=49.50  file=/scratch/ursl/h/cmcatnlo_151_chain.root
-type=mc,mcatnlo,mcatnlo5     xsec=49.50  file=/scratch/ursl/h/cmcatnlo_155_chain.root
+type=mc,sherpa,sherpa   xsec=1.60   file=/scratch/ursl/h/sherpa_132.root
+#
+type=mc,mcatnlo,manis0  xsec=36.44  file=/scratch/ursl/h/mcatnlo_is_150.root
+type=mc,mcatnlo,manis1  xsec=-2.37  file=/scratch/ursl/h/mcatnlo_is_151.root
+type=mc,mcatnlo,manis5  xsec=34.36  file=/scratch/ursl/h/mcatnlo_is_155.root
+#
+type=mc,mcatnlo,man0    xsec=42.40  file=/scratch/ursl/h/mcatnlo_600.root
+type=mc,mcatnlo,man1    xsec=-2.45  file=/scratch/ursl/h/mcatnlo_601.root
+type=mc,mcatnlo,man5    xsec=40.02  file=/scratch/ursl/h/mcatnlo_605.root
 # -- signal systematics
-type=mc,mcatnlo,mcatnlo0v5 xsec=49.50  file=/scratch/ursl/h/cmcatnlo_v5_150_chain.root
-type=mc,mcatnlo,mcatnlo1v5 xsec=49.50  file=/scratch/ursl/h/cmcatnlo_v5_151_chain.root
-type=mc,mcatnlo,mcatnlo5v5 xsec=49.50  file=/scratch/ursl/h/cmcatnlo_v5_155_chain.root
+type=mc,mcatnlo,man150  xsec=42.40  file=/scratch/ursl/h/mcatnlo_150.root
+type=mc,mcatnlo,man151  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_151.root
+type=mc,mcatnlo,man155  xsec=40.02  file=/scratch/ursl/h/mcatnlo_155.root
+type=mc,mcatnlo,man160  xsec=42.40  file=/scratch/ursl/h/mcatnlo_160.root
+type=mc,mcatnlo,man161  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_161.root
+type=mc,mcatnlo,man165  xsec=40.02  file=/scratch/ursl/h/mcatnlo_165.root
+type=mc,mcatnlo,man170  xsec=40.03  file=/scratch/ursl/h/mcatnlo_170.root
+type=mc,mcatnlo,man171  xsec=-2.34  file=/scratch/ursl/h/mcatnlo_171.root
+type=mc,mcatnlo,man175  xsec=37.78  file=/scratch/ursl/h/mcatnlo_175.root
+type=mc,mcatnlo,man180  xsec=41.50  file=/scratch/ursl/h/mcatnlo_180.root
+type=mc,mcatnlo,man181  xsec=-2.38  file=/scratch/ursl/h/mcatnlo_181.root
+type=mc,mcatnlo,man185  xsec=39.17  file=/scratch/ursl/h/mcatnlo_185.root
+# MC@NLO systematics
+type=mc,mcatnlo,man600  xsec=42.40  file=/scratch/ursl/h/mcatnlo_600.root
+type=mc,mcatnlo,man601  xsec=-2.450 file=/scratch/ursl/h/mcatnlo_601.root
+type=mc,mcatnlo,man605  xsec=40.02  file=/scratch/ursl/h/mcatnlo_605.root
+#
+type=mc,mcatnlo,man610  xsec=50.44  file=/scratch/ursl/h/mcatnlo_610.root
+type=mc,mcatnlo,man611  xsec=-2.486 file=/scratch/ursl/h/mcatnlo_611.root
+type=mc,mcatnlo,man615  xsec=47.67  file=/scratch/ursl/h/mcatnlo_615.root
+#
+type=mc,mcatnlo,man620  xsec=50.44  file=/scratch/ursl/h/mcatnlo_620.root
+type=mc,mcatnlo,man621  xsec=-2.486 file=/scratch/ursl/h/mcatnlo_621.root
+type=mc,mcatnlo,man625  xsec=47.67  file=/scratch/ursl/h/mcatnlo_625.root
+#
+type=mc,mcatnlo,man630  xsec=42.40  file=/scratch/ursl/h/mcatnlo_630.root
+type=mc,mcatnlo,man631  xsec=-2.450 file=/scratch/ursl/h/mcatnlo_631.root
+type=mc,mcatnlo,man635  xsec=40.02  file=/scratch/ursl/h/mcatnlo_635.root
+#
+type=mc,mcatnlo,man640  xsec=42.40  file=/scratch/ursl/h/mcatnlo_640.root
+type=mc,mcatnlo,man641  xsec=-2.450 file=/scratch/ursl/h/mcatnlo_641.root
+type=mc,mcatnlo,man645  xsec=40.02  file=/scratch/ursl/h/mcatnlo_645.root
+#
+type=mc,mcatnlo,man650  xsec=36.44  file=/scratch/ursl/h/mcatnlo_650.root
+type=mc,mcatnlo,man651  xsec=-2.372 file=/scratch/ursl/h/mcatnlo_651.root
+type=mc,mcatnlo,man655  xsec=34.36  file=/scratch/ursl/h/mcatnlo_655.root
+#
+type=mc,mcatnlo,man660  xsec=36.44  file=/scratch/ursl/h/mcatnlo_660.root
+type=mc,mcatnlo,man661  xsec=-2.372 file=/scratch/ursl/h/mcatnlo_661.root
+type=mc,mcatnlo,man665  xsec=34.36  file=/scratch/ursl/h/mcatnlo_665.root
+#
+type=mc,mcatnlo,man670  xsec=36.44  file=/scratch/ursl/h/mcatnlo_670.root
+type=mc,mcatnlo,man671  xsec=-2.372 file=/scratch/ursl/h/mcatnlo_671.root
+type=mc,mcatnlo,man675  xsec=34.362 file=/scratch/ursl/h/mcatnlo_675.root
+#
+type=mc,mcatnlo,man680  xsec=50.44  file=/scratch/ursl/h/mcatnlo_680.root
+type=mc,mcatnlo,man681  xsec=-2.486 file=/scratch/ursl/h/mcatnlo_681.root
+type=mc,mcatnlo,man685  xsec=47.67  file=/scratch/ursl/h/mcatnlo_685.root
 # -- background systematics
-type=mc,sherpa,132  xsec=1.60  file=/scratch/ursl/h/csherpa_132_sys.root
-type=mc,sherpa,133  xsec=0.31  file=/scratch/ursl/h/csherpa_133_sys.root
-type=mc,sherpa,134  xsec=0.12  file=/scratch/ursl/h/csherpa_134_sys.root
-type=mc,sherpa,135  xsec=0.053 file=/scratch/ursl/h/csherpa_135_sys.root
-type=mc,sherpa,141  xsec=0.82  file=/scratch/ursl/h/csherpa_141_sys.root
-type=mc,sherpa,150  xsec=0.11  file=/scratch/ursl/h/csherpa_150_sys.root
-type=mc,sherpa,151  xsec=0.048 file=/scratch/ursl/h/csherpa_151_sys.root
-type=mc,sherpa,152  xsec=0.29  file=/scratch/ursl/h/csherpa_152_sys.root
+type=mc,sherpa,132      xsec=1.60  file=/scratch/ursl/h/sherpa_132_sys.root
+type=mc,sherpa,133      xsec=0.31  file=/scratch/ursl/h/sherpa_133_sys.root
+type=mc,sherpa,134      xsec=0.12  file=/scratch/ursl/h/sherpa_134_sys.root
+type=mc,sherpa,135      xsec=0.053 file=/scratch/ursl/h/sherpa_135_sys.root
+type=mc,sherpa,141      xsec=0.82  file=/scratch/ursl/h/sherpa_141_sys.root
+type=mc,sherpa,150      xsec=0.11  file=/scratch/ursl/h/sherpa_150_sys.root
+type=mc,sherpa,151      xsec=0.048 file=/scratch/ursl/h/sherpa_151_sys.root
+type=mc,sherpa,152      xsec=0.29  file=/scratch/ursl/h/sherpa_152_sys.root
