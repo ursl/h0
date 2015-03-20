@@ -17,6 +17,7 @@ void plotHpt::loadFiles(string afiles) {
 
     string::size_type m1 = sbuffer.find("xsec="); 
     string stype = sbuffer.substr(5, m1-6); 
+    cleanupString(stype); 
 
     string::size_type m2 = sbuffer.find("file="); 
     string sxsec = sbuffer.substr(m1+5, m2-m1-6); 
@@ -34,8 +35,7 @@ void plotHpt::loadFiles(string afiles) {
       int nevt = t->GetEntries();
       if (string::npos != stype.find("mcatnlo")) {
 	dataset *ds = new dataset(); 
-	if (string::npos != stype.find("0")) {
-	  //sname = "mcatnlo0";
+	if (stype.substr(stype.length()-1) == "0") {
 	  sname = stype.substr(stype.rfind(",") + 1);
 	  cleanupString(sname); 
 	  sdecay = "m_{t}=173.5GeV";
@@ -44,8 +44,7 @@ void plotHpt::loadFiles(string afiles) {
 	  ds->fFcolor = kBlue; 
 	  ds->fSymbol = 24; 
 	  ds->fFillStyle = 3305; 
-	} else if (string::npos != stype.find("1")) {
-	  //sname = "mcatnlo1";
+	} else if (stype.substr(stype.length()-1) == "1") {
 	  sname = stype.substr(stype.rfind(",") + 1);
 	  cleanupString(sname); 
 	  sdecay = "blurp";
@@ -54,8 +53,7 @@ void plotHpt::loadFiles(string afiles) {
 	  ds->fFcolor = kBlue+2; 
 	  ds->fSymbol = 25; 
 	  ds->fFillStyle = 3395; 
-	} else if (string::npos != stype.find("5")) {
-          // sname = "mcatnlo5";
+	} else if (stype.substr(stype.length()-1) == "5") {
 	  sname = stype.substr(stype.rfind(",") + 1);
 	  cleanupString(sname); 
 	  sdecay = "m_{t}#rightarrow#infty";
@@ -74,11 +72,10 @@ void plotHpt::loadFiles(string afiles) {
 	ds->fWidth = 2; 
 	fDS.insert(make_pair(sname, ds)); 
 	// -- add additionally the combined datasets derived from 0 and 1: 
-	if (!sname.compare("mcatnlo0")) fDS.insert(make_pair("mcatnlo", ds)); 
-	if (string::npos != sname.find("man") && string::npos != sname.find("0")) {
-	  string combined = sname.substr(0, sname.find("0")); 
+	if (string::npos != sname.find("man") && stype.substr(stype.length()-1) == "0") {
+	  string combined = sname.substr(0, sname.rfind("0")) + string("x"); 
 	  fDS.insert(make_pair(combined, ds)); 
-	  //cout << "combined: " << combined << endl;
+	  cout << "combined: " << combined << endl;
 	 }	 
       }
 
@@ -96,7 +93,7 @@ void plotHpt::loadFiles(string afiles) {
 	ds->fSize = 1; 
 	ds->fWidth = 2; 
 	if (string::npos != stype.find("132")) {
-	  sname = "sys132"; 
+	  sname = "sherpa132"; 
 	  cleanupString(sname); 
 	  sdecay = "132";
 	  ds->fColor = kRed; 
@@ -106,7 +103,7 @@ void plotHpt::loadFiles(string afiles) {
 	  ds->fFillStyle = 3365; 
 	}
 	if (string::npos != stype.find("133")) {
-	  sname = "sys133"; 
+	  sname = "sherpa133"; 
 	  cleanupString(sname); 
 	  sdecay = "133";
 	  ds->fColor = kRed+1; 
@@ -116,7 +113,7 @@ void plotHpt::loadFiles(string afiles) {
 	  ds->fFillStyle = 3305; 
 	}
 	if (string::npos != stype.find("134")) {
-	  sname = "sys134"; 
+	  sname = "sherpa134"; 
 	  cleanupString(sname); 
 	  sdecay = "134";
 	  ds->fColor = kRed+2; 
@@ -126,7 +123,7 @@ void plotHpt::loadFiles(string afiles) {
 	  ds->fFillStyle = 3395; 
 	}
 	if (string::npos != stype.find("135")) {
-	  sname = "sys135"; 
+	  sname = "sherpa135"; 
 	  cleanupString(sname); 
 	  sdecay = "135";
 	  ds->fColor = kRed+3; 
@@ -136,13 +133,13 @@ void plotHpt::loadFiles(string afiles) {
 	  ds->fFillStyle = 3356; 
 	}
 	if (string::npos != stype.find("140")) {
-	  sname = "sys140"; 
+	  sname = "sherpa140"; 
 	  cleanupString(sname); 
 	  sdecay = "140";
 	}
 	if (string::npos != stype.find("141")) {
 	  // against 132 or sherpa
-	  sname = "sys141"; 
+	  sname = "sherpa141"; 
 	  cleanupString(sname); 
 	  sdecay = "141";
 	  ds->fColor = kBlue; 
@@ -153,7 +150,7 @@ void plotHpt::loadFiles(string afiles) {
 	}
 	if (string::npos != stype.find("150")) {
 	  // against 134
-	  sname = "sys150"; 
+	  sname = "sherpa150"; 
 	  cleanupString(sname); 
 	  sdecay = "150";
 	  ds->fColor = kBlue; 
@@ -164,7 +161,7 @@ void plotHpt::loadFiles(string afiles) {
 	}
 	if (string::npos != stype.find("151")) {
 	  // against 135
-	  sname = "sys151"; 
+	  sname = "sherpa151"; 
 	  cleanupString(sname); 
 	  sdecay = "151";
 	  ds->fColor = kBlue+1; 
@@ -175,7 +172,7 @@ void plotHpt::loadFiles(string afiles) {
 	}
 	if (string::npos != stype.find("152")) {
 	  // against 133
-	  sname = "sys152"; 
+	  sname = "sherpa152"; 
 	  cleanupString(sname); 
 	  sdecay = "152";
 	  ds->fColor = kBlue+2; 
@@ -193,7 +190,7 @@ void plotHpt::loadFiles(string afiles) {
       } 
 
       // mb ub nb pb fb 
-      cout << "MC "  << sfile  << ", sname=" << sname << /*"(" << stype << */ ", xsec = " << sxsec
+      cout << "MC "  << sfile  << ", sname=" << sname << /*"(" << stype << */ ", xsec = " << fDS[sname]->fXsec
 	   << " eq.lumi = " << fDS[sname]->fLumi << "/fb"
 	   << " (Nevts = " << nevt << ")"
 	   << endl;

@@ -27,7 +27,9 @@ public :
 
   // -- Main analysis methods 
   void   makeAll(int bitmask = 0);
-  virtual void treeAnalysis(int mask = 1, int nevts = -1); 
+  void   plot1(std::string what = "pt", double xmin = 200., double xmax = 1000.); 
+  void   plot2(); 
+  virtual void treeAnalysis(int mask = 1, int nevts = -1, string opt = "RECREATE", string ds = ""); 
   void   massResolution(std::string hname = "mpt_mcatnlo5_nopt");
   // -- these two are historic 
   void   optimizeCuts(std::string fname = "opt.root", double lumi = 1000., int nevts = -1);
@@ -45,7 +47,7 @@ public :
   void   bgShape(int nevts = -1);
   void   bgSyst(std::string ds0, std::string ds1, std::string ds2 = "nada");
 
-  void   sgSyst(std::string ds0, std::string ds1, std::string ds2 = "nada");
+  void   sgSyst(std::string ds0, std::string ds1 = "", double xmin = 200., double xmax = 1000.);
 
 
   // -- now start to factorize the preprocessing
@@ -70,14 +72,22 @@ public :
   void   findMidPoint(TH1D* hq0, TH1D* hq1, double &midpoint, double &tailprob);
   double oneSidedGaussianSigma(double prob); 
 
-  TH1*   combMCAtNLOHist(TH1 *h0, TH1 *h1);
+  TH1*   combMCAtNLOHist(TH1 *h0, TH1 *h1, std::string combName);
+  void   calcMCAtNLOScaleFactor(std::string basename); 
+  void   calcSherpaScaleFactor(std::string basename); 
+  void   norm2Xsec(std::string basename); 
+  void   norm2Lumi(); 
 
   void setNtoy(int ntoy) {fNtoy = ntoy;} 
   void shutup();
+  std::string getVar(std::string name); 
+  std::string getDs(std::string name); 
+  std::string getSel(std::string name); 
 
 private: 
 
   // -- essential analysis numbers
+  double fGGFXS; 
   double fMu, fSg, fSg0, fSg1, fBg; 
   double fHiggsMpeak, fHiggsMres;
   double fBgMp1, fBgMp1E; // pol1
