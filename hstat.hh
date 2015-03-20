@@ -2,6 +2,7 @@
 #define STAT_h
 
 #include "RooWorkspace.h"
+#include "RooDataSet.h"
 #include "RooRealVar.h"
 #include "RooFormulaVar.h"
 
@@ -11,12 +12,13 @@
 
 
 // ----------------------------------------------------------------------
-class stat {
+class hstat: public TObject {
 
 public :
-  stat(std::string dir = "hpt0", std::string files = "plotHpt.files", std::string setup = "m");
-  virtual        ~stat();
+  hstat(std::string dir = "hpt0", std::string files = "plotHpt.files", std::string setup = "m");
+  virtual        ~hstat();
 
+  RooAbsPdf* genModel(int i, int ini);
   void sigNoBackground(); 
   void genData(); 
 
@@ -52,7 +54,7 @@ private:
   TFile *fHistFile; 
 
   // ----------------------------------------------------------------------
-  ClassDef(stat,1) 
+  ClassDef(hstat,1) 
 
 };
 

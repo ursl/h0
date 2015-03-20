@@ -1,4 +1,4 @@
-#include "stat.hh"
+#include "hstat.hh"
 
 #include <fstream>
 #include <iostream>
@@ -64,22 +64,22 @@
 
 #include "RooOneSidedProfileLL.hh"
 
-ClassImp(stat)
+ClassImp(hstat)
 
 using namespace std; 
 using namespace RooFit; 
 using namespace RooStats; 
 
 // ----------------------------------------------------------------------
-stat::stat(string dir,  string files, string setup)  {
+hstat::hstat(string dir,  string files, string setup)  {
 
   fNtoy = 1000; 
   fSetup = setup;
 
   if (setup == "") {
-    fHistFileName = Form("%s/stat.root", dir.c_str()); 
+    fHistFileName = Form("%s/hstat.root", dir.c_str()); 
   } else {
-    fHistFileName = Form("%s/stat-%s.root", dir.c_str(), setup.c_str()); 
+    fHistFileName = Form("%s/hstat-%s.root", dir.c_str(), setup.c_str()); 
   }
 
   fTexFileName = fHistFileName; 
@@ -122,13 +122,13 @@ stat::stat(string dir,  string files, string setup)  {
 
 
 // ----------------------------------------------------------------------
-stat::~stat() {
+hstat::~hstat() {
   if (fHistFile) fHistFile->Close();
 }
 
 
 // ----------------------------------------------------------------------
-void stat::genData() {
+void hstat::genData() {
 
 
   
@@ -136,7 +136,7 @@ void stat::genData() {
 
 
 // ----------------------------------------------------------------------
-void stat::sigNoBackground() {
+void hstat::sigNoBackground() {
 
 }
 
@@ -144,13 +144,14 @@ void stat::sigNoBackground() {
 
 
 // ----------------------------------------------------------------------
-RooAbsPdf* stat::genModel(int i, int ini) {
+RooAbsPdf* hstat::genModel(int i, int ini) {
+  /*
   double nsg(0.), ntau(0.); 
   nsg = fSg0; 
-  ntau = Sg0Tau;
+  ntau = fSg0Tau;
   if (1 == ini) {
     nsg = fSg1; 
-    ntau = Sg1Tau;
+    ntau = fSg1Tau;
   }     
   RooRealVar  *sgN = new RooRealVar(Form("sgN%d", i), Form("Number of Higgs signal events %d", i), nsg, 0., 1.e4);
   RooGaussian *sgM = new RooRealVar(Form("sgM%d", i), Form("signal mass %d", i), *fRm, *fRsgP, *fRsgS); 
@@ -158,8 +159,8 @@ RooAbsPdf* stat::genModel(int i, int ini) {
   RooChebychev *bgM = new RooChebychev(Form("bgM%d", i), Form("background gamma gamma mass %d", i), 
 				       *fRm, RooArgList(*bgS)); 
   RooRealVar  *bgN  = new RooRealVar(Form("bgN%d", i), Form("Number of background events %d", i), fBg, 0., 1.e5);
-  RooAddPdf   *model = new RooAddPdf(Form("model%d"), "model2", RooArgList(sg2M, bg2M), RooArgList(*fRsg2N, *fRbg2N));
+  RooAddPdf   *model = new RooAddPdf(Form("model%d"), "model2", RooArgList(sgM, bgM), RooArgList(*fRsgN, *fRbgN));
+  */
 
-
-
+  return 0; 
 }

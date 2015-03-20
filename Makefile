@@ -21,7 +21,7 @@ EXTHEADERS    = -I../util -I$(DELPHES)
 LIBPATH       = $(shell pwd)/lib
 
 READER = anaH.o
-ANA = plotHpt.o RooOneSidedProfileLL.o stat.o
+ANA = plotHpt.o RooOneSidedProfileLL.o hstat.o
 EXE =  runH.o runPlot.o
 
 DICTFILES = ${ANA:.o=Dict.o}
