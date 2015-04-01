@@ -1,0 +1,50 @@
+#!/usr/bin/env perl
+
+# ----------------------------------------------------------------------
+# Usage: ./manChains -x "$PSI"/store/user/ursl/h/v5/mcatnlo/700x
+# ----------------------------------------------------------------------
+
+use Getopt::Std;
+getopts('ax:');
+
+if ($opt_a) {
+    &doAll;
+    exit(0); 
+}
+
+if ($opt_x) {
+    $dir = $opt_x;
+} else {
+    die "please provide the location of the 0,1,5 mc@nlo files\n";
+} 
+
+my @bla = split(/\//, $dir);
+my $lastpart = pop(@bla); 
+substr($lastpart, -1) = ""; # remove last character of string
+
+my $chainBase = "mcatnlo_v5_" . $lastpart; 
+print "lastpart: $lastpart -> $chainBase\n";
+
+my @patterns = ("0", "1", "5"); 
+
+
+foreach $p (@patterns) {
+    $chain = $chainBase . $p . "_chain"; 
+    print "srmLs -x $dir -p $p- -c |sort > $chain\n";
+    system("srmLs -x $dir -p $p- -c |sort > $chain");
+}
+
+#  "$PSI"/store/user/ursl/h/v5/mcatnlo/700x -p 5- -c | sort > mcatnlo_v5_7005_chain
+
+
+# ----------------------------------------------------------------------
+sub doAll() {
+    my $baselocation = "srm://t3se01.psi.ch:8443/srm/managerv2?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/h/v5/mcatnlo/";
+    my $dir; 
+    for ($i = 0; $i < 41; $i++) {
+	$run = 700 + $i;
+	$dir = $baselocation . $run . "x";
+	print "./manChains -x $dir\n";
+	system("./manChains -x $dir");
+    }
+}
