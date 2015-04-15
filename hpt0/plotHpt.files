@@ -22,42 +22,78 @@ type=mc,mcatnlo,man175  xsec=37.78  file=/scratch/ursl/h/mcatnlo_175.root
 type=mc,mcatnlo,man180  xsec=41.50  file=/scratch/ursl/h/mcatnlo_180.root
 type=mc,mcatnlo,man181  xsec=-2.38  file=/scratch/ursl/h/mcatnlo_181.root
 type=mc,mcatnlo,man185  xsec=39.17  file=/scratch/ursl/h/mcatnlo_185.root
-# MC@NLO systematics
+# top mass parametric uncertainty
+type=mc,mcatnlo,man200  xsec=42.37  file=/scratch/ursl/h/mcatnlo_200.root
+type=mc,mcatnlo,man201  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_201.root
+type=mc,mcatnlo,man205  xsec=40.02  file=/scratch/ursl/h/mcatnlo_205.root
+#
+type=mc,mcatnlo,man210  xsec=42.42  file=/scratch/ursl/h/mcatnlo_210.root
+type=mc,mcatnlo,man211  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_211.root
+type=mc,mcatnlo,man215  xsec=40.02  file=/scratch/ursl/h/mcatnlo_215.root
+# MC@NLO systematics 
+type=mc,mcatnlo,man400  xsec=42.40  file=/scratch/ursl/h/mcatnlo_400.root
+type=mc,mcatnlo,man401  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_401.root
+type=mc,mcatnlo,man405  xsec=40.02  file=/scratch/ursl/h/mcatnlo_405.root
+#
+type=mc,mcatnlo,man410  xsec=42.40  file=/scratch/ursl/h/mcatnlo_410.root
+type=mc,mcatnlo,man411  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_411.root
+type=mc,mcatnlo,man415  xsec=40.01  file=/scratch/ursl/h/mcatnlo_415.root
+#                            
+type=mc,mcatnlo,man420  xsec=42.40  file=/scratch/ursl/h/mcatnlo_420.root
+type=mc,mcatnlo,man421  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_421.root
+type=mc,mcatnlo,man425  xsec=40.02  file=/scratch/ursl/h/mcatnlo_425.root
+#
+type=mc,mcatnlo,man500  xsec=43.22  file=/scratch/ursl/h/mcatnlo_500.root
+type=mc,mcatnlo,man501  xsec=-2.48  file=/scratch/ursl/h/mcatnlo_501.root
+type=mc,mcatnlo,man505  xsec=40.79  file=/scratch/ursl/h/mcatnlo_505.root
+#
+type=mc,mcatnlo,man510  xsec=41.41  file=/scratch/ursl/h/mcatnlo_510.root
+type=mc,mcatnlo,man511  xsec=-2.41  file=/scratch/ursl/h/mcatnlo_511.root
+type=mc,mcatnlo,man515  xsec=39.08  file=/scratch/ursl/h/mcatnlo_515.root
+#                            
+type=mc,mcatnlo,man520  xsec=44.51  file=/scratch/ursl/h/mcatnlo_520.root
+type=mc,mcatnlo,man521  xsec=-2.53  file=/scratch/ursl/h/mcatnlo_521.root
+type=mc,mcatnlo,man525  xsec=42.02  file=/scratch/ursl/h/mcatnlo_525.root
+#
+type=mc,mcatnlo,man530  xsec=39.85  file=/scratch/ursl/h/mcatnlo_530.root
+type=mc,mcatnlo,man531  xsec=-2.35  file=/scratch/ursl/h/mcatnlo_531.root
+type=mc,mcatnlo,man535  xsec=37.61  file=/scratch/ursl/h/mcatnlo_535.root
+#
 type=mc,mcatnlo,man600  xsec=42.40  file=/scratch/ursl/h/mcatnlo_600.root
-type=mc,mcatnlo,man601  xsec=-2.450 file=/scratch/ursl/h/mcatnlo_601.root
+type=mc,mcatnlo,man601  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_601.root
 type=mc,mcatnlo,man605  xsec=40.02  file=/scratch/ursl/h/mcatnlo_605.root
 #
 type=mc,mcatnlo,man610  xsec=50.44  file=/scratch/ursl/h/mcatnlo_610.root
-type=mc,mcatnlo,man611  xsec=-2.486 file=/scratch/ursl/h/mcatnlo_611.root
+type=mc,mcatnlo,man611  xsec=-2.48  file=/scratch/ursl/h/mcatnlo_611.root
 type=mc,mcatnlo,man615  xsec=47.67  file=/scratch/ursl/h/mcatnlo_615.root
 #
 type=mc,mcatnlo,man620  xsec=50.44  file=/scratch/ursl/h/mcatnlo_620.root
-type=mc,mcatnlo,man621  xsec=-2.486 file=/scratch/ursl/h/mcatnlo_621.root
+type=mc,mcatnlo,man621  xsec=-2.48  file=/scratch/ursl/h/mcatnlo_621.root
 type=mc,mcatnlo,man625  xsec=47.67  file=/scratch/ursl/h/mcatnlo_625.root
 #
 type=mc,mcatnlo,man630  xsec=42.40  file=/scratch/ursl/h/mcatnlo_630.root
-type=mc,mcatnlo,man631  xsec=-2.450 file=/scratch/ursl/h/mcatnlo_631.root
+type=mc,mcatnlo,man631  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_631.root
 type=mc,mcatnlo,man635  xsec=40.02  file=/scratch/ursl/h/mcatnlo_635.root
 #
 type=mc,mcatnlo,man640  xsec=42.40  file=/scratch/ursl/h/mcatnlo_640.root
-type=mc,mcatnlo,man641  xsec=-2.450 file=/scratch/ursl/h/mcatnlo_641.root
+type=mc,mcatnlo,man641  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_641.root
 type=mc,mcatnlo,man645  xsec=40.02  file=/scratch/ursl/h/mcatnlo_645.root
 #
 type=mc,mcatnlo,man650  xsec=36.44  file=/scratch/ursl/h/mcatnlo_650.root
-type=mc,mcatnlo,man651  xsec=-2.372 file=/scratch/ursl/h/mcatnlo_651.root
+type=mc,mcatnlo,man651  xsec=-2.37  file=/scratch/ursl/h/mcatnlo_651.root
 type=mc,mcatnlo,man655  xsec=34.36  file=/scratch/ursl/h/mcatnlo_655.root
 #
 type=mc,mcatnlo,man660  xsec=36.44  file=/scratch/ursl/h/mcatnlo_660.root
-type=mc,mcatnlo,man661  xsec=-2.372 file=/scratch/ursl/h/mcatnlo_661.root
+type=mc,mcatnlo,man661  xsec=-2.37  file=/scratch/ursl/h/mcatnlo_661.root
 type=mc,mcatnlo,man665  xsec=34.36  file=/scratch/ursl/h/mcatnlo_665.root
-#
-type=mc,mcatnlo,man670  xsec=36.44  file=/scratch/ursl/h/mcatnlo_670.root
-type=mc,mcatnlo,man671  xsec=-2.372 file=/scratch/ursl/h/mcatnlo_671.root
-type=mc,mcatnlo,man675  xsec=34.362 file=/scratch/ursl/h/mcatnlo_675.root
-#
-type=mc,mcatnlo,man680  xsec=50.44  file=/scratch/ursl/h/mcatnlo_680.root
-type=mc,mcatnlo,man681  xsec=-2.486 file=/scratch/ursl/h/mcatnlo_681.root
-type=mc,mcatnlo,man685  xsec=47.67  file=/scratch/ursl/h/mcatnlo_685.root
+# 
+type=mc,mcatnlo,man670  xsec=31.75  file=/scratch/ursl/h/mcatnlo_670.root
+type=mc,mcatnlo,man671  xsec=-2.26  file=/scratch/ursl/h/mcatnlo_671.root
+type=mc,mcatnlo,man675  xsec=29.92  file=/scratch/ursl/h/mcatnlo_675.root
+# 
+type=mc,mcatnlo,man680  xsec=36.44  file=/scratch/ursl/h/mcatnlo_680.root
+type=mc,mcatnlo,man681  xsec=-2.37  file=/scratch/ursl/h/mcatnlo_681.root
+type=mc,mcatnlo,man685  xsec=34.36  file=/scratch/ursl/h/mcatnlo_685.root
 # -- background systematics
 type=mc,sherpa,132      xsec=1.60  file=/scratch/ursl/h/sherpa_132_sys.root
 type=mc,sherpa,133      xsec=0.31  file=/scratch/ursl/h/sherpa_133_sys.root
@@ -67,3 +103,168 @@ type=mc,sherpa,141      xsec=0.82  file=/scratch/ursl/h/sherpa_141_sys.root
 type=mc,sherpa,150      xsec=0.11  file=/scratch/ursl/h/sherpa_150_sys.root
 type=mc,sherpa,151      xsec=0.048 file=/scratch/ursl/h/sherpa_151_sys.root
 type=mc,sherpa,152      xsec=0.29  file=/scratch/ursl/h/sherpa_152_sys.root
+# -- pdf envelope
+type=mc,mcatnlo,man7000  xsec=42.40  file=/scratch/ursl/h/mcatnlo_7000.root
+type=mc,mcatnlo,man7001  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_7001.root
+type=mc,mcatnlo,man7005  xsec=40.02  file=/scratch/ursl/h/mcatnlo_7005.root
+#
+type=mc,mcatnlo,man7010  xsec=42.41  file=/scratch/ursl/h/mcatnlo_7010.root
+type=mc,mcatnlo,man7011  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_7011.root
+type=mc,mcatnlo,man7015  xsec=40.03  file=/scratch/ursl/h/mcatnlo_7015.root
+#
+type=mc,mcatnlo,man7020  xsec=42.38  file=/scratch/ursl/h/mcatnlo_7020.root
+type=mc,mcatnlo,man7021  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_7021.root
+type=mc,mcatnlo,man7025  xsec=40.00  file=/scratch/ursl/h/mcatnlo_7025.root
+#
+type=mc,mcatnlo,man7030  xsec=42.45  file=/scratch/ursl/h/mcatnlo_7030.root
+type=mc,mcatnlo,man7031  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_7031.root
+type=mc,mcatnlo,man7035  xsec=40.07  file=/scratch/ursl/h/mcatnlo_7035.root
+#
+type=mc,mcatnlo,man7040  xsec=42.33  file=/scratch/ursl/h/mcatnlo_7040.root
+type=mc,mcatnlo,man7041  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_7041.root
+type=mc,mcatnlo,man7045  xsec=39.96  file=/scratch/ursl/h/mcatnlo_7045.root
+#
+type=mc,mcatnlo,man7050  xsec=42.46  file=/scratch/ursl/h/mcatnlo_7050.root
+type=mc,mcatnlo,man7051  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_7051.root
+type=mc,mcatnlo,man7055  xsec=40.07  file=/scratch/ursl/h/mcatnlo_7055.root
+#
+type=mc,mcatnlo,man7060  xsec=42.31  file=/scratch/ursl/h/mcatnlo_7060.root
+type=mc,mcatnlo,man7061  xsec=-2.44  file=/scratch/ursl/h/mcatnlo_7061.root
+type=mc,mcatnlo,man7065  xsec=39.93  file=/scratch/ursl/h/mcatnlo_7065.root
+#
+type=mc,mcatnlo,man7070  xsec=42.44  file=/scratch/ursl/h/mcatnlo_7070.root
+type=mc,mcatnlo,man7071  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_7071.root
+type=mc,mcatnlo,man7075  xsec=40.05  file=/scratch/ursl/h/mcatnlo_7075.root
+#
+type=mc,mcatnlo,man7080  xsec=42.37  file=/scratch/ursl/h/mcatnlo_7080.root
+type=mc,mcatnlo,man7081  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_7081.root
+type=mc,mcatnlo,man7085  xsec=39.99  file=/scratch/ursl/h/mcatnlo_7085.root
+#
+type=mc,mcatnlo,man7090  xsec=42.31  file=/scratch/ursl/h/mcatnlo_7090.root
+type=mc,mcatnlo,man7091  xsec=-2.44  file=/scratch/ursl/h/mcatnlo_7091.root
+type=mc,mcatnlo,man7095  xsec=39.93  file=/scratch/ursl/h/mcatnlo_7095.root
+#
+type=mc,mcatnlo,man7100  xsec=42.52  file=/scratch/ursl/h/mcatnlo_7100.root
+type=mc,mcatnlo,man7101  xsec=-2.46  file=/scratch/ursl/h/mcatnlo_7101.root
+type=mc,mcatnlo,man7105  xsec=40.13  file=/scratch/ursl/h/mcatnlo_7105.root
+#
+type=mc,mcatnlo,man7110  xsec=41.89  file=/scratch/ursl/h/mcatnlo_7110.root
+type=mc,mcatnlo,man7111  xsec=-2.41  file=/scratch/ursl/h/mcatnlo_7111.root
+type=mc,mcatnlo,man7115  xsec=39.55  file=/scratch/ursl/h/mcatnlo_7115.root
+#
+type=mc,mcatnlo,man7120  xsec=42.71  file=/scratch/ursl/h/mcatnlo_7120.root
+type=mc,mcatnlo,man7121  xsec=-2.47  file=/scratch/ursl/h/mcatnlo_7121.root
+type=mc,mcatnlo,man7125  xsec=40.31  file=/scratch/ursl/h/mcatnlo_7125.root
+#
+type=mc,mcatnlo,man7130  xsec=42.54  file=/scratch/ursl/h/mcatnlo_7130.root
+type=mc,mcatnlo,man7131  xsec=-2.46  file=/scratch/ursl/h/mcatnlo_7131.root
+type=mc,mcatnlo,man7135  xsec=40.15  file=/scratch/ursl/h/mcatnlo_7135.root
+#
+type=mc,mcatnlo,man7140  xsec=42.20  file=/scratch/ursl/h/mcatnlo_7140.root
+type=mc,mcatnlo,man7141  xsec=-2.44  file=/scratch/ursl/h/mcatnlo_7141.root
+type=mc,mcatnlo,man7145  xsec=39.84  file=/scratch/ursl/h/mcatnlo_7145.root
+#
+type=mc,mcatnlo,man7150  xsec=42.21  file=/scratch/ursl/h/mcatnlo_7150.root
+type=mc,mcatnlo,man7151  xsec=-2.44  file=/scratch/ursl/h/mcatnlo_7151.root
+type=mc,mcatnlo,man7155  xsec=39.84  file=/scratch/ursl/h/mcatnlo_7155.root
+#
+type=mc,mcatnlo,man7160  xsec=42.46  file=/scratch/ursl/h/mcatnlo_7160.root
+type=mc,mcatnlo,man7161  xsec=-2.46  file=/scratch/ursl/h/mcatnlo_7161.root
+type=mc,mcatnlo,man7165  xsec=40.08  file=/scratch/ursl/h/mcatnlo_7165.root
+#
+type=mc,mcatnlo,man7170  xsec=42.35  file=/scratch/ursl/h/mcatnlo_7170.root
+type=mc,mcatnlo,man7171  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_7171.root
+type=mc,mcatnlo,man7175  xsec=39.98  file=/scratch/ursl/h/mcatnlo_7175.root
+#
+type=mc,mcatnlo,man7180  xsec=42.28  file=/scratch/ursl/h/mcatnlo_7180.root
+type=mc,mcatnlo,man7181  xsec=-2.44  file=/scratch/ursl/h/mcatnlo_7181.root
+type=mc,mcatnlo,man7185  xsec=39.90  file=/scratch/ursl/h/mcatnlo_7185.root
+#
+type=mc,mcatnlo,man7190  xsec=42.35  file=/scratch/ursl/h/mcatnlo_7190.root
+type=mc,mcatnlo,man7191  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_7191.root
+type=mc,mcatnlo,man7195  xsec=39.98  file=/scratch/ursl/h/mcatnlo_7195.root
+#
+type=mc,mcatnlo,man7200  xsec=42.44  file=/scratch/ursl/h/mcatnlo_7200.root
+type=mc,mcatnlo,man7201  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_7201.root
+type=mc,mcatnlo,man7205  xsec=40.05  file=/scratch/ursl/h/mcatnlo_7205.root
+#
+type=mc,mcatnlo,man7210  xsec=42.36  file=/scratch/ursl/h/mcatnlo_7210.root
+type=mc,mcatnlo,man7211  xsec=-2.44  file=/scratch/ursl/h/mcatnlo_7211.root
+type=mc,mcatnlo,man7215  xsec=39.98  file=/scratch/ursl/h/mcatnlo_7215.root
+#
+type=mc,mcatnlo,man7220  xsec=42.42  file=/scratch/ursl/h/mcatnlo_7220.root
+type=mc,mcatnlo,man7221  xsec=-2.46  file=/scratch/ursl/h/mcatnlo_7221.root
+type=mc,mcatnlo,man7225  xsec=40.04  file=/scratch/ursl/h/mcatnlo_7225.root
+#
+type=mc,mcatnlo,man7230  xsec=42.43  file=/scratch/ursl/h/mcatnlo_7230.root
+type=mc,mcatnlo,man7231  xsec=-2.46  file=/scratch/ursl/h/mcatnlo_7231.root
+type=mc,mcatnlo,man7235  xsec=40.05  file=/scratch/ursl/h/mcatnlo_7235.root
+#
+type=mc,mcatnlo,man7240  xsec=42.36  file=/scratch/ursl/h/mcatnlo_7240.root
+type=mc,mcatnlo,man7241  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_7241.root
+type=mc,mcatnlo,man7245  xsec=39.99  file=/scratch/ursl/h/mcatnlo_7245.root
+#
+type=mc,mcatnlo,man7250  xsec=42.47  file=/scratch/ursl/h/mcatnlo_7250.root
+type=mc,mcatnlo,man7251  xsec=-2.46  file=/scratch/ursl/h/mcatnlo_7251.root
+type=mc,mcatnlo,man7255  xsec=40.08  file=/scratch/ursl/h/mcatnlo_7255.root
+#
+type=mc,mcatnlo,man7260  xsec=42.36  file=/scratch/ursl/h/mcatnlo_7260.root
+type=mc,mcatnlo,man7261  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_7261.root
+type=mc,mcatnlo,man7265  xsec=39.98  file=/scratch/ursl/h/mcatnlo_7265.root
+#
+type=mc,mcatnlo,man7270  xsec=42.45  file=/scratch/ursl/h/mcatnlo_7270.root
+type=mc,mcatnlo,man7271  xsec=-2.46  file=/scratch/ursl/h/mcatnlo_7271.root
+type=mc,mcatnlo,man7275  xsec=40.06  file=/scratch/ursl/h/mcatnlo_7275.root
+#
+type=mc,mcatnlo,man7280  xsec=42.43  file=/scratch/ursl/h/mcatnlo_7280.root
+type=mc,mcatnlo,man7281  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_7281.root
+type=mc,mcatnlo,man7285  xsec=40.05  file=/scratch/ursl/h/mcatnlo_7285.root
+#
+type=mc,mcatnlo,man7290  xsec=42.28  file=/scratch/ursl/h/mcatnlo_7290.root
+type=mc,mcatnlo,man7291  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_7291.root
+type=mc,mcatnlo,man7295  xsec=39.91  file=/scratch/ursl/h/mcatnlo_7295.root
+#
+type=mc,mcatnlo,man7300  xsec=42.65  file=/scratch/ursl/h/mcatnlo_7300.root
+type=mc,mcatnlo,man7301  xsec=-2.46  file=/scratch/ursl/h/mcatnlo_7301.root
+type=mc,mcatnlo,man7305  xsec=40.26  file=/scratch/ursl/h/mcatnlo_7305.root
+#
+type=mc,mcatnlo,man7310  xsec=42.39  file=/scratch/ursl/h/mcatnlo_7310.root
+type=mc,mcatnlo,man7311  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_7311.root
+type=mc,mcatnlo,man7315  xsec=40.01  file=/scratch/ursl/h/mcatnlo_7315.root
+#
+type=mc,mcatnlo,man7320  xsec=42.40  file=/scratch/ursl/h/mcatnlo_7320.root
+type=mc,mcatnlo,man7321  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_7321.root
+type=mc,mcatnlo,man7325  xsec=40.02  file=/scratch/ursl/h/mcatnlo_7325.root
+#
+type=mc,mcatnlo,man7330  xsec=42.44  file=/scratch/ursl/h/mcatnlo_7330.root
+type=mc,mcatnlo,man7331  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_7331.root
+type=mc,mcatnlo,man7335  xsec=40.06  file=/scratch/ursl/h/mcatnlo_7335.root
+#
+type=mc,mcatnlo,man7340  xsec=42.37  file=/scratch/ursl/h/mcatnlo_7340.root
+type=mc,mcatnlo,man7341  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_7341.root
+type=mc,mcatnlo,man7345  xsec=39.99  file=/scratch/ursl/h/mcatnlo_7345.root
+#
+type=mc,mcatnlo,man7350  xsec=42.33  file=/scratch/ursl/h/mcatnlo_7350.root
+type=mc,mcatnlo,man7351  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_7351.root
+type=mc,mcatnlo,man7355  xsec=39.96  file=/scratch/ursl/h/mcatnlo_7355.root
+#
+type=mc,mcatnlo,man7360  xsec=42.42  file=/scratch/ursl/h/mcatnlo_7360.root
+type=mc,mcatnlo,man7361  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_7361.root
+type=mc,mcatnlo,man7365  xsec=40.04  file=/scratch/ursl/h/mcatnlo_7365.root
+#
+type=mc,mcatnlo,man7370  xsec=42.53  file=/scratch/ursl/h/mcatnlo_7370.root
+type=mc,mcatnlo,man7371  xsec=-2.46  file=/scratch/ursl/h/mcatnlo_7371.root
+type=mc,mcatnlo,man7375  xsec=40.14  file=/scratch/ursl/h/mcatnlo_7375.root
+#
+type=mc,mcatnlo,man7380  xsec=42.05  file=/scratch/ursl/h/mcatnlo_7380.root
+type=mc,mcatnlo,man7381  xsec=-2.43  file=/scratch/ursl/h/mcatnlo_7381.root
+type=mc,mcatnlo,man7385  xsec=39.69  file=/scratch/ursl/h/mcatnlo_7385.root
+#
+type=mc,mcatnlo,man7390  xsec=42.34  file=/scratch/ursl/h/mcatnlo_7390.root
+type=mc,mcatnlo,man7391  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_7391.root
+type=mc,mcatnlo,man7395  xsec=39.96  file=/scratch/ursl/h/mcatnlo_7395.root
+#
+type=mc,mcatnlo,man7400  xsec=42.41  file=/scratch/ursl/h/mcatnlo_7400.root
+type=mc,mcatnlo,man7401  xsec=-2.45  file=/scratch/ursl/h/mcatnlo_7401.root
+type=mc,mcatnlo,man7405  xsec=40.03  file=/scratch/ursl/h/mcatnlo_7405.root
+#

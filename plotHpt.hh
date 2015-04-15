@@ -43,11 +43,16 @@ public :
   //     > all necessary plots are produced. This emulates overlayAll, in a sense...
   void   validation(); 
 
-  // study the background mass shape in different pT bins
+  // -- study the background mass shape in different pT bins
   void   bgShape(int nevts = -1);
   void   bgSyst(std::string ds0, std::string ds1, std::string ds2 = "nada");
 
-  void   sgSyst(std::string ds0, std::string ds1 = "", double xmin = 200., double xmax = 1000.);
+  // -- signal systematics
+  void   sgSyst(std::string ds0, std::string ds1 = "", std::string ds2 = "", 
+		double xmin = 200., double xmax = 1000., std::string name = "");
+  void   sgEnvelope(std::string type = "ignored", std::string hname = "pt", std::string sel = "goodcand");
+  void   sgShape(std::string dsf0, std::string type, double xmin = 0., double xmax = 1000.);
+  void   sgAlphaS();
 
 
   // -- now start to factorize the preprocessing

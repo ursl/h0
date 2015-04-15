@@ -182,7 +182,7 @@ void plotHpt::readHistograms(vector<string> extrads) {
 	h1 = (TH1*)fHistFile->Get(hist);
 	fHists.insert(make_pair(hist, h1));
 	dataset = ds[id];
-	cout << "dataset: " << dataset << " id: " << id << endl;
+	cout << "dataset: " << dataset << " id: " << id << " hist: " << hist << " fHists[hist] = " << fHists[hist] << endl;
 	setHistTitles(fHists[hist], fDS[dataset], h1->GetXaxis()->GetTitle(), "Entries/bin");
       }
     }
@@ -326,26 +326,32 @@ void plotHpt::bookHist(string name, string cuts) {
 
 // ----------------------------------------------------------------------
 void plotHpt::makeAll(int bitmask) {
-  if (bitmask & 0x1) {
-    treeAnalysis();
+  
+  cout << "makeAll with bitmask = " << bitmask << endl;
+  
+  if (0 == bitmask) {
     allNumbers5(); 
+  }
+  if (bitmask & 0x1) {
+    treeAnalysis(1, -1, "UPDATE");
   }
   if (bitmask & 0x2) {
-    allNumbers5(); 
+    treeAnalysis(2, -1, "UPDATE");
   }
   if (bitmask & 0x4) {
-    optimizeCuts(); 
+    treeAnalysis(4, -1, "UPDATE");
   }
   if (bitmask & 0x8) {
-    optAnalysis(1); 
-    optAnalysis(2); 
-    optAnalysis(3); 
+    treeAnalysis(8, -1, "UPDATE");
   }
+    
   if (bitmask & 0x10) {
     validation(); 
   }
 
   if (bitmask & 0x20) {
+    //    optimizeCuts(); 
+    
     // -- different mass cuts
     // MSTW08
     bgSyst("sherpa132", "sherpa133", "sherpa134"); 
@@ -434,87 +440,581 @@ void plotHpt::plot2() {
 }
 
 
+// ----------------------------------------------------------------------
+void plotHpt::sgAlphaS() {
+
+  vector<string> vds; 
+  vds.push_back("man60x");
+  vds.push_back("man605");
+
+  vds.push_back("man50x");
+  vds.push_back("man505");
+  vds.push_back("man51x");
+  vds.push_back("man515");
+  vds.push_back("man52x");
+  vds.push_back("man525");
+  vds.push_back("man53x");
+  vds.push_back("man535");
+  
+  readHistograms(vds); 
+
+  norm2Lumi();
+
+  string what("pt");
+  string sel("goodcand");
+
+  zone(2,2);
+
+  vector<TH1D*> hx, h5; 
+  vector<double> as;
+  vector<int> color; 
+
+  vector<string> ds; 
+  ds.push_back("man53"); as.push_back(0.11632); color.push_back(kCyan);
+  ds.push_back("man51"); as.push_back(0.11867); color.push_back(kBlue);
+  ds.push_back("man60"); as.push_back(0.12018); color.push_back(kBlack);
+  ds.push_back("man50"); as.push_back(0.12140); color.push_back(kMagenta);
+  ds.push_back("man52"); as.push_back(0.12335); color.push_back(kRed);
+  
+  TH1D *h(0); 
+  TGraph *gx = new TGraph(ds.size()); 
+  gx->SetTitle("m_{t} = 173.3 GeV");
+  gx->GetXaxis()->SetTitle("#alpha_s"); 
+  gx->GetYaxis()->SetTitle("N_{signal}"); 
+  TGraph *g5 = new TGraph(ds.size()); 
+  g5->SetTitle("m_{t} #rightarrow #infty");
+  g5->GetXaxis()->SetTitle("#alpha_s"); 
+  g5->GetYaxis()->SetTitle("N_{signal}"); 
+  double integral(0.);
+  
+  h = (TH1D*)fHists[Form("%s_%sx_%s", what.c_str(), ds[0].c_str(), sel.c_str())];
+  int blo = h->FindBin(PTLO); 
+  int bhi = h->FindBin(PTHI)+1; 
+  cout << "integrating from bin " << blo << " .. " << bhi << ", corresponding to " 
+       << h->GetBinLowEdge(blo) << " .. " << h->GetBinLowEdge(bhi) 
+       << endl;
+
+  for (unsigned int i = 0; i < ds.size(); ++i) {
+
+    h = (TH1D*)fHists[Form("%s_%sx_%s", what.c_str(), ds[i].c_str(), sel.c_str())];
+    setHist(h, color[i], 20, 0.7, 1);
+    integral = h->Integral(blo, bhi); 
+    hx.push_back(h);
+    gx->SetPoint(i, as[i], integral); 
+    
+    h = (TH1D*)fHists[Form("%s_%s5_%s", what.c_str(), ds[i].c_str(), sel.c_str())];
+    setHist(h, color[i], 20, 0.7, 1);
+    integral = h->Integral(blo, bhi);
+    h5.push_back(h);
+    g5->SetPoint(i, as[i], integral); 
+  }
+
+
+
+  c0->cd(1); 
+  gPad->SetLogy(1);
+  for (unsigned int i = 0; i < hx.size(); ++i) {
+    if (0 == i) {
+      hx[i]->Draw("hist");
+    } else {
+      hx[i]->Draw("histsame");
+    }
+  }
+
+  c0->cd(2); 
+  gPad->SetLogy(1);
+  for (unsigned int i = 0; i < hx.size(); ++i) {
+    if (0 == i) {
+      h5[i]->Draw("hist");
+    } else {
+      h5[i]->Draw("histsame");
+    }
+  }
+
+
+  c0->cd(3); 
+  gx->Fit("pol1");
+  gx->Draw("alp");
+  TF1 *f1 = gx->GetFunction("pol1");
+  double Y0 = f1->Eval(0.117);
+  double Y1 = f1->Eval(0.119);
+  double Y2 = f1->Eval(0.121);
+
+
+  tl->SetNDC(kTRUE);
+  tl->SetTextSize(0.04); 
+  tl->DrawLatex(0.2, 0.85, Form("0.117: %3.2f, %3.2f (%4.3f)", Y0, Y0-Y1, (Y0-Y1)/Y1));
+  tl->DrawLatex(0.2, 0.80, Form("0.119: %3.2f", Y1));
+  tl->DrawLatex(0.2, 0.75, Form("0.121: %3.2f, %3.2f (%4.3f)", Y2, Y2-Y1, (Y2-Y1)/Y1));
+
+  c0->cd(4); 
+  g5->Fit("pol1");
+  g5->Draw("alp");
+
+  f1 = g5->GetFunction("pol1");
+  double y0 = f1->Eval(0.117);
+  double y1 = f1->Eval(0.119);
+  double y2 = f1->Eval(0.121);
+
+  tl->DrawLatex(0.2, 0.85, Form("0.117: %3.2f, %3.2f (%4.3f)", y0, y0-y1, (y0-y1)/y1));
+  tl->DrawLatex(0.2, 0.80, Form("0.119: %3.2f", y1));
+  tl->DrawLatex(0.2, 0.75, Form("0.121: %3.2f, %3.2f (%4.3f)", y2, y2-y1, (y2-y1)/y1));
+
+  tl->DrawLatex(0.2, 0.65, Form("sg1/sg0: %4.3f, %4.3f, %4.3f", y0/Y0, y1/Y1, y2/Y2));
+
+  c0->SaveAs(Form("%s/sgAlphaS.pdf", fDirectory.c_str())); 
+
+
+}
+
 
 // ----------------------------------------------------------------------
-void plotHpt::sgSyst(string dsf0, string dsf1, double xmin, double xmax) {
-  cout << "sgSyst(" << dsf0 << ", " << dsf1 << ")" << endl;
+void plotHpt::sgEnvelope(string type, string hname, string sel) {
+  cout << "sgEnvelope(" << type << ", " << hname << ")" << endl;
+
+  fHists.clear();
+
+  vector<string> v; 
+  
+  string hist(""), ds("");
+  int NMIN(-1), NMAX(-1), BASE(-1);
+
+  if ("all" == type) {
+    sgEnvelope("zero"); 
+    sgEnvelope("pdf"); 
+    sgEnvelope("mstw"); 
+    sgEnvelope("scale"); 
+    sgEnvelope("mtop"); 
+    sgEnvelope("ff1"); 
+    return;
+  } else if ("pdf" == type) {
+    BASE = 700; 
+    NMIN = 700; 
+    NMAX = 740; 
+    for (int i = NMIN; i <= NMAX; ++i) {
+      ds = Form("man%dx", i);
+      v.push_back(ds);
+      ds = Form("man%d5", i);
+      v.push_back(ds);
+    }    
+  } else if ("mstw" == type) {
+    BASE = 15; 
+    NMIN = 15; 
+    NMAX = 18; 
+    for (int i = NMIN; i <= NMAX; ++i) {
+      ds = Form("man%dx", i);
+      v.push_back(ds);
+      ds = Form("man%d5", i);
+      v.push_back(ds);
+    }    
+  } else if ("ff1" == type) {
+    BASE = 40; 
+    NMIN = 40; 
+    NMAX = 42; 
+    for (int i = NMIN; i <= NMAX; ++i) {
+      ds = Form("man%dx", i);
+      v.push_back(ds);
+      ds = Form("man%d5", i);
+      v.push_back(ds);
+    }    
+  } else if ("mtop" == type) {
+    BASE = 60; 
+    ds = Form("man%dx", BASE);
+    v.push_back(ds);
+    ds = Form("man%d5", BASE);
+    v.push_back(ds);
+    NMIN = 20; 
+    NMAX = 21; 
+    for (int i = NMIN; i <= NMAX; ++i) {
+      ds = Form("man%dx", i);
+      v.push_back(ds);
+      ds = Form("man%d5", i);
+      v.push_back(ds);
+    }    
+  } else if ("zero" == type) {
+    BASE = 60; 
+    ds = Form("man%dx", BASE);
+    v.push_back(ds);
+    ds = Form("man%d5", BASE);
+    v.push_back(ds);
+    NMIN = 15; 
+    NMAX = 16; 
+    for (int i = NMIN; i <= NMAX; ++i) {
+      ds = Form("man%dx", i);
+      v.push_back(ds);
+      ds = Form("man%d5", i);
+      v.push_back(ds);
+    }    
+  } else if ("scale" == type) {
+    BASE = 15; 
+    NMIN = 61; 
+    NMAX = 68; 
+    for (int i = NMIN; i <= NMAX; ++i) {
+      ds = Form("man%dx", i);
+      v.push_back(ds);
+      ds = Form("man%d5", i);
+      v.push_back(ds);
+    }    
+    ds = Form("man%dx", BASE);
+    v.push_back(ds);
+    ds = Form("man%d5", BASE);
+    v.push_back(ds);
+  } else {
+    cout << "not implemented" << endl;
+    return; 
+  }
+
+
+
+
+  readHistograms(v); 
+
+  norm2Lumi();
+
+  vector<int> colMod;
+  colMod.push_back(+1);
+  colMod.push_back(+2);
+  colMod.push_back(+3);
+  colMod.push_back(+4);
+  colMod.push_back(-4);
+  colMod.push_back(-7);
+  colMod.push_back(-6);
+  colMod.push_back(-5);
+  colMod.push_back(-9);
+  colMod.push_back(-8);
+
+  int baseCol(0); 
+ 
+  zone(1);
+  gPad->SetLogy(1);
+
+  TH1D *hx(0); 
+  vector<double> ix, i5; 
+
+  // -- determine bin numbers for integrals
+  ds = Form("man%dx", BASE);
+  hist = Form("%s_%s_%s", hname.c_str(), ds.c_str(), sel.c_str()); 
+  hx = (TH1D*)fHists[hist];
+  int blo = hx->FindBin(PTLO); 
+  int bhi = hx->FindBin(PTHI)+1; 
+
+  double integral(0.); 
+
+  // -- manX
+  for (int i = NMIN; i <= NMAX; ++i) {
+    ds = Form("man%dx", i);
+
+    if (i-NMIN < 50) baseCol = kGreen;
+    if (i-NMIN < 40) baseCol = kBlue;
+    if (i-NMIN < 30) baseCol = kCyan;
+    if (i-NMIN < 20) baseCol = kMagenta;
+    if (i-NMIN < 10) baseCol = kRed;
+
+    hist = Form("%s_%s_%s", hname.c_str(), ds.c_str(), sel.c_str()); 
+    hx = (TH1D*)fHists[hist];
+    integral = hx->Integral(blo, bhi);
+    cout << hist << ": " << hx->Integral() << " in high range: " << integral << endl;
+    hx->SetLineWidth(1); 
+    hx->SetFillStyle(0); 
+    hx->SetLineColor(baseCol+colMod[i%10]);
+
+    ix.push_back(integral);
+
+    if (NMIN == i) {
+      hx->Draw("hist");
+    } else {
+      hx->Draw("histsame");
+    }
+  }
+
+  ds = Form("man%dx", BASE);
+
+  hx = (TH1D*)fHists[Form("%s_%s_%s", hname.c_str(), ds.c_str(), sel.c_str())];
+  hx->SetFillStyle(0); 
+  hx->SetLineWidth(3); 
+  hx->SetLineColor(kBlack);
+  hx->Draw("histsame");
+  hx->Draw("axissame");
+
+  c0->SaveAs(Form("%s/sgEnvelope-%s-x.pdf", fDirectory.c_str(), type.c_str())); 
+
+  // -- man5
+  for (int i = NMIN; i <= NMAX; ++i) {
+    ds = Form("man%d5", i);
+
+    if (i < 750) baseCol = kGreen;
+    if (i < 740) baseCol = kBlue;
+    if (i < 730) baseCol = kCyan;
+    if (i < 720) baseCol = kMagenta;
+    if (i < 710) baseCol = kRed;
+
+    if (i-NMIN < 50) baseCol = kGreen;
+    if (i-NMIN < 40) baseCol = kBlue;
+    if (i-NMIN < 30) baseCol = kCyan;
+    if (i-NMIN < 20) baseCol = kMagenta;
+    if (i-NMIN < 10) baseCol = kRed;
+
+
+    hist = Form("%s_%s_%s", hname.c_str(), ds.c_str(), sel.c_str()); 
+    hx = (TH1D*)fHists[hist];
+    integral = hx->Integral(blo, bhi);
+    cout << hist << ": " << hx->Integral() << " in high range: " << integral << endl;
+    hx->SetLineWidth(1); 
+    hx->SetFillStyle(0); 
+    hx->SetLineColor(baseCol+colMod[i%10]);
+
+    i5.push_back(integral);
+
+    if (NMIN == i) {
+      hx->Draw("hist");
+    } else {
+      hx->Draw("histsame");
+    }
+  }
+
+  ds = Form("man%d5", BASE);
+
+  hx = (TH1D*)fHists[Form("%s_%s_%s", hname.c_str(), ds.c_str(), sel.c_str())];
+  hx->SetFillStyle(0); 
+  hx->SetLineWidth(3); 
+  hx->SetLineColor(kBlack);
+  hx->Draw("histsame");
+  hx->Draw("axissame");
+
+  c0->SaveAs(Form("%s/sgEnvelope-%s-5.pdf", fDirectory.c_str(), type.c_str())); 
+
+  // -- calculate event yields and ratios
+  TH1D *hnx = new TH1D("hnx", "hnx", 100,  50., 150.); 
+  TH1D *hn5 = new TH1D("hn5", "hn5", 100, 100., 200.); 
+  TH1D *hnR = new TH1D("hnR", "hnR", 100, 1.5, 2.0); 
+
+  double err0(0.), err1(0.), errR(0.); 
+
+  for (unsigned int i = 0; i < ix.size(); ++i) {
+    hnx->Fill(ix[i]);
+    hn5->Fill(i5[i]);
+    hnR->Fill(i5[i]/ix[i]); 
+  }
+
+  // -- use middle of "band" as central value
+  for (unsigned int i = 0; i < ix.size(); ++i) {
+    err0 += (ix[i] - hnx->GetMean()) * (ix[i] - hnx->GetMean());
+    err1 += (i5[i] - hn5->GetMean()) * (i5[i] - hn5->GetMean());
+
+    errR += (i5[i]/ix[i] - hn5->GetMean()/hnx->GetMean()) * (i5[i]/ix[i] - hn5->GetMean()/hnx->GetMean());
+  }
+
+  cout << "err0: " << TMath::Sqrt(err0) << " ix[0] = " << hnx->GetMean() << " rel: " << TMath::Sqrt(err0)/hnx->GetMean() << endl;
+
+  err0 = TMath::Sqrt(err0)/hnx->GetMean(); 
+  err1 = TMath::Sqrt(err1)/hn5->GetMean(); 
+  errR = TMath::Sqrt(errR)/(hn5->GetMean()/hnx->GetMean()); 
+
+  tl->SetNDC(kTRUE);
+  zone(2,2);
+  hnx->Draw();
+  double xmin = hnx->GetBinLowEdge(hnx->FindFirstBinAbove(0.5)); 
+  double xmax = hnx->GetBinLowEdge(hnx->FindLastBinAbove(0.5)); 
+  tl->DrawLatex(0.25, 0.92, Form("0.5*%4.3f/%4.3f = %4.3f", (xmax-xmin), hnx->GetMean(), 0.5*(xmax-xmin)/hnx->GetMean())); 
+  tl->DrawLatex(0.21, 0.80, "quadr. sum, relative error"); 
+  tl->DrawLatex(0.21, 0.75, Form("%4.3f", err0)); 
+
+  
+  c0->cd(2);
+  hn5->Draw();
+  xmin = hn5->GetBinLowEdge(hn5->FindFirstBinAbove(0.5)); 
+  xmax = hn5->GetBinLowEdge(hn5->FindLastBinAbove(0.5)); 
+  tl->DrawLatex(0.25, 0.92, Form("0.5*%4.3f/%4.3f = %4.3f", (xmax-xmin), hn5->GetMean(), 0.5*(xmax-xmin)/hn5->GetMean())); 
+  tl->DrawLatex(0.21, 0.80, "quadr. sum, relative error"); 
+  tl->DrawLatex(0.21, 0.75, Form("%4.3f", err1)); 
+
+  c0->cd(3);
+  hnR->Draw();
+  xmin = hnR->GetBinLowEdge(hnR->FindFirstBinAbove(0.5)); 
+  xmax = hnR->GetBinLowEdge(hnR->FindLastBinAbove(0.5)); 
+  tl->DrawLatex(0.25, 0.92, Form("0.5*%4.3f/%4.3f = %4.3f", (xmax-xmin), hnR->GetMean(), 0.5*(xmax-xmin)/hnR->GetMean())); 
+  tl->DrawLatex(0.21, 0.80, "quadr. sum, relative error"); 
+  tl->DrawLatex(0.21, 0.75, Form("%4.3f", errR)); 
+
+  c0->SaveAs(Form("%s/sgEnvelope-%s-syst.pdf", fDirectory.c_str(), type.c_str())); 
+}
+
+
+// ----------------------------------------------------------------------
+void plotHpt::sgShape(string dsf0, string type, double xmin, double xmax) {
+
+  vector<string> v; 
+  string ds0x = dsf0 + string("x");
+  string ds05 = dsf0 + string("5");
+
+  TF1 *f1(0); 
+  if (type == "mtop") {
+    f1 = new TF1("f1",  "1.0 + 0.01*(x-40)*0.01*(x-40)*0.015", 0., 1000.);
+  }
+
+  vector<string> vds; 
+  vds.push_back(ds0x);
+  vds.push_back(ds05);
+
+  readHistograms(vds); 
+  norm2Lumi();
+
+  string what("pt");
+  string sel("goodcand");
+
+  zone(2,2);
+
+  TH1D *hx = (TH1D*)fHists[Form("%s_%s_%s", what.c_str(), vds[0].c_str(), sel.c_str())];
+  setHist(hx, kBlue, 20, 0.7, 1);
+  double nx = hx->Integral(); 
+  TH1D *sx = (TH1D*)hx->Clone("sx"); sx->SetLineStyle(kDashed);
+
+  TH1D *h5 = (TH1D*)fHists[Form("%s_%s_%s", what.c_str(), vds[1].c_str(), sel.c_str())];
+  setHist(h5, kRed, 20, 0.7, 1);
+  double n5 = h5->Integral(); 
+  TH1D *s5 = (TH1D*)h5->Clone("s5"); s5->SetLineStyle(kDashed);
+  
+  sx->Multiply(f1); 
+  sx->Scale(nx/sx->Integral()); 
+
+  zone(1);
+  gPad->SetLogy(1);
+  hx->Draw("hist");
+  sx->Draw("histsame");
+  
+  h5->Draw("histsame");
+
+  int blo(hx->FindBin(300.));
+  int bhi(hx->FindBin(1000.)+1);
+
+  tl->SetTextSize(0.03);
+  tl->SetNDC(kTRUE);
+  tl->SetTextColor(kBlue);
+  tl->DrawLatex(0.35, 0.85, Form("p_{T} > 300: %4.1f vs %4.1f: %4.3f", 
+			       hx->Integral(blo, bhi), sx->Integral(blo, bhi), -1. + sx->Integral(blo, bhi)/hx->Integral(blo, bhi)));
+  tl->SetTextColor(kRed);
+  tl->DrawLatex(0.35, 0.80, Form("p_{T} > 300: %4.1f vs %4.1f: %4.3f", 
+			       h5->Integral(blo, bhi), s5->Integral(blo, bhi), -1. + s5->Integral(blo, bhi)/h5->Integral(blo, bhi)));
+
+  tl->SetTextColor(kBlack);
+  tl->DrawLatex(0.38, 0.75, Form("ratios: %4.3f vs %4.3f: %4.3f", 
+				h5->Integral(blo, bhi)/hx->Integral(blo, bhi), 
+				s5->Integral(blo, bhi)/sx->Integral(blo, bhi), 
+				-1. + (h5->Integral(blo, bhi)/hx->Integral(blo, bhi))/(s5->Integral(blo, bhi)/sx->Integral(blo, bhi))));
+  
+  
+  c0->SaveAs(Form("%s/sgShape-%s-%s.pdf", fDirectory.c_str(), vds[0].c_str(), type.c_str())); 
+
+
+}
+
+// ----------------------------------------------------------------------
+void plotHpt::sgSyst(string dsf0, string dsf1, string dsf2, double xmin, double xmax, string name) {
+  cout << "sgSyst(" << dsf0 << ", " << dsf1 << ", " << dsf2 << ")" << endl;
 
   if (dsf0 == "all") {
-    sgSyst("man60", "man15"); 
-    sgSyst("man15", "man16"); 
-    sgSyst("man60", "man17"); 
-    sgSyst("man60", "man18"); 
+    sgSyst("man", "man15", "man16", xmin, xmax, "zero"); 
+    sgSyst("man", "man15", "manis", xmin, xmax, "strebel"); 
 
-    sgSyst("man60", "man61"); 
-    sgSyst("man60", "man62"); 
-    sgSyst("man60", "man63"); 
-    sgSyst("man60", "man64"); 
-    sgSyst("man60", "man65"); 
-    sgSyst("man60", "man66"); 
-    sgSyst("man60", "man67"); 
-    sgSyst("man60", "man68"); 
+    sgSyst("mstw");
+    sgSyst("scale");
+    sgSyst("mtop");
+    sgSyst("ff1");
+
+    return;
+  }
+
+
+  if (dsf0 == "mstw") {
+    sgSyst("man15", "man17", "man18", xmin, xmax, "mstw"); 
+    return;
+  }
+
+  if (dsf0 == "scale") {
+    sgSyst("man15", "man61", "man66", xmin, xmax, "scale-fren"); 
+    sgSyst("man15", "man63", "man64", xmin, xmax, "scale-ffac"); 
+    return;
+  }
+
+  if (dsf0 == "mtop") {
+    sgSyst("man60", "man20", "man21", xmin, xmax, "mtop"); 
+    return;
+  }
+
+  if (dsf0 == "ff1") {
+    sgSyst("man40", "man41", "man42", xmin, xmax, "ff1"); 
     return;
   }
    
   vector<string> v; 
-//   v.push_back("manis5");
-//   v.push_back("man5"); 
-
   string ds0x = dsf0 + string("x");
   string ds05 = dsf0 + string("5");
 
   string ds1x = dsf1 + string("x");
   string ds15 = dsf1 + string("5");
 
+  string ds2x = dsf2 + string("x");
+  string ds25 = dsf2 + string("5");
+
   vector<string> vds; 
   vds.push_back(ds0x);
   vds.push_back(ds05);
   vds.push_back(ds1x);
   vds.push_back(ds15);
+  vds.push_back(ds2x);
+  vds.push_back(ds25);
   
   copy(vds.begin(), vds.end(), back_inserter(v));
   readHistograms(v); 
 
+  norm2Lumi();
+
   string what("pt");
-  string sel("hipt");
-  sel = "goodcand";
+  string sel("goodcand");
 
   zone(2,2);
 
   TH1D *h0x = (TH1D*)fHists[Form("%s_%s_%s", what.c_str(), vds[0].c_str(), sel.c_str())];
-  setHist(h0x, kBlack, 24, 0.7);
+  setHist(h0x, kBlack, 20, 0.7, 1);
   TH1D *h05 = (TH1D*)fHists[Form("%s_%s_%s", what.c_str(), vds[1].c_str(), sel.c_str())];
-  setHist(h05, kBlack, 24, 0.7);
-
+  setHist(h05, kBlack, 20, 0.7, 1);
 
   TH1D *h1x = (TH1D*)fHists[Form("%s_%s_%s", what.c_str(), vds[2].c_str(), sel.c_str())];
-  setHist(h1x, kRed, 25, 0.7);
-
+  setHist(h1x, kRed, 25, 0.7, 1);
   TH1D *h15 = (TH1D*)fHists[Form("%s_%s_%s", what.c_str(), vds[3].c_str(), sel.c_str())];
-  setHist(h15, kRed, 25, 0.7);
+  setHist(h15, kRed, 25, 0.7, 1);
 
-  TH1D *hrxa = (TH1D*)h0x->Clone("hrxa"); hrxa->Sumw2(); hrxa->Reset();
-  setHist(hrxa, kBlack, 25, 1);
-  hrxa->Divide(h0x, h1x); 
-  hrxa->SetMinimum(0.);
-  hrxa->SetMaximum(2.5);
-  TH1D *hrxb = (TH1D*)h0x->Clone("hrxb"); hrxb->Sumw2(); hrxb->Reset();
-  setHist(hrxb, kBlack, 25, 1);
-  hrxb->Divide(h0x, h1x); 
-  hrxb->SetMinimum(0.);
-  hrxb->SetMaximum(2.5);
+  TH1D *h2x = (TH1D*)fHists[Form("%s_%s_%s", what.c_str(), vds[4].c_str(), sel.c_str())];
+  setHist(h2x, kBlue, 26, 0.7, 1);
+  TH1D *h25 = (TH1D*)fHists[Form("%s_%s_%s", what.c_str(), vds[5].c_str(), sel.c_str())];
+  setHist(h25, kBlue, 26, 0.7, 1);
 
+  // -- ratios x
+  TH1D *hrx1 = (TH1D*)h0x->Clone("hrx1"); hrx1->Sumw2(); hrx1->Reset();
+  setHist(hrx1, kRed, 25, 1, 1);
+  hrx1->Divide(h1x, h0x); 
+  hrx1->SetMinimum(0.);
+  hrx1->SetMaximum(2.5);
 
-  TH1D *hr5a = (TH1D*)h1x->Clone("hr5a"); hr5a->Sumw2(); hr5a->Reset();
-  setHist(hr5a, kBlack, 25, 1);
-  hr5a->Divide(h05, h15); 
-  hr5a->SetMinimum(0.);
-  hr5a->SetMaximum(2.5);
-  TH1D *hr5b = (TH1D*)h1x->Clone("hrxb"); hr5b->Sumw2(); hr5b->Reset();
-  setHist(hr5b, kBlack, 25, 1);
-  hr5b->Divide(h05, h15); 
-  hr5b->SetMinimum(0.);
-  hr5b->SetMaximum(2.5);
+  TH1D *hrx2 = (TH1D*)h0x->Clone("hrx2"); hrx2->Sumw2(); hrx2->Reset();
+  setHist(hrx2, kBlue, 26, 1, 1);
+  hrx2->Divide(h2x, h0x); 
+  hrx2->SetMinimum(0.);
+  hrx2->SetMaximum(2.5);
+
+  // -- ratios 5
+  TH1D *hr51 = (TH1D*)h05->Clone("hr51"); hr51->Sumw2(); hr51->Reset();
+  setHist(hr51, kRed, 25, 1, 1);
+  hr51->Divide(h15, h05); 
+  hr51->SetMinimum(0.);
+  hr51->SetMaximum(2.5);
+
+  TH1D *hr52 = (TH1D*)h05->Clone("hr52"); hr52->Sumw2(); hr52->Reset();
+  setHist(hr52, kBlue, 26, 1, 1);
+  hr52->Divide(h25, h05); 
+  hr52->SetMinimum(0.);
+  hr52->SetMaximum(2.5);
+
 
   int blo = h0x->FindBin(PTLO); 
   int bhi = h0x->FindBin(PTHI)+1; 
@@ -523,70 +1023,88 @@ void plotHpt::sgSyst(string dsf0, string dsf1, double xmin, double xmax) {
   c0->cd(1); 
   gPad->SetLogy(1);  
   h0x->Draw(""); 
-  h1x->Draw("same"); 
+  h1x->Draw("histsame"); 
+  h2x->Draw("histsame"); 
   tl->SetTextColor(kBlack);
-  tl->DrawLatex(0.4, 0.80, Form("%s: %8.7f", vds[0].c_str(), h0x->Integral(blo, bhi)));
+  tl->DrawLatex(0.4, 0.80, Form("%s: %3.1f", vds[0].c_str(), h0x->Integral(blo, bhi)));
   tl->SetTextColor(kRed);
-  tl->DrawLatex(0.4, 0.75, Form("%s: %8.7f", vds[2].c_str(), h1x->Integral(blo, bhi)));
-  tl->DrawLatex(0.4, 0.70, Form("ratio: %4.3f", h0x->Integral(blo, bhi)/h1x->Integral(blo, bhi)));
+  tl->DrawLatex(0.4, 0.75, Form("%s: %3.1f, %3.2f", vds[2].c_str(), h1x->Integral(blo, bhi), 
+				h1x->Integral(blo, bhi)/h0x->Integral(blo, bhi)));
+  tl->SetTextColor(kBlue);
+  tl->DrawLatex(0.4, 0.70, Form("%s: %3.1f, %3.2f", vds[4].c_str(), h2x->Integral(blo, bhi), 
+				h2x->Integral(blo, bhi)/h0x->Integral(blo, bhi)));
 
   c0->cd(2); 
   gPad->SetLogy(1);  
   h05->Draw(""); 
-  h15->Draw("same"); 
+  h15->Draw("histsame"); 
+  h25->Draw("histsame"); 
   tl->SetTextColor(kBlack);
-  tl->DrawLatex(0.4, 0.80, Form("%s: %8.7f", vds[1].c_str(), h05->Integral(blo, bhi)));
+  tl->DrawLatex(0.4, 0.80, Form("%s: %3.1f", vds[1].c_str(), h05->Integral(blo, bhi)));
   tl->SetTextColor(kRed);
-  tl->DrawLatex(0.4, 0.75, Form("%s: %8.7f", vds[3].c_str(), h15->Integral(blo, bhi)));
-  tl->DrawLatex(0.4, 0.70, Form("ratio: %4.3f", h05->Integral(blo, bhi)/h15->Integral(blo, bhi)));
+  tl->DrawLatex(0.4, 0.75, Form("%s: %3.1f, %3.2f", vds[3].c_str(), h15->Integral(blo, bhi), 
+				h15->Integral(blo, bhi)/h05->Integral(blo, bhi)));
 
-  //  double xmin(300.), xmax(700.); 
+  tl->SetTextColor(kBlue);
+  tl->DrawLatex(0.4, 0.70, Form("%s: %3.1f, %3.2f", vds[5].c_str(), h25->Integral(blo, bhi),
+				h25->Integral(blo, bhi)/h05->Integral(blo, bhi)));
 
-  if (TMath::Abs(1. - h0x->Integral(blo, bhi)/h1x->Integral(blo, bhi)) < 0.1) {
-    xmin = 0.; 
-  }
+  tl->SetTextColor(kBlack);
+  tl->DrawLatex(0.2, 0.40, Form("ratio: %4.3f",  h05->Integral(blo, bhi)/h0x->Integral(blo, bhi)));
+
+  tl->SetTextColor(kRed);
+  tl->DrawLatex(0.2, 0.35, Form("ratio: %4.3f, sys: %4.3f",  h15->Integral(blo, bhi)/h1x->Integral(blo, bhi),
+				(h15->Integral(blo, bhi)/h1x->Integral(blo, bhi))/(h05->Integral(blo, bhi)/h0x->Integral(blo, bhi)))
+		);
+
+  tl->SetTextColor(kBlue);
+  tl->DrawLatex(0.2, 0.30, Form("ratio: %4.3f, sys: %4.3f",  h25->Integral(blo, bhi)/h2x->Integral(blo, bhi),
+				(h25->Integral(blo, bhi)/h2x->Integral(blo, bhi))/(h05->Integral(blo, bhi)/h0x->Integral(blo, bhi)))
+		);
+
+
+  
+
 
   c0->cd(3); 
-  hrxa->Fit("pol0", "R", "", xmin, xmax); 
-  hrxa->GetFunction("pol0")->SetLineColor(kRed);
-  hrxa->GetFunction("pol0")->SetLineWidth(2);
+  gPad->SetLogy(0);  
+  hrx1->Fit("pol0", "r", "", xmin, xmax); 
+  TF1 *fx1 = (TF1*)hrx1->GetFunction("pol0");
+  fx1->SetLineColor(kRed);
   tl->SetTextColor(kRed);
-  tl->DrawLatex(0.2, 0.85, Form("offset %5.4f+/-%5.4f", hrxa->GetFunction("pol0")->GetParameter(0), 
-			       hrxa->GetFunction("pol0")->GetParError(0))); 
-  tl->SetTextColor(kBlack);
-  tl->DrawLatex(0.2, 0.92, Form("%s/%s", vds[0].c_str(), vds[2].c_str()));
+  tl->DrawLatex(0.3, 0.96, Form("%4.3f+/-%4.3f, #chi^{2} = %3.2f", fx1->GetParameter(0), fx1->GetParError(0), 
+				fx1->GetChisquare()/fx1->GetNDF()));
 
-  hrxb->Fit("pol1", "R", "same", xmin, xmax); 
-  hrxb->GetFunction("pol1")->SetLineColor(kBlue);
-  hrxb->GetFunction("pol1")->SetLineWidth(2);
+  hrx2->Fit("pol0", "r", "same", xmin, xmax); 
+  TF1 *fx2 = (TF1*)hrx2->GetFunction("pol0");
+  fx2->SetLineColor(kBlue);
   tl->SetTextColor(kBlue);
-  tl->DrawLatex(0.2, 0.75, Form("offset %5.4f+/-%5.4f", hrxb->GetFunction("pol1")->GetParameter(0), 
-				hrxb->GetFunction("pol1")->GetParError(0))); 
-  tl->DrawLatex(0.2, 0.70, Form("slope  %5.4f+/-%5.4f", hrxb->GetFunction("pol1")->GetParameter(1), 
-				hrxb->GetFunction("pol1")->GetParError(1))); 
+  tl->DrawLatex(0.3, 0.90, Form("%4.3f+/-%4.3f, #chi^{2} = %3.2f", fx2->GetParameter(0), fx2->GetParError(0), 
+				fx2->GetChisquare()/fx2->GetNDF()));
 
   c0->cd(4); 
-  hr5a->Fit("pol0", "R", "", xmin, xmax); 
-  hr5a->GetFunction("pol0")->SetLineColor(kRed);
-  hr5a->GetFunction("pol0")->SetLineWidth(2);
+  gPad->SetLogy(0);  
+  hr51->Fit("pol0", "r", "", xmin, xmax); 
+  TF1 *f51 = (TF1*)hr51->GetFunction("pol0");
+  f51->SetLineColor(kRed);
   tl->SetTextColor(kRed);
-  tl->DrawLatex(0.2, 0.85, Form("offset %5.4f+/-%5.4f", hr5a->GetFunction("pol0")->GetParameter(0), 
-			       hr5a->GetFunction("pol0")->GetParError(0))); 
-  tl->SetTextColor(kBlack);
-  tl->DrawLatex(0.2, 0.92, Form("%s/%s", vds[1].c_str(), vds[3].c_str()));
+  tl->DrawLatex(0.3, 0.96, Form("%4.3f+/-%4.3f, #chi^{2} = %3.2f", f51->GetParameter(0), f51->GetParError(0), 
+				f51->GetChisquare()/f51->GetNDF()));
 
-  hr5b->Fit("pol1", "R", "same", xmin, xmax); 
-  hr5b->GetFunction("pol1")->SetLineColor(kBlue);
-  hr5b->GetFunction("pol1")->SetLineWidth(2);
+  hr52->Fit("pol0", "r", "same", xmin, xmax); 
+  TF1 *f52 = (TF1*)hr52->GetFunction("pol0");
+  f52->SetLineColor(kBlue);
   tl->SetTextColor(kBlue);
-  tl->DrawLatex(0.2, 0.75, Form("offset %5.4f+/-%5.4f", hr5b->GetFunction("pol1")->GetParameter(0), 
-				hr5b->GetFunction("pol1")->GetParError(0))); 
-  tl->DrawLatex(0.2, 0.70, Form("slope  %5.4f+/-%5.4f", hr5b->GetFunction("pol1")->GetParameter(1), 
-				hr5b->GetFunction("pol1")->GetParError(1))); 
+  tl->DrawLatex(0.3, 0.90, Form("%4.3f+/-%4.3f, #chi^{2} = %3.2f", f52->GetParameter(0), f52->GetParError(0), 
+				f52->GetChisquare()/f52->GetNDF()));
 
-
-  c0->SaveAs(Form("%s/sgSyst-%s-%s-%s.pdf", fDirectory.c_str(), what.c_str(), vds[0].c_str(), vds[2].c_str())); 
-
+  if (name == "") {
+    c0->SaveAs(Form("%s/sgSyst-%s-%s-%s-%s.pdf", fDirectory.c_str(), 
+		    what.c_str(), vds[0].c_str(), vds[2].c_str(), vds[4].c_str())); 
+  } else {
+    c0->SaveAs(Form("%s/sgSyst-%s-%s-%s-%s-%s.pdf", fDirectory.c_str(), 
+		    what.c_str(), vds[0].c_str(), vds[2].c_str(), vds[4].c_str(), name.c_str())); 
+  }
 }
 
 
@@ -805,15 +1323,17 @@ void plotHpt::treeAnalysis(int mask, int nevents, string opt, string ds) {
 
   vector<string> vds; 
   if (0 == mask) {
-    vds.push_back(ds);
+    if (string::npos == ds.find("man")) {
+	vds.push_back(ds);
+      } else {
+	vds.push_back(Form("%s%s", ds.c_str(), "0")); 
+	vds.push_back(Form("%s%s", ds.c_str(), "1")); 
+	vds.push_back(Form("%s%s", ds.c_str(), "5")); 
+      }
   }
 
 
   if (mask & 0x1) {
-//     vds.push_back("man0");
-//     vds.push_back("man1");
-//     vds.push_back("man5");
-
     vds.push_back("sherpa");
     vds.push_back("man0");
     vds.push_back("man1");
@@ -847,6 +1367,14 @@ void plotHpt::treeAnalysis(int mask, int nevents, string opt, string ds) {
     vds.push_back("sherpa152");
   }
 
+  if (mask & 0x8) {
+    for (int i = 7000; i < 7410; i += 10) {
+      vds.push_back(Form("man%d", i+0)); 
+      vds.push_back(Form("man%d", i+1)); 
+      vds.push_back(Form("man%d", i+5)); 
+    }
+  }
+
   
   for (unsigned int i = 0; i < vds.size(); ++i) {
     fCds = vds[i]; 
@@ -858,7 +1386,7 @@ void plotHpt::treeAnalysis(int mask, int nevents, string opt, string ds) {
     setupTree(t); 
     loopOverTree(t, 1, nevents); 
   }
-  
+
   map<string, TH1*>::iterator hit = fHists.begin();
   map<string, TH1*>::iterator hite = fHists.end();
   string h0name(""), h1name(""), h5name("");
