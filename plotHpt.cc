@@ -788,27 +788,44 @@ void plotHpt::sgEnvelope(string type, string hname, string sel) {
   TH1D *hn5 = new TH1D("hn5", "hn5", 100, 100., 200.); 
   TH1D *hnR = new TH1D("hnR", "hnR", 100, 1.5, 2.0); 
 
-  double err0(0.), err1(0.), errR(0.); 
-
   for (unsigned int i = 0; i < ix.size(); ++i) {
     hnx->Fill(ix[i]);
     hn5->Fill(i5[i]);
     hnR->Fill(i5[i]/ix[i]); 
   }
 
-  // -- use middle of "band" as central value
-  for (unsigned int i = 0; i < ix.size(); ++i) {
-    err0 += (ix[i] - hnx->GetMean()) * (ix[i] - hnx->GetMean());
-    err1 += (i5[i] - hn5->GetMean()) * (i5[i] - hn5->GetMean());
+  double err0Pos(0.), err1Pos(0.), errRPos(0.); 
+  double err0Neg(0.), err1Neg(0.), errRNeg(0.); 
+  double a1(0.), a2(0.), a0(0.); 
 
-    errR += (i5[i]/ix[i] - hn5->GetMean()/hnx->GetMean()) * (i5[i]/ix[i] - hn5->GetMean()/hnx->GetMean());
+  // -- This only makes sense for the "pdf" error. Use mem=0 as central value!
+  for (unsigned int i = 1; i < ix.size()/2; ++i) {
+    // -- first positive error 
+    a1 = ix[2*i-1] - ix[0];
+    a2 = ix[2*i]   - ix[0];
+    a0 = TMath::Max(a1, a2); 
+    a0 = TMath::Max(a1, 0.); 
+    err0Pos += a0*a0; 
+    cout << Form("%2d: %4.3f %4.3f ->  %4.3f pos, now at  %4.3f",
+		 i, a1, a2, a0, err0Pos);
+
+
+    a1 = ix[0] - ix[2*i-1];
+    a2 = ix[0] - ix[2*i];
+    a0 = TMath::Max(a1, a2); 
+    a0 = TMath::Max(a1, 0.); 
+    err0Neg += a0*a0; 
+    cout << Form("%2d: %4.3f %4.3f ->  %4.3f neg, now at  %4.3f",
+		 i, a1, a2, a0, err0Neg);
+    
   }
 
-  cout << "err0: " << TMath::Sqrt(err0) << " ix[0] = " << hnx->GetMean() << " rel: " << TMath::Sqrt(err0)/hnx->GetMean() << endl;
-
-  err0 = TMath::Sqrt(err0)/hnx->GetMean(); 
-  err1 = TMath::Sqrt(err1)/hn5->GetMean(); 
-  errR = TMath::Sqrt(errR)/(hn5->GetMean()/hnx->GetMean()); 
+  err0Pos = TMath::Sqrt(err0Pos)/hnx->GetMean(); 
+  err0Neg = TMath::Sqrt(err0Neg)/hnx->GetMean(); 
+  err1Pos = TMath::Sqrt(err1Pos)/hn5->GetMean(); 
+  err1Neg = TMath::Sqrt(err1Neg)/hn5->GetMean(); 
+  errRPos = TMath::Sqrt(errRPos)/(hn5->GetMean()/hnx->GetMean()); 
+  errRNeg = TMath::Sqrt(errRNeg)/(hn5->GetMean()/hnx->GetMean()); 
 
   tl->SetNDC(kTRUE);
   zone(2,2);
@@ -817,7 +834,7 @@ void plotHpt::sgEnvelope(string type, string hname, string sel) {
   double xmax = hnx->GetBinLowEdge(hnx->FindLastBinAbove(0.5)); 
   tl->DrawLatex(0.25, 0.92, Form("0.5*%4.3f/%4.3f = %4.3f", (xmax-xmin), hnx->GetMean(), 0.5*(xmax-xmin)/hnx->GetMean())); 
   tl->DrawLatex(0.21, 0.80, "quadr. sum, relative error"); 
-  tl->DrawLatex(0.21, 0.75, Form("%4.3f", err0)); 
+  tl->DrawLatex(0.21, 0.75, Form("+%4.3f -%4.3f", err0Pos, err0Neg)); 
 
   
   c0->cd(2);
@@ -826,7 +843,7 @@ void plotHpt::sgEnvelope(string type, string hname, string sel) {
   xmax = hn5->GetBinLowEdge(hn5->FindLastBinAbove(0.5)); 
   tl->DrawLatex(0.25, 0.92, Form("0.5*%4.3f/%4.3f = %4.3f", (xmax-xmin), hn5->GetMean(), 0.5*(xmax-xmin)/hn5->GetMean())); 
   tl->DrawLatex(0.21, 0.80, "quadr. sum, relative error"); 
-  tl->DrawLatex(0.21, 0.75, Form("%4.3f", err1)); 
+  tl->DrawLatex(0.21, 0.75, Form("+%4.3f -%4.3f", err1Pos, err1Neg)); 
 
   c0->cd(3);
   hnR->Draw();
@@ -834,7 +851,7 @@ void plotHpt::sgEnvelope(string type, string hname, string sel) {
   xmax = hnR->GetBinLowEdge(hnR->FindLastBinAbove(0.5)); 
   tl->DrawLatex(0.25, 0.92, Form("0.5*%4.3f/%4.3f = %4.3f", (xmax-xmin), hnR->GetMean(), 0.5*(xmax-xmin)/hnR->GetMean())); 
   tl->DrawLatex(0.21, 0.80, "quadr. sum, relative error"); 
-  tl->DrawLatex(0.21, 0.75, Form("%4.3f", errR)); 
+  tl->DrawLatex(0.21, 0.75, Form("+%4.3f -%4.3f", errRPos, errRNeg)); 
 
   c0->SaveAs(Form("%s/sgEnvelope-%s-syst.pdf", fDirectory.c_str(), type.c_str())); 
 }
