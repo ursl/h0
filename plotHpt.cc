@@ -787,11 +787,15 @@ void plotHpt::sgEnvelope(string type, string hname, string sel) {
   TH1D *hnx = new TH1D("hnx", "hnx", 100,  50., 150.); 
   TH1D *hn5 = new TH1D("hn5", "hn5", 100, 100., 200.); 
   TH1D *hnR = new TH1D("hnR", "hnR", 100, 1.5, 2.0); 
+  TH2D *hcorr = new TH2D("hcorr", "hcorr", 100, 80., 95., 100, 145., 160.);
+  hcorr->SetMinimum(1.6);
+  hcorr->SetMaximum(1.9);
 
   for (unsigned int i = 0; i < ix.size(); ++i) {
     hnx->Fill(ix[i]);
     hn5->Fill(i5[i]);
     hnR->Fill(i5[i]/ix[i]); 
+    hcorr->Fill(ix[i], i5[i], i5[i]/ix[i]); 
   }
 
   double err0Pos(0.), err1Pos(0.), errRPos(0.); 
@@ -799,33 +803,83 @@ void plotHpt::sgEnvelope(string type, string hname, string sel) {
   double a1(0.), a2(0.), a0(0.); 
 
   // -- This only makes sense for the "pdf" error. Use mem=0 as central value!
-  for (unsigned int i = 1; i < ix.size()/2; ++i) {
-    // -- first positive error 
+  //    http://www.hep.ucl.ac.uk/pdf4lhc/PDF4LHC_practical_guide.pdf
+  for (unsigned int i = 1; i <= ix.size()/2; ++i) {
+
+    cout << "Integrals: ix[0] = " << ix[0] << " ix[" << 2*i-1 << "] = " << ix[2*i-1] 
+	 << " ix[" << 2*i << "] = " << ix[2*i] 
+	 << " *** i5[0] = " << i5[0]
+	 << " i5[" << 2*i-1 << "] = " << i5[2*i-1] 
+	 << " i5[" << 2*i << "] = " << i5[2*i] 
+	 << endl;
+
+    // -- X positive error 
     a1 = ix[2*i-1] - ix[0];
     a2 = ix[2*i]   - ix[0];
     a0 = TMath::Max(a1, a2); 
-    a0 = TMath::Max(a1, 0.); 
+    a0 = TMath::Max(a0, 0.); 
     err0Pos += a0*a0; 
-    cout << Form("%2d: %4.3f %4.3f ->  %4.3f pos, now at  %4.3f",
-		 i, a1, a2, a0, err0Pos);
-
-
+    cout << Form("%2d: %4.3f %4.3f ->  %4.3f 0 pos, now at  %4.3f -> %4.3f",
+		 i, a1, a2, a0, err0Pos, TMath::Sqrt(err0Pos)/ix[0])
+	 << endl;
+    // -- X negative error 
     a1 = ix[0] - ix[2*i-1];
     a2 = ix[0] - ix[2*i];
     a0 = TMath::Max(a1, a2); 
-    a0 = TMath::Max(a1, 0.); 
+    a0 = TMath::Max(a0, 0.); 
     err0Neg += a0*a0; 
-    cout << Form("%2d: %4.3f %4.3f ->  %4.3f neg, now at  %4.3f",
-		 i, a1, a2, a0, err0Neg);
+    cout << Form("%2d: %4.3f %4.3f ->  %4.3f 0 neg, now at  %4.3f -> %4.3f",
+		 i, a1, a2, a0, err0Neg, TMath::Sqrt(err0Neg)/ix[0])
+	 << endl;
+
+
+    // -- 5 positive error 
+    a1 = i5[2*i-1] - i5[0];
+    a2 = i5[2*i]   - i5[0];
+    a0 = TMath::Max(a1, a2); 
+    a0 = TMath::Max(a0, 0.); 
+    err1Pos += a0*a0; 
+    cout << Form("%2d: %4.3f %4.3f ->  %4.3f 1 pos, now at  %4.3f -> %4.3f",
+		 i, a1, a2, a0, err1Pos, TMath::Sqrt(err1Pos)/i5[0])
+	 << endl;
+    // -- 5 negative error 
+    a1 = i5[0] - i5[2*i-1];
+    a2 = i5[0] - i5[2*i];
+    a0 = TMath::Max(a1, a2); 
+    a0 = TMath::Max(a0, 0.); 
+    err1Neg += a0*a0; 
+    cout << Form("%2d: %4.3f %4.3f ->  %4.3f 1 neg, now at  %4.3f -> %4.3f",
+		 i, a1, a2, a0, err1Neg, TMath::Sqrt(err1Neg)/i5[0])
+	 << endl;
+
+
+    // -- RATIO positive error 
+    a1 = i5[2*i-1]/ix[2*i-1] - i5[0]/ix[0];
+    a2 = i5[2*i]/ix[2*i]     - i5[0]/ix[0];
+    a0 = TMath::Max(a1, a2); 
+    a0 = TMath::Max(a0, 0.); 
+    errRPos += a0*a0; 
+    cout << Form("%2d: %4.3f %4.3f ->  %4.3f R pos, now at  %4.3f -> %4.3f",
+		 i, a1, a2, a0, errRPos, TMath::Sqrt(errRPos)/(i5[0]/ix[0]))
+	 << endl;
+    // -- RATIO negative error 
+    a1 = i5[0]/ix[0] - i5[2*i-1]/ix[2*i-1];
+    a2 = i5[0]/ix[0] - i5[2*i]/ix[2*i];
+    a0 = TMath::Max(a1, a2); 
+    a0 = TMath::Max(a0, 0.); 
+    errRNeg += a0*a0; 
+    cout << Form("%2d: %4.3f %4.3f ->  %4.3f R neg, now at  %4.3f -> %4.3f",
+		 i, a1, a2, a0, errRNeg, TMath::Sqrt(errRNeg)/(i5[0]/ix[0]))
+	 << endl;
     
   }
 
-  err0Pos = TMath::Sqrt(err0Pos)/hnx->GetMean(); 
-  err0Neg = TMath::Sqrt(err0Neg)/hnx->GetMean(); 
-  err1Pos = TMath::Sqrt(err1Pos)/hn5->GetMean(); 
-  err1Neg = TMath::Sqrt(err1Neg)/hn5->GetMean(); 
-  errRPos = TMath::Sqrt(errRPos)/(hn5->GetMean()/hnx->GetMean()); 
-  errRNeg = TMath::Sqrt(errRNeg)/(hn5->GetMean()/hnx->GetMean()); 
+  err0Pos = TMath::Sqrt(err0Pos)/ix[0];
+  err0Neg = TMath::Sqrt(err0Neg)/ix[0];
+  err1Pos = TMath::Sqrt(err1Pos)/i5[0];
+  err1Neg = TMath::Sqrt(err1Neg)/i5[0];
+  errRPos = TMath::Sqrt(errRPos)/(i5[0]/ix[0]);
+  errRNeg = TMath::Sqrt(errRNeg)/(i5[0]/ix[0]);
 
   tl->SetNDC(kTRUE);
   zone(2,2);
@@ -833,7 +887,7 @@ void plotHpt::sgEnvelope(string type, string hname, string sel) {
   double xmin = hnx->GetBinLowEdge(hnx->FindFirstBinAbove(0.5)); 
   double xmax = hnx->GetBinLowEdge(hnx->FindLastBinAbove(0.5)); 
   tl->DrawLatex(0.25, 0.92, Form("0.5*%4.3f/%4.3f = %4.3f", (xmax-xmin), hnx->GetMean(), 0.5*(xmax-xmin)/hnx->GetMean())); 
-  tl->DrawLatex(0.21, 0.80, "quadr. sum, relative error"); 
+  tl->DrawLatex(0.21, 0.80, "PDF4LHC recipe"); 
   tl->DrawLatex(0.21, 0.75, Form("+%4.3f -%4.3f", err0Pos, err0Neg)); 
 
   
@@ -842,7 +896,7 @@ void plotHpt::sgEnvelope(string type, string hname, string sel) {
   xmin = hn5->GetBinLowEdge(hn5->FindFirstBinAbove(0.5)); 
   xmax = hn5->GetBinLowEdge(hn5->FindLastBinAbove(0.5)); 
   tl->DrawLatex(0.25, 0.92, Form("0.5*%4.3f/%4.3f = %4.3f", (xmax-xmin), hn5->GetMean(), 0.5*(xmax-xmin)/hn5->GetMean())); 
-  tl->DrawLatex(0.21, 0.80, "quadr. sum, relative error"); 
+  tl->DrawLatex(0.21, 0.80, "PDF4LHC recipe"); 
   tl->DrawLatex(0.21, 0.75, Form("+%4.3f -%4.3f", err1Pos, err1Neg)); 
 
   c0->cd(3);
@@ -850,12 +904,22 @@ void plotHpt::sgEnvelope(string type, string hname, string sel) {
   xmin = hnR->GetBinLowEdge(hnR->FindFirstBinAbove(0.5)); 
   xmax = hnR->GetBinLowEdge(hnR->FindLastBinAbove(0.5)); 
   tl->DrawLatex(0.25, 0.92, Form("0.5*%4.3f/%4.3f = %4.3f", (xmax-xmin), hnR->GetMean(), 0.5*(xmax-xmin)/hnR->GetMean())); 
-  tl->DrawLatex(0.21, 0.80, "quadr. sum, relative error"); 
+  tl->DrawLatex(0.21, 0.80, "PDF4LHC recipe"); 
   tl->DrawLatex(0.21, 0.75, Form("+%4.3f -%4.3f", errRPos, errRNeg)); 
 
   c0->SaveAs(Form("%s/sgEnvelope-%s-syst.pdf", fDirectory.c_str(), type.c_str())); 
-}
 
+  zone(); 
+  hcorr->Draw("colz");
+  tl->DrawLatex(0.2, 0.20, Form("corr: %4.3f", hcorr->GetCorrelationFactor())); 
+  tl->DrawLatex(0.2, 0.15, Form("cov: %4.3f", hcorr->GetCovariance())); 
+
+
+
+  c0->SaveAs(Form("%s/sgEnvelope-%s-corr.pdf", fDirectory.c_str(), type.c_str())); 
+  
+
+}
 
 // ----------------------------------------------------------------------
 void plotHpt::sgShape(string dsf0, string type, double xmin, double xmax) {
