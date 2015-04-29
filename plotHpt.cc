@@ -800,86 +800,90 @@ void plotHpt::sgEnvelope(string type, string hname, string sel) {
 
   double err0Pos(0.), err1Pos(0.), errRPos(0.); 
   double err0Neg(0.), err1Neg(0.), errRNeg(0.); 
+
   double a1(0.), a2(0.), a0(0.); 
 
   // -- This only makes sense for the "pdf" error. Use mem=0 as central value!
   //    http://www.hep.ucl.ac.uk/pdf4lhc/PDF4LHC_practical_guide.pdf
-  for (unsigned int i = 1; i <= ix.size()/2; ++i) {
+  if (type == "pdf") {
 
-    cout << "Integrals: ix[0] = " << ix[0] << " ix[" << 2*i-1 << "] = " << ix[2*i-1] 
-	 << " ix[" << 2*i << "] = " << ix[2*i] 
-	 << " *** i5[0] = " << i5[0]
-	 << " i5[" << 2*i-1 << "] = " << i5[2*i-1] 
-	 << " i5[" << 2*i << "] = " << i5[2*i] 
-	 << endl;
-
-    // -- X positive error 
-    a1 = ix[2*i-1] - ix[0];
-    a2 = ix[2*i]   - ix[0];
-    a0 = TMath::Max(a1, a2); 
-    a0 = TMath::Max(a0, 0.); 
-    err0Pos += a0*a0; 
-    cout << Form("%2d: %4.3f %4.3f ->  %4.3f 0 pos, now at  %4.3f -> %4.3f",
-		 i, a1, a2, a0, err0Pos, TMath::Sqrt(err0Pos)/ix[0])
-	 << endl;
-    // -- X negative error 
-    a1 = ix[0] - ix[2*i-1];
-    a2 = ix[0] - ix[2*i];
-    a0 = TMath::Max(a1, a2); 
-    a0 = TMath::Max(a0, 0.); 
-    err0Neg += a0*a0; 
-    cout << Form("%2d: %4.3f %4.3f ->  %4.3f 0 neg, now at  %4.3f -> %4.3f",
-		 i, a1, a2, a0, err0Neg, TMath::Sqrt(err0Neg)/ix[0])
-	 << endl;
-
-
-    // -- 5 positive error 
-    a1 = i5[2*i-1] - i5[0];
-    a2 = i5[2*i]   - i5[0];
-    a0 = TMath::Max(a1, a2); 
-    a0 = TMath::Max(a0, 0.); 
-    err1Pos += a0*a0; 
-    cout << Form("%2d: %4.3f %4.3f ->  %4.3f 1 pos, now at  %4.3f -> %4.3f",
-		 i, a1, a2, a0, err1Pos, TMath::Sqrt(err1Pos)/i5[0])
-	 << endl;
-    // -- 5 negative error 
-    a1 = i5[0] - i5[2*i-1];
-    a2 = i5[0] - i5[2*i];
-    a0 = TMath::Max(a1, a2); 
-    a0 = TMath::Max(a0, 0.); 
-    err1Neg += a0*a0; 
-    cout << Form("%2d: %4.3f %4.3f ->  %4.3f 1 neg, now at  %4.3f -> %4.3f",
-		 i, a1, a2, a0, err1Neg, TMath::Sqrt(err1Neg)/i5[0])
-	 << endl;
-
-
-    // -- RATIO positive error 
-    a1 = i5[2*i-1]/ix[2*i-1] - i5[0]/ix[0];
-    a2 = i5[2*i]/ix[2*i]     - i5[0]/ix[0];
-    a0 = TMath::Max(a1, a2); 
-    a0 = TMath::Max(a0, 0.); 
-    errRPos += a0*a0; 
-    cout << Form("%2d: %4.3f %4.3f ->  %4.3f R pos, now at  %4.3f -> %4.3f",
-		 i, a1, a2, a0, errRPos, TMath::Sqrt(errRPos)/(i5[0]/ix[0]))
-	 << endl;
-    // -- RATIO negative error 
-    a1 = i5[0]/ix[0] - i5[2*i-1]/ix[2*i-1];
-    a2 = i5[0]/ix[0] - i5[2*i]/ix[2*i];
-    a0 = TMath::Max(a1, a2); 
-    a0 = TMath::Max(a0, 0.); 
-    errRNeg += a0*a0; 
-    cout << Form("%2d: %4.3f %4.3f ->  %4.3f R neg, now at  %4.3f -> %4.3f",
-		 i, a1, a2, a0, errRNeg, TMath::Sqrt(errRNeg)/(i5[0]/ix[0]))
-	 << endl;
+    for (unsigned int i = 1; i <= ix.size()/2; ++i) {
+      
+      cout << "Integrals: ix[0] = " << ix[0] << " ix[" << 2*i-1 << "] = " << ix[2*i-1] 
+	   << " ix[" << 2*i << "] = " << ix[2*i] 
+	   << " *** i5[0] = " << i5[0]
+	   << " i5[" << 2*i-1 << "] = " << i5[2*i-1] 
+	   << " i5[" << 2*i << "] = " << i5[2*i] 
+	   << endl;
+      
+      // -- X positive error 
+      a1 = ix[2*i-1] - ix[0];
+      a2 = ix[2*i]   - ix[0];
+      a0 = TMath::Max(a1, a2); 
+      a0 = TMath::Max(a0, 0.); 
+      err0Pos += a0*a0; 
+      cout << Form("%2d: %4.3f %4.3f ->  %4.3f 0 pos, now at  %4.3f -> %4.3f",
+		   i, a1, a2, a0, err0Pos, TMath::Sqrt(err0Pos)/ix[0])
+	   << endl;
+      // -- X negative error 
+      a1 = ix[0] - ix[2*i-1];
+      a2 = ix[0] - ix[2*i];
+      a0 = TMath::Max(a1, a2); 
+      a0 = TMath::Max(a0, 0.); 
+      err0Neg += a0*a0; 
+      cout << Form("%2d: %4.3f %4.3f ->  %4.3f 0 neg, now at  %4.3f -> %4.3f",
+		   i, a1, a2, a0, err0Neg, TMath::Sqrt(err0Neg)/ix[0])
+	   << endl;
+      
+      
+      // -- 5 positive error 
+      a1 = i5[2*i-1] - i5[0];
+      a2 = i5[2*i]   - i5[0];
+      a0 = TMath::Max(a1, a2); 
+      a0 = TMath::Max(a0, 0.); 
+      err1Pos += a0*a0; 
+      cout << Form("%2d: %4.3f %4.3f ->  %4.3f 1 pos, now at  %4.3f -> %4.3f",
+		   i, a1, a2, a0, err1Pos, TMath::Sqrt(err1Pos)/i5[0])
+	   << endl;
+      // -- 5 negative error 
+      a1 = i5[0] - i5[2*i-1];
+      a2 = i5[0] - i5[2*i];
+      a0 = TMath::Max(a1, a2); 
+      a0 = TMath::Max(a0, 0.); 
+      err1Neg += a0*a0; 
+      cout << Form("%2d: %4.3f %4.3f ->  %4.3f 1 neg, now at  %4.3f -> %4.3f",
+		   i, a1, a2, a0, err1Neg, TMath::Sqrt(err1Neg)/i5[0])
+	   << endl;
+      
+      
+      // -- RATIO positive error 
+      a1 = i5[2*i-1]/ix[2*i-1] - i5[0]/ix[0];
+      a2 = i5[2*i]/ix[2*i]     - i5[0]/ix[0];
+      a0 = TMath::Max(a1, a2); 
+      a0 = TMath::Max(a0, 0.); 
+      errRPos += a0*a0; 
+      cout << Form("%2d: %4.3f %4.3f ->  %4.3f R pos, now at  %4.3f -> %4.3f",
+		   i, a1, a2, a0, errRPos, TMath::Sqrt(errRPos)/(i5[0]/ix[0]))
+	   << endl;
+      // -- RATIO negative error 
+      a1 = i5[0]/ix[0] - i5[2*i-1]/ix[2*i-1];
+      a2 = i5[0]/ix[0] - i5[2*i]/ix[2*i];
+      a0 = TMath::Max(a1, a2); 
+      a0 = TMath::Max(a0, 0.); 
+      errRNeg += a0*a0; 
+      cout << Form("%2d: %4.3f %4.3f ->  %4.3f R neg, now at  %4.3f -> %4.3f",
+		   i, a1, a2, a0, errRNeg, TMath::Sqrt(errRNeg)/(i5[0]/ix[0]))
+	   << endl;
+      
+    }
     
+    err0Pos = TMath::Sqrt(err0Pos)/ix[0];
+    err0Neg = TMath::Sqrt(err0Neg)/ix[0];
+    err1Pos = TMath::Sqrt(err1Pos)/i5[0];
+    err1Neg = TMath::Sqrt(err1Neg)/i5[0];
+    errRPos = TMath::Sqrt(errRPos)/(i5[0]/ix[0]);
+    errRNeg = TMath::Sqrt(errRNeg)/(i5[0]/ix[0]);
   }
-
-  err0Pos = TMath::Sqrt(err0Pos)/ix[0];
-  err0Neg = TMath::Sqrt(err0Neg)/ix[0];
-  err1Pos = TMath::Sqrt(err1Pos)/i5[0];
-  err1Neg = TMath::Sqrt(err1Neg)/i5[0];
-  errRPos = TMath::Sqrt(errRPos)/(i5[0]/ix[0]);
-  errRNeg = TMath::Sqrt(errRNeg)/(i5[0]/ix[0]);
 
   tl->SetNDC(kTRUE);
   zone(2,2);
@@ -887,25 +891,30 @@ void plotHpt::sgEnvelope(string type, string hname, string sel) {
   double xmin = hnx->GetBinLowEdge(hnx->FindFirstBinAbove(0.5)); 
   double xmax = hnx->GetBinLowEdge(hnx->FindLastBinAbove(0.5)); 
   tl->DrawLatex(0.25, 0.92, Form("0.5*%4.3f/%4.3f = %4.3f", (xmax-xmin), hnx->GetMean(), 0.5*(xmax-xmin)/hnx->GetMean())); 
-  tl->DrawLatex(0.21, 0.80, "PDF4LHC recipe"); 
-  tl->DrawLatex(0.21, 0.75, Form("+%4.3f -%4.3f", err0Pos, err0Neg)); 
-
+  if (type == "pdf") {
+    tl->DrawLatex(0.21, 0.80, "PDF4LHC recipe"); 
+    tl->DrawLatex(0.21, 0.75, Form("+%4.3f -%4.3f", err0Pos, err0Neg)); 
+  }
   
   c0->cd(2);
   hn5->Draw();
   xmin = hn5->GetBinLowEdge(hn5->FindFirstBinAbove(0.5)); 
   xmax = hn5->GetBinLowEdge(hn5->FindLastBinAbove(0.5)); 
   tl->DrawLatex(0.25, 0.92, Form("0.5*%4.3f/%4.3f = %4.3f", (xmax-xmin), hn5->GetMean(), 0.5*(xmax-xmin)/hn5->GetMean())); 
-  tl->DrawLatex(0.21, 0.80, "PDF4LHC recipe"); 
-  tl->DrawLatex(0.21, 0.75, Form("+%4.3f -%4.3f", err1Pos, err1Neg)); 
+  if (type == "pdf") {
+    tl->DrawLatex(0.21, 0.80, "PDF4LHC recipe"); 
+    tl->DrawLatex(0.21, 0.75, Form("+%4.3f -%4.3f", err1Pos, err1Neg)); 
+  }
 
   c0->cd(3);
   hnR->Draw();
   xmin = hnR->GetBinLowEdge(hnR->FindFirstBinAbove(0.5)); 
   xmax = hnR->GetBinLowEdge(hnR->FindLastBinAbove(0.5)); 
   tl->DrawLatex(0.25, 0.92, Form("0.5*%4.3f/%4.3f = %4.3f", (xmax-xmin), hnR->GetMean(), 0.5*(xmax-xmin)/hnR->GetMean())); 
-  tl->DrawLatex(0.21, 0.80, "PDF4LHC recipe"); 
-  tl->DrawLatex(0.21, 0.75, Form("+%4.3f -%4.3f", errRPos, errRNeg)); 
+  if (type == "pdf") {
+    tl->DrawLatex(0.21, 0.80, "PDF4LHC recipe"); 
+    tl->DrawLatex(0.21, 0.75, Form("+%4.3f -%4.3f", errRPos, errRNeg)); 
+  }
 
   c0->SaveAs(Form("%s/sgEnvelope-%s-syst.pdf", fDirectory.c_str(), type.c_str())); 
 
@@ -2651,26 +2660,13 @@ void plotHpt::allNumbers5(int ntoy, int rndmseed) {
   RooAddPdf      model4("model4", "model4", RooArgList(sg4Pdf, bg4Pdf), RooArgList(*fRsg4N, *fRbg4N));
   
 
-//   RooChebychev bgM("bgM", "background gamma gamma mass", *fRm, RooArgList(*fRbgSlope)); 
-//   RooExponential bgPt("bgPt", "background gamma gamma pT", *fRpt, *fRbgTau);   
-
-  // -- parametrization in terms of mu
-//   fRmu   = new RooRealVar("mu", "mu", fMu, -1., 10.);
-//   fRsgN   = new RooFormulaVar("sgN", "sgN", "@0 + @1*(@2-@0)", RooArgList(*fRsg0N, *fRmu, *fRsg1N)); 
-//   fRsgTau = new RooFormulaVar("sgTau", "sgTau", "@0 + @1*(@2-@0)", RooArgList(*fRsg0Tau, *fRmu, *fRsg1Tau)); 
-//   RooGaussian sgM("sgM", "signal mass", *fRm, *fRsgP, *fRsgS); 
-//   RooExponential sgPt("sgPt", "signal pT", *fRpt, *fRsgTau);   
-
   // -- signal and background 2D pdfs
   RooProdPdf sg0Pdf = RooProdPdf("sg0Pdf", "sg0Pdf", RooArgSet(sg0M, sg0Pt));
   RooProdPdf sg1Pdf = RooProdPdf("sg1Pdf", "sg1Pdf", RooArgSet(sg1M, sg1Pt));
-//   RooProdPdf sgPdf  = RooProdPdf("sgPdf",  "sgPdf",  RooArgSet(sgM,  sgPt));
 
   RooProdPdf bg0Pdf = RooProdPdf("bg0Pdf", "bg0Pdf", RooArgSet(bg0M, bg0Pt));
   RooProdPdf bg1Pdf = RooProdPdf("bg1Pdf", "bg1Pdf", RooArgSet(bg1M, bg1Pt));
-//   RooProdPdf bgPdf  = RooProdPdf("bgPdf",  "bgPdf",  RooArgSet(bgM,  bgPt));
 
-//   RooAddPdf model("model", "model", RooArgList(sgPdf, bgPdf), RooArgList(*fRsgN, *fRbgN));
   RooAddPdf model0("model0", "model0", RooArgList(sg0Pdf, bg0Pdf), RooArgList(*fRsg0N, *fRbg0N));
   RooAddPdf model1("model1", "model1", RooArgList(sg1Pdf, bg1Pdf), RooArgList(*fRsg1N, *fRbg1N));
   
@@ -2731,37 +2727,6 @@ void plotHpt::allNumbers5(int ntoy, int rndmseed) {
     data0 = new RooDataSet(*bgData);
     data0->append(*sg0Data);
 
-    // -----------------------
-    // -- mu parametrization?!
-    // -----------------------
-    //     fRsg0N->setConstant(kTRUE);
-    //     fRsg1N->setConstant(kTRUE);
-    //     fRsg0Tau->setConstant(kTRUE);
-    //     fRsg1Tau->setConstant(kTRUE);
-    
-    //     RooAbsPdf * pdf = &model;
-    //     RooFitResult *r0 = pdf->fitTo(*data, RooFit::Save(true), RooFit::Minimizer("Minuit2","Migrad"));
-    //     cout << "### RooFitResult r0 ###################################################################" << endl;
-    //     r0->Print("v");
-    //     cout << "#######################################################################################" << endl;
-    
-    //     // -- plot 0
-    //     c0->cd(6);
-    //     RooPlot *plotM = fRm->frame(Title("mass"), Bins(NBINS));
-    //     data->plotOn(plotM);
-    //     pdf->plotOn(plotM);
-    //     pdf->paramOn(plotM, Layout(0.5,0.9,0.85));
-    //     plotM->Draw();
-    
-    
-    //     c0->cd(7);
-    //     RooPlot *plotPt = fRpt->frame(Title("pt"));
-    //     data->plotOn(plotPt);
-    //     pdf->plotOn(plotPt);
-    //     pdf->paramOn(plotPt, Layout(0.5,0.9,0.85));
-    //     plotPt->Draw();
-    
-
     // ----------------------------
     // -- "2D" mass-lifetime
     // ----------------------------
@@ -2798,29 +2763,6 @@ void plotHpt::allNumbers5(int ntoy, int rndmseed) {
     mc1.SetNuisanceParameters(nuisParams);
 
 
-    //     // -- plot 1: PLL
-    //     if (0) {
-    //       ProfileLikelihoodCalculator pl(*data1, mc1);
-    //       pl.SetConfidenceLevel(0.683); // 68% interval
-    //       LikelihoodInterval* interval0 = pl.GetInterval();
-    
-    //       // find the iterval on the first Parameter of Interest
-    //       RooRealVar* firstPOI = (RooRealVar*) mc1.GetParametersOfInterest()->first();
-    
-    //       double lowerLimit = interval0->LowerLimit(*firstPOI);
-    //       double upperLimit = interval0->UpperLimit(*firstPOI);
-    
-    
-    //       cout << "### 68% interval on " << firstPOI->GetName()<< " ###################################" << endl
-    // 	   << "### [" << lowerLimit << ", " << upperLimit << "] "
-    // 	   << endl;
-    
-    //       c0->cd(5);
-    //       LikelihoodIntervalPlot *liplot = new LikelihoodIntervalPlot(interval0);
-    //       liplot->SetRange(50., 200.); 
-    //       liplot->Draw("");  
-    //     }
-
     // ----------------------------------------------------------------------
     // -- Asymptotic significance: works for one POI only!
     // ----------------------------------------------------------------------
@@ -2856,10 +2798,8 @@ void plotHpt::allNumbers5(int ntoy, int rndmseed) {
     plc.SetData(*data1); 
     
     RooArgSet ras_poi(*fRsg1N);
-    //    RooArgSet ras_poi(*fRsg1N, *fRsg1Tau);
     RooArgSet *nullParams = (RooArgSet*) ras_poi.snapshot(); 
     nullParams->setRealValue("sg1N", fSg0); 
-    //    nullParams->setRealValue("sg1Tau", fSg0Tau); 
     
     plc.SetModel(mcpll);
     plc.SetNullParameters(*nullParams);
