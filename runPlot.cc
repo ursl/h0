@@ -18,9 +18,16 @@
 
 using namespace std;
 
-// bin/runPlot -s 1 -c "PTLO=400;PTHI=10000;G0PT=100;g1PT=40"
-// bin/runPlot -s 0 -a hstat -m 0 -n 200
-
+// run plotHpt:          bin/runPlot -s 1 -c "PTLO=400;PTHI=10000;G0PT=100;g1PT=40"
+// run run2D vanilla:    bin/runPlot -s 10 -a hstat -m 0 -n 1000
+// run run1D vanilla:    bin/runPlot -s 0  -a hstat -m 0 -n 1000
+// Run run1D sys no top: bin/runPlot -s 0  -a hstat -m 1 -n 1000
+// run run1D sys scale:  bin/runPlot -s 0  -a hstat -m 3 -n 1000
+// run run1D sys bg:     bin/runPlot -s 0  -a hstat -m 10 -n 1000
+// run sigStudies nbg:   bin/runPlot -s 2  -a hstat -m 0 -n 1000
+// run sigStudies lumi:  bin/runPlot -s 2  -a hstat -m 1 -n 1000
+// run sigStudies repr:  bin/runPlot -s 2  -a hstat -m 2 -n 1000
+// run ALL systematics:  bin/runPlot -s 1  -a hstat -n 2000
 // ----------------------------------------------------------------------
 int main(int argc, char *argv[]) {
 
@@ -63,7 +70,17 @@ int main(int argc, char *argv[]) {
   } else if (ana == "hstat") {
     hstat a; 
     if ("0" == setup) {
+      a.setRndmSeed(rndms); 
       a.run1D(ntoy, mode);
+    } else if ("1" == setup) {
+      a.setRndmSeed(rndms); 
+      a.systematics(ntoy);
+    } else if ("2" == setup) {
+      a.setRndmSeed(rndms); 
+      a.sigStudies(mode, ntoy);
+    } else if ("10" == setup) {
+      a.setRndmSeed(rndms); 
+      a.run2D(ntoy, mode);
     }
   }
 }

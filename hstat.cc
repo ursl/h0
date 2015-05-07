@@ -22,11 +22,6 @@
 #include "RooAbsPdf.h"
 #include "RooRandom.h"
 #include "RooFitResult.h"
-#include "RooExponential.h"
-#include "RooChebychev.h"
-#include "RooGaussian.h"
-#include "RooPoisson.h"
-#include "RooPolynomial.h"
 #include "RooHistPdf.h"
 #include "RooKeysPdf.h"
 #include "RooDataHist.h"
@@ -71,10 +66,40 @@ using namespace RooFit;
 using namespace RooStats; 
 
 // ----------------------------------------------------------------------
+// par[0] -> const
+// par[1] -> mean
+// par[2] -> sigmaL
+// par[3] -> sigmaR
+double gaussBifurcated(double *x, double *par) {
+  
+  double arg = x[0] - par[1];
+  double sigmaL = par[2];
+  double sigmaR = par[3];
+
+  double coef(0.0);
+
+  if (arg < 0.0){
+    if (TMath::Abs(sigmaL) > 1e-30) {
+      coef = -0.5/(sigmaL*sigmaL);
+    }
+  } else {
+    if (TMath::Abs(sigmaR) > 1e-30) {
+      coef = -0.5/(sigmaR*sigmaR);
+    }
+  }
+    
+  return par[0]*exp(coef*arg*arg);
+}
+
+
+
+// ----------------------------------------------------------------------
 hstat::hstat(string dir,  string files, string setup)  {
 
   fNtoy = 1000; 
   fSetup = setup;
+
+  fRndmSeed = 111; 
 
   fHistFile = 0; 
 
@@ -86,16 +111,21 @@ hstat::hstat(string dir,  string files, string setup)  {
 
   fTexFileName = fHistFileName; 
   replaceAll(fTexFileName, ".root", ".tex"); 
-  system(Form("/bin/rm -f %s", fTexFileName.c_str()));
+  //  system(Form("/bin/rm -f %s", fTexFileName.c_str()));
 
 
   NBINS = 55; 
   MGGLO = 70.;
   MGGHI = 180.;
 
+  fSG0 =   86; 
+  fSG1 =  150;
+  fBG  = 1363; 
+
   fSg0 =   86; 
   fSg1 =  150;
   fBg  = 1363; 
+
   fHiggsMpeak = 125.0; 
   fHiggsMres  =   9.4;
   // mass pol1
@@ -111,7 +141,7 @@ hstat::hstat(string dir,  string files, string setup)  {
   fSg0TauE =  0.000176586;
   fSg1Tau  = -0.00791874;
   fSg1TauE = -9.58177e-05;
-   
+  
 }
 
 
@@ -233,52 +263,438 @@ void hstat::run1() {
 
 }
 
+
+// ----------------------------------------------------------------------
+void hstat::systematics(int n) {
+
+  fTEX.open(fTexFileName.c_str(), ios::app);
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+
+  int ntoys(n); 
+  // -- no systematics
+  run1D(ntoys, 0); 
+  double sRaw = fSeparation; 
+  fTEX << "sNoSyst: " << Form("%4.3f +/- %4.3f", sRaw, fSeparationE) << endl;
+
+  // -- missing top systematics
+  run1D(ntoys, 1); 
+  double sTop = fSeparation; 
+  fTEX << "sTop: " << Form("%4.3f +/- %4.3f", sTop, fSeparationE) << endl;
+
+  // -- pdf eigenvectors
+  run1D(ntoys, 2); 
+  double sPdf = fSeparation; 
+  fTEX << "sPdf: " << Form("%4.3f +/- %4.3f", sPdf, fSeparationE) << endl;
+
+  // -- scale
+  run1D(ntoys, 3); 
+  double sScale = fSeparation; 
+  fTEX << "sScale: " << Form("%4.3f +/- %4.3f", sScale, fSeparationE) << endl;
+
+  // -- background systematics
+  run1D(ntoys, 10); 
+  double sBg = fSeparation; 
+  fTEX << "sBg: " << Form("%4.3f +/- %4.3f", sBg, fSeparationE) << endl;
+
+  // -- all 
+  run1D(ntoys, 20); 
+  double sSyst = fSeparation; 
+  fTEX << "sSyst: " << Form("%4.3f +/- %4.3f", sSyst, fSeparationE) << endl;
+
+  fTEX.close(); 
+}
+
+
+// ----------------------------------------------------------------------
+void hstat::sigStudies(int mode, int n) {
+
+  fTEX.open(fTexFileName.c_str(), ios::app);
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  
+  TH1D *hsig(0); 
+  if (0 == mode) {
+    // -- significance vs background numbers
+    int nBINS(9); 
+    hsig = new TH1D("hsig", "nBG = 0 .. 2000", 40, 0., 2000.); 
+    double bg[] = {fBG, 200., 500., 750., 1000., 1250., 1500., 1750., 1950.};
+    hsig->GetXaxis()->SetTitle("N_{BG}");
+    for (int i = 0; i < nBINS; ++i) {
+      fBg = bg[i];
+      fSg0 = fSG0;
+      fSg1 = fSG1; 
+      cout << "XXXXXXXXXX run " << i << "  " << fBg << " .. " << fSg0 << " .. " << fSg1 << endl;
+      run1D(n, -1); 
+      if (fSeparation < 100.) {
+	hsig->SetBinContent(hsig->FindBin(fBg), fSeparation); 
+	hsig->SetBinError(hsig->FindBin(fBg), fSeparationE); 
+      }
+      fTEX << "sigStudies::nbg : " << fBg << " "  << fSg0 << " " << fSg1 << " " 
+	   << fSeparation << " +/- " << fSeparationE << endl;
+    }
+  } else if (10 == mode) {
+    // -- significance vs background numbers
+    int nBINS(9); 
+    hsig = new TH1D("hsig", "nBG = 0 .. 2000", 40, 0., 2000.); 
+    double bg[] = {fBG, 200., 500., 750., 1000., 1250., 1500., 1750., 1950.};
+    hsig->GetXaxis()->SetTitle("N_{BG}");
+      for (int i = 0; i < nBINS; ++i) {
+	fBg = bg[i];
+	fSg0 = fSG0;
+	fSg1 = fSG1; 
+	cout << "XXXXXXXXXX run " << i << "  " << fBg << " .. " << fSg0 << " .. " << fSg1 << endl;
+	run2D(n, -1); 
+	if (fSeparation < 100.) {
+	  hsig->SetBinContent(hsig->FindBin(fBg), fSeparation); 
+	  hsig->SetBinError(hsig->FindBin(fBg), fSeparationE); 
+	}
+	fTEX << "sigStudies::nbg : " << fBg << " "  << fSg0 << " " << fSg1 << " " 
+	     << fSeparation << " +/- " << fSeparationE << endl;
+      }      
+  } else  if (1 == mode) {
+    // -- significance vs lumi
+    int nBINS(6); 
+    hsig = new TH1D("hsig", "lumi = 500 .. 3000", 30, 500., 3500.); 
+    hsig->GetXaxis()->SetTitle("luminosity [/fb]");
+    double scale[] = {1.0, 0.5, 1.5, 2.0, 2.5, 3.0};
+    for (int i = 0; i < nBINS; ++i) {
+      fBg =  scale[i]*fBG; 
+      fSg0 = scale[i]*fSG0;
+      fSg1 = scale[i]*fSG1; 
+      cout << "XXXXXXXXXX run " << i << "  " << fBg << " .. " << fSg0 << " .. " << fSg1 << endl;
+      run1D(n, -1); 
+      if (fSeparation < 100.) {
+	hsig->SetBinContent(hsig->FindBin(scale[i]*1000.), fSeparation); 
+	hsig->SetBinError(hsig->FindBin(scale[i]*1000.), fSeparationE); 
+      }
+      fTEX << "sigStudies::lumi : " << scale[i] << " " << fBg << " "  << fSg0 << " " << fSg1 
+	   << " " << fSeparation << " +/- " << fSeparationE << endl;
+    }      
+  } else  if (11 == mode) {
+    // -- significance vs lumi
+    int nBINS(6); 
+    hsig = new TH1D("hsig", "lumi = 500 .. 3000", 30, 500., 3500.); 
+    hsig->GetXaxis()->SetTitle("luminosity [/fb]");
+    double scale[] = {1.0, 0.5, 1.5, 2.0, 2.5, 3.0};
+    for (int i = 0; i < nBINS; ++i) {
+      fBg =  scale[i]*fBG; 
+      fSg0 = scale[i]*fSG0;
+      fSg1 = scale[i]*fSG1; 
+      cout << "XXXXXXXXXX run " << i << "  " << fBg << " .. " << fSg0 << " .. " << fSg1 << endl;
+      run2D(n, -1); 
+      if (fSeparation < 100.) {
+	hsig->SetBinContent(hsig->FindBin(scale[i]*1000.), fSeparation); 
+	hsig->SetBinError(hsig->FindBin(scale[i]*1000.), fSeparationE); 
+      }
+      fTEX << "sigStudies::lumi : " << scale[i] << " " << fBg << " "  << fSg0 << " " << fSg1 
+	   << " " << fSeparation << " +/- " << fSeparationE << endl;
+    }      
+  } else  if (2 == mode) {
+    // -- significance error from repeated trials
+    int nBINS(20); 
+    hsig = new TH1D("hsig", "run = 0 .. 9 ", 400, 1., 5.); 
+    hsig->GetXaxis()->SetTitle("significance");
+    for (int i = 0; i < nBINS; ++i) {
+      fBg =  fBG; 
+      fSg0 = fSG0;
+      fSg1 = fSG1; 
+      cout << "XXXXXXXXXX run " << i << "  " << fBg << " .. " << fSg0 << " .. " << fSg1 << endl;
+
+      run1D(n, -1); 
+      if (fSeparation < 100.) {
+	hsig->Fill(fSeparation); 
+      }
+      fTEX << "sigStudies::repeat : " << i << " " << fBg << " "  << fSg0 << " " << fSg1 
+	   << " " << fSeparation << " +/- " << fSeparationE << endl;
+    }      
+  } else  if (12 == mode) {
+    // -- significance error from repeated trials
+    int nBINS(20); 
+    hsig = new TH1D("hsig", "run = 0 .. 9 ", 400, 1., 5.); 
+    hsig->GetXaxis()->SetTitle("significance");
+    for (int i = 0; i < nBINS; ++i) {
+      fBg =  fBG; 
+      fSg0 = fSG0;
+      fSg1 = fSG1; 
+      cout << "XXXXXXXXXX run " << i << "  " << fBg << " .. " << fSg0 << " .. " << fSg1 << endl;
+
+      run2D(n, -1); 
+      if (fSeparation < 100.) {
+	hsig->Fill(fSeparation); 
+      }
+      fTEX << "sigStudies::repeat : " << i << " " << fBg << " "  << fSg0 << " " << fSg1 
+	   << " " << fSeparation << " +/- " << fSeparationE << endl;
+    }      
+  } else {
+    return;
+  }
+
+  TCanvas *c0 = (TCanvas*)gROOT->FindObject("c0"); 
+  if (!c0) c0 = new TCanvas("c0","--c0--",0,0,656,700);
+  c0->Clear();
+  hsig->SetMarkerStyle(20); 
+  hsig->Draw("p][");
+  if (12 == mode || 2 == mode)   hsig->Draw("hist");
+  c0->SaveAs(Form("hstat-sigStudies-%d-%d.pdf", mode, n)); 
+  fTEX.close();
+
+  fHistFile = TFile::Open(Form("hstat-sigStudies-%d-%d.root", mode, n)); 
+  hsig->SetDirectory(fHistFile); 
+  hsig->Write();
+  
+
+}
+
 // ----------------------------------------------------------------------
 void hstat::run1D(int ntoys, int mode) {
 
-  TH1D *ht0 = new TH1D("ht0", "prof t = -2ln(lambda), lambda = L(t, v^^)/L(t^, v^)", 400, -40., 40.); ht0->SetLineColor(kBlue); 
-  TH1D *ht1 = new TH1D("ht1", "prof t = -2ln(lambda), lambda = L(t, v^^)/L(t^, v^)", 400, -40., 40.); ht1->SetLineColor(kRed); 
+  TH1D *ht0 = new TH1D("ht0", "prof t = -2ln(lambda), lambda = L(t, v^^)/L(t^, v^)", 1000, -40., 40.); 
+  ht0->SetLineColor(kBlue); 
+  TH1D *ht1 = new TH1D("ht1", "prof t = -2ln(lambda), lambda = L(t, v^^)/L(t^, v^)", 1000, -40., 40.); 
+  ht1->SetLineColor(kRed); 
 
-  if (0 == mode) {
+  TH1D *hsg0 = (TH1D*)gROOT->Get("hsg0"); 
+  if (0 == hsg0) {
+    RooRandom::randomGenerator()->SetSeed(fRndmSeed);
+    hsg0 = new TH1D("hsg0", "hsg0", 50, 0., 200.); 
+  } else { 
+    hsg0->Reset();
+  }
+  TH1D *hsg1 = (TH1D*)gROOT->Get("hsg1"); 
+  if (0 == hsg1) {
+    hsg1 = new TH1D("hsg1", "hsg1", 50, 0., 400.); 
+  } else {
+    hsg1->Reset();
+  }
+  TH1D *hrat = (TH1D*)gROOT->Get("hrat");
+  if (0 == hrat) {
+    hrat = new TH1D("hrat", "hrat", 50, 0.5, 3.0); 
+  } else {
+    hrat->Reset(); 
+  }
+
+  if (mode <= 0) {
     cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
     cout << "Input: sg0N = " << fSg0 << endl;
     cout << "Input: sg1N = " << fSg1 << endl;
     cout << "Input: bgN  = " << fBg << endl;
     cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
     for (int i = 0; i < ntoys; ++i) {
+      hsg0->Fill(fSg0); 
+      hsg1->Fill(fSg1); 
+      hrat->Fill(fSg1/fSg0); 
       cout << "XXXXXX run " << i << endl;
       toy1D();
-   
+    
+      ht0->Fill(2.*(fD0M1 - fD0M0));    
+      ht1->Fill(2.*(fD1M1 - fD1M0));
+    }
+  } else if (1 == TMath::Abs(mode)) {
+    double syst(0.17); 
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    cout << "systematics from missing top calculations" << endl;
+    cout << "Input: sg0N = " << fSg0 << ", varied by " << 100*syst << "%" << endl;
+    cout << "Input: sg1N = " << fSg1 << ", varied through delta(fSg1/fSg0) = " << 100*syst << "%" <<  endl;
+    cout << "Input: bgN  = " << fBg << endl;
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    double randFact(1.0); 
+    for (int i = 0; i < ntoys; ++i) {
+      randFact = 1. + gRandom->Gaus(0., syst);
+      while (randFact < 0.) {
+	randFact = 1. + gRandom->Gaus(0., syst);
+      }
+      fSg0 = fSG0*randFact; 
+      fSg1 = fSG1;
+      cout << "XXXXXX run " << i << ", fSg0 = " << fSg0 << ", fSg1 = " << fSg1 << ", fSg1/fSg0 = " << fSg1/fSg0 << endl;
+      hsg0->Fill(fSg0); 
+      hsg1->Fill(fSg1); 
+      hrat->Fill(fSg1/fSg0); 
+      toy1D();
+      
+      ht0->Fill(2.*(fD0M1 - fD0M0));    
+      ht1->Fill(2.*(fD1M1 - fD1M0));
+    }
+  } else if (2 == TMath::Abs(mode)) {
+    double systHi(0.22); 
+    double systLo(0.06); 
+    TF1 *f1 = new TF1("f1BifGauss", gaussBifurcated, -2., 2., 4); 
+    f1->SetParameters(1., 0., systLo, systHi); 
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    cout << "systematics from pdf eigenvectors" << endl;
+    cout << "Input: sg0N = " << fSg0 << ", varied by +" << systHi << " -" << systLo<< endl;
+    cout << "Input: sg1N = " << fSg1 << ", varied through delta(fSg1/fSg0) = +" << 1.-systHi << " -" << 1.-systLo << endl;
+    cout << "Input: bgN  = " << fBg << endl;
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    double randFact(1.0);
+    for (int i = 0; i < ntoys; ++i) {
+      randFact = 1. + f1->GetRandom(); 
+      while (randFact < 0.) {
+	randFact = 1. + f1->GetRandom(); 
+      }
+      fSg0 = fSG0*randFact; 
+      fSg1 = fSG1;
+      cout << "XXXXXX run " << i << ", fSg0 = " << fSg0 << ", fSg1 = " << fSg1 << ", fSg1/fSg0 = " << fSg1/fSg0 << endl;
+      hsg0->Fill(fSg0); 
+      hsg1->Fill(fSg1); 
+      hrat->Fill(fSg1/fSg0); 
+      toy1D();
+      
+      ht0->Fill(2.*(fD0M1 - fD0M0));    
+      ht1->Fill(2.*(fD1M1 - fD1M0));
+    }
+  } else if (3 == TMath::Abs(mode)) {
+    double syst(0.20); 
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    cout << "systematics from scale uncertainties" << endl;
+    cout << "Input: sg0N = " << fSg0 << ", varied by " << 100*syst << "%" << endl;
+    cout << "Input: sg1N = " << fSg1 << ", varied through delta(fSg1/fSg0) = " << 100*syst << "%" <<  endl;
+    cout << "Input: bgN  = " << fBg << endl;
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    double randFact(1.0); 
+    for (int i = 0; i < ntoys; ++i) {
+      randFact = 1. + gRandom->Gaus(0., syst);
+      while (randFact < 0.) {
+	randFact = 1. + gRandom->Gaus(0., syst);
+      }
+      fSg0 = fSG0*randFact; 
+      fSg1 = fSG1*randFact;
+      cout << "XXXXXX run " << i << ", fSg0 = " << fSg0 << ", fSg1 = " << fSg1 << ", fSg1/fSg0 = " << fSg1/fSg0 << endl;
+      hsg0->Fill(fSg0); 
+      hsg1->Fill(fSg1); 
+      hrat->Fill(fSg1/fSg0); 
+      toy1D();
+      
+      ht0->Fill(2.*(fD0M1 - fD0M0));    
+      ht1->Fill(2.*(fD1M1 - fD1M0));
+    }
+  } else if (10 == TMath::Abs(mode)) {
+    double syst(0.4); 
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    cout << "systematics from background uncertainty" << endl;
+    cout << "Input: sg0N = " << fSg0 << endl;
+    cout << "Input: sg1N = " << fSg1 <<  endl;
+    cout << "Input: bgN  = " << fBg << ", varied by " << 100*syst << "%, truncated to be > 0" << endl;
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    double randFact(1.0); 
+    for (int i = 0; i < ntoys; ++i) {
+      fSg0 = fSG0; 
+      fSg1 = fSG1;
+      randFact = 1. + gRandom->Gaus(0., syst);
+      while (randFact < 0.) {
+	randFact = 1. + gRandom->Gaus(0., syst);
+      }
+      fBg = fBG*randFact; 
+      if (fBg < 0) fBg = 10.; 
+      cout << "XXXXXX run " << i << ", fBg = " << fBg << endl;
+      hsg0->Fill(fSg0); 
+      hsg1->Fill(fSg1); 
+      hrat->Fill(fSg1/fSg0); 
+      toy1D();
+      
+      ht0->Fill(2.*(fD0M1 - fD0M0));    
+      ht1->Fill(2.*(fD1M1 - fD1M0));
+    }
+  } else if (20 == TMath::Abs(mode)) {
+    double syst(0.25); 
+    double systBg(0.40); 
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    cout << "systematics from complete uncertainty" << endl;
+    cout << "Input: sg0N = " << fSg0 << ", varied by " << 100*syst << "%" << endl;
+    cout << "Input: sg1N = " << fSg1 << ", varied by " << 100*syst << "%" << endl;
+    cout << "Input: bgN  = " << fBg << ", varied by " << 100*systBg << "%, truncated to be > 0" << endl;
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    double randFact(1.0); 
+    for (int i = 0; i < ntoys; ++i) {
+      randFact = 1. + gRandom->Gaus(0., systBg);
+      while (randFact < 0.) {
+	randFact = 1. + gRandom->Gaus(0., systBg);
+      }
+      fBg = fBG*randFact; 
+
+      randFact = 1. + gRandom->Gaus(0., syst);
+      while (randFact < 0.) {
+	randFact = 1. + gRandom->Gaus(0., syst);
+      }
+      fSg0 = fSG0*randFact; 
+      randFact = 1. + gRandom->Gaus(0., syst);
+      while (randFact < 0.) {
+	randFact = 1. + gRandom->Gaus(0., syst);
+      }
+      fSg1 = fSG1*randFact; 
+      cout << "XXXXXX run " << i << ", fSg0 = " << fSg0 << ", fSg1 = " << fSg1 << ", fSg1/fSg0 = " << fSg1/fSg0 
+	   << ", fBg = " << fBg 
+	   << endl;
+
+      hsg0->Fill(fSg0); 
+      hsg1->Fill(fSg1); 
+      hrat->Fill(fSg1/fSg0); 
+      toy1D();
+      
       ht0->Fill(2.*(fD0M1 - fD0M0));    
       ht1->Fill(2.*(fD1M1 - fD1M0));
     }
   }
 
-  zone(); 
-  gStyle->SetOptStat(0); 
-  ht0->Draw();
-  ht1->Draw("same");
-  
-  double midpoint, tailprob, sigma;
-  findMidPoint(ht0, ht1, midpoint, tailprob); 
-  sigma = 2.*oneSidedGaussianSigma(tailprob);
-  
   TLatex *tl = new TLatex(); 
   tl->SetNDC(kTRUE);
   tl->SetTextSize(0.04);
-  tl->DrawLatex(0.6, 0.85, Form("ntoys: %d", ntoys)); 
-  tl->DrawLatex(0.6, 0.80, Form("midpoint: %4.3f", midpoint)); 
-  tl->DrawLatex(0.6, 0.75, Form("tailprob: %4.3f", tailprob)); 
-  tl->DrawLatex(0.6, 0.70, Form("Sep: %4.3f", sigma)); 
 
+  TArrow *ta = new TArrow(); 
+
+  gStyle->SetOptStat(111111); 
+  TCanvas *c0 = (TCanvas*)gROOT->FindObject("c0"); 
+  if (!c0) c0 = new TCanvas("c0","--c0--",0,0,656,700);
+  c0->Clear(); 
+  c0->Divide(2,2);
+  c0->cd(1);
+  hsg0->Draw();
+  tl->DrawLatex(0.15, 0.92, Form("rel rms: %4.3f", hsg0->GetRMS()/hsg0->GetMean())); 
+  ta->DrawArrow(fSG0, 0.5*hsg0->GetMaximum(), fSG0, 0.); 
+  c0->cd(2); 
+  hsg1->Draw();
+  tl->DrawLatex(0.15, 0.92, Form("rel rms: %4.3f", hsg1->GetRMS()/hsg1->GetMean())); 
+  ta->DrawArrow(fSG1, 0.5*hsg1->GetMaximum(), fSG1, 0.); 
+  c0->cd(3); 
+  hrat->Draw();
+  tl->DrawLatex(0.15, 0.92, Form("rel rms: %4.3f", hrat->GetRMS()/hrat->GetMean())); 
+  ta->DrawArrow(fSG1/fSG0, 0.5*hrat->GetMaximum(), fSG1/fSG0, 0.); 
+
+  c0->cd(4);
+
+  double midpoint, tailprob, sigma, lo, hi;
+  findMidPoint(ht0, ht1, midpoint, tailprob, lo, hi); 
+  //  sigma = 2.*oneSidedGaussianSigma(tailprob);
+  sigma = 2.*RooStats::PValueToSignificance(tailprob);
+  fSeparation = sigma; 
+  fSeparationE = 2.*(RooStats::PValueToSignificance(hi) - RooStats::PValueToSignificance(lo)); 
+  if (fSeparationE < 1.e-3) fSeparationE = 1.e-3; 
+  // -- new error on separation according to 
+  // evernote:///view/40567474/s295/local/x-coredata://B740E98C-51E1-432D-B0F3-002D230CF640/ENNote/p7145/
+  fSeparationE = 0.02;
+  if (ntoys < 2200) fSeparationE = 0.02*fSeparation; 
+  if (ntoys < 1200) fSeparationE = 0.02*fSeparation; 
+  if (ntoys < 700) fSeparationE = 0.03*fSeparation; 
+  if (ntoys < 200) fSeparationE = 0.08*fSeparation; 
+  
+
+  ht0->Rebin(10)->Draw();
+  ht1->Rebin(10)->Draw("same");
+  
+  tl->DrawLatex(0.17, 0.85, Form("ntoys/mode: %d/%d", ntoys, mode)); 
+  tl->DrawLatex(0.17, 0.80, Form("midpoint: %4.3f", midpoint)); 
+  tl->DrawLatex(0.17, 0.75, Form("tailprob: %4.3f", tailprob)); 
+  tl->DrawLatex(0.17, 0.70, Form("Sep: %4.3f +/- %4.3f", sigma, fSeparationE)); 
+  
   cout << "----------------------------------------------------------------------" << endl;
   cout << "midpoint: " << midpoint << endl;
-  cout << "sigma:    " << sigma << endl;
+  cout << "sigma:    " << sigma << " +/- " << fSeparationE << endl;
+  cout << "sigma(lo): " << 2.*RooStats::PValueToSignificance(lo) << endl;
+  cout << "sigma(hi): " << 2.*RooStats::PValueToSignificance(hi) << endl;
   cout << "----------------------------------------------------------------------" << endl;
-
-  gPad->SaveAs(Form("hstat-%d-%d.pdf", mode, ntoys)); 
-
+  
+  if (mode >= 0) c0->SaveAs(Form("hstat-%d-%d.pdf", mode, ntoys)); 
+  
 }
+
 
 // ----------------------------------------------------------------------
 void hstat::toy1D() {
@@ -298,6 +714,7 @@ void hstat::toy1D() {
   d1 = new RooDataSet(*bgData);
   d1->append(*sg1Data);
 
+  RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING);
   RooAbsReal *d0m0NLL = m0->modelPdf->createNLL(*d0, Extended(kTRUE), Verbose(kFALSE));
   RooAbsReal *d0m1NLL = m1->modelPdf->createNLL(*d0, Extended(kTRUE), Verbose(kFALSE));
   RooAbsReal *d1m0NLL = m0->modelPdf->createNLL(*d1,  Extended(kTRUE), Verbose(kFALSE));
@@ -310,10 +727,258 @@ void hstat::toy1D() {
   RooProfileLL *pd1m0NLL = dynamic_cast<RooProfileLL*>(d1m0NLL->createProfile(m0->poi));
   fD1M0 = pd1m0NLL->getVal(); 
   RooProfileLL *pd1m1NLL = dynamic_cast<RooProfileLL*>(d1m1NLL->createProfile(m1->poi));
+  fD1M1 = pd1m1NLL->getVal();   
+
+  delModel(m0); 
+  delModel(m1); 
+
+  delete d0;
+  delete d1;
+  delete bgData;
+  delete sg0Data; 
+  delete sg1Data;
+
+  delete d0m0NLL;
+  delete d0m1NLL;
+  delete d1m0NLL;
+  delete d1m1NLL;
+
+  delete pd0m0NLL;
+  delete pd0m1NLL;
+  delete pd1m0NLL;
+  delete pd1m1NLL;
+
+  return;
+
+}
+
+
+// ----------------------------------------------------------------------
+void hstat::run2D(int ntoys, int mode) {
+
+  TH1D *ht0 = new TH1D("ht0", "prof t = -2ln(lambda), lambda = L(t, v^^)/L(t^, v^)", 1000, -40., 40.); 
+  ht0->SetLineColor(kBlue); 
+  TH1D *ht1 = new TH1D("ht1", "prof t = -2ln(lambda), lambda = L(t, v^^)/L(t^, v^)", 1000, -40., 40.); 
+  ht1->SetLineColor(kRed); 
+
+  TH1D *hsg0 = (TH1D*)gROOT->Get("hsg0"); 
+  if (0 == hsg0) {
+    RooRandom::randomGenerator()->SetSeed(fRndmSeed);
+    hsg0 = new TH1D("hsg0", "hsg0", 50, 0., 200.); 
+  } else { 
+    hsg0->Reset();
+  }
+  TH1D *hsg1 = (TH1D*)gROOT->Get("hsg1"); 
+  if (0 == hsg1) {
+    hsg1 = new TH1D("hsg1", "hsg1", 50, 0., 400.); 
+  } else {
+    hsg1->Reset();
+  }
+  TH1D *hrat = (TH1D*)gROOT->Get("hrat");
+  if (0 == hrat) {
+    hrat = new TH1D("hrat", "hrat", 50, 0.5, 3.0); 
+  } else {
+    hrat->Reset(); 
+  }
+
+  if (mode <= 0) {
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    cout << "Input: sg0N = " << fSg0 << endl;
+    cout << "Input: sg1N = " << fSg1 << endl;
+    cout << "Input: bgN  = " << fBg << endl;
+    cout << "Input: sg0T = " << fSg0Tau << endl;
+    cout << "Input: sg1T = " << fSg1Tau << endl;
+    cout << "Input: bgT  = " << fBgTau << endl;
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    for (int i = 0; i < ntoys; ++i) {
+      hsg0->Fill(fSg0); 
+      hsg1->Fill(fSg1); 
+      hrat->Fill(fSg1/fSg0); 
+      cout << "XXXXXX run " << i << endl;
+      toy2D();
+    
+      ht0->Fill(2.*(fD0M1 - fD0M0));    
+      ht1->Fill(2.*(fD1M1 - fD1M0));
+    }
+  } else if (1 == mode) {
+    double syst(0.17); 
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    cout << "systematics from missing top calculations" << endl;
+    cout << "Input: sg0N = " << fSg0 << ", varied by " << 100*syst << "%" << endl;
+    cout << "Input: sg1N = " << fSg1 << ", varied through delta(fSg1/fSg0) = " << 100*syst << "%" <<  endl;
+    cout << "Input: bgN  = " << fBg << endl;
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    double randFact(1.0); 
+    for (int i = 0; i < ntoys; ++i) {
+      randFact = 1. + gRandom->Gaus(0., syst);
+      while (randFact < 0.) {
+	randFact = 1. + gRandom->Gaus(0., syst);
+      }
+      fSg0 = fSG0*randFact; 
+      fSg1 = fSG1;
+      cout << "XXXXXX run " << i << ", fSg0 = " << fSg0 << ", fSg1 = " << fSg1 << ", fSg1/fSg0 = " << fSg1/fSg0 << endl;
+      hsg0->Fill(fSg0); 
+      hsg1->Fill(fSg1); 
+      hrat->Fill(fSg1/fSg0); 
+      toy2D();
+      
+      ht0->Fill(2.*(fD0M1 - fD0M0));    
+      ht1->Fill(2.*(fD1M1 - fD1M0));
+    }
+  } else if (3 == mode) {
+    double syst(0.20); 
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    cout << "systematics from scale uncertainties" << endl;
+    cout << "Input: sg0N = " << fSg0 << ", varied by " << 100*syst << "%" << endl;
+    cout << "Input: sg1N = " << fSg1 << ", varied through delta(fSg1/fSg0) = " << 100*syst << "%" <<  endl;
+    cout << "Input: bgN  = " << fBg << endl;
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    double randFact(1.0); 
+    for (int i = 0; i < ntoys; ++i) {
+      randFact = 1. + gRandom->Gaus(0., syst);
+      while (randFact < 0.) {
+	randFact = 1. + gRandom->Gaus(0., syst);
+      }
+      fSg0 = fSG0*randFact; 
+      fSg1 = fSG1*randFact;
+      cout << "XXXXXX run " << i << ", fSg0 = " << fSg0 << ", fSg1 = " << fSg1 << ", fSg1/fSg0 = " << fSg1/fSg0 << endl;
+      hsg0->Fill(fSg0); 
+      hsg1->Fill(fSg1); 
+      hrat->Fill(fSg1/fSg0); 
+      toy2D();
+      
+      ht0->Fill(2.*(fD0M1 - fD0M0));    
+      ht1->Fill(2.*(fD1M1 - fD1M0));
+    }
+  } else if (10 == mode) {
+    double syst(0.4); 
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    cout << "systematics from background uncertainty" << endl;
+    cout << "Input: sg0N = " << fSg0 << endl;
+    cout << "Input: sg1N = " << fSg1 <<  endl;
+    cout << "Input: bgN  = " << fBg << ", varied by " << 100*syst << "%, truncated to be > 0" << endl;
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    double randFact(1.0); 
+    for (int i = 0; i < ntoys; ++i) {
+      fSg0 = fSG0; 
+      fSg1 = fSG1;
+      randFact = 1. + gRandom->Gaus(0., syst);
+      while (randFact < 0.) {
+	randFact = 1. + gRandom->Gaus(0., syst);
+      }
+      fBg = fBG*randFact; 
+      if (fBg < 0) fBg = 10.; 
+      cout << "XXXXXX run " << i << ", fBg = " << fBg << endl;
+      hsg0->Fill(fSg0); 
+      hsg1->Fill(fSg1); 
+      hrat->Fill(fSg1/fSg0); 
+      toy2D();
+      
+      ht0->Fill(2.*(fD0M1 - fD0M0));    
+      ht1->Fill(2.*(fD1M1 - fD1M0));
+    }
+  }
+
+
+  TLatex *tl = new TLatex(); 
+  tl->SetNDC(kTRUE);
+  tl->SetTextSize(0.04);
+
+  TArrow *ta = new TArrow(); 
+
+  gStyle->SetOptStat(111111); 
+  TCanvas *c0 = (TCanvas*)gROOT->FindObject("c0"); 
+  if (!c0) c0 = new TCanvas("c0","--c0--",0,0,656,700);
+  c0->Clear(); 
+  c0->Divide(2,2);
+  c0->cd(1);
+  hsg0->Draw();
+  tl->DrawLatex(0.15, 0.92, Form("rel rms: %4.3f", hsg0->GetRMS()/hsg0->GetMean())); 
+  ta->DrawArrow(fSG0, 0.5*hsg0->GetMaximum(), fSG0, 0.); 
+  c0->cd(2); 
+  hsg1->Draw();
+  tl->DrawLatex(0.15, 0.92, Form("rel rms: %4.3f", hsg1->GetRMS()/hsg1->GetMean())); 
+  ta->DrawArrow(fSG1, 0.5*hsg1->GetMaximum(), fSG1, 0.); 
+  c0->cd(3); 
+  hrat->Draw();
+  tl->DrawLatex(0.15, 0.92, Form("rel rms: %4.3f", hrat->GetRMS()/hrat->GetMean())); 
+  ta->DrawArrow(fSG1/fSG0, 0.5*hrat->GetMaximum(), fSG1/fSG0, 0.); 
+
+  c0->cd(4);
+  //  gStyle->SetOptStat(0); 
+
+  double midpoint, tailprob, sigma, lo, hi;
+  findMidPoint(ht0, ht1, midpoint, tailprob, lo, hi); 
+  //  sigma = 2.*oneSidedGaussianSigma(tailprob);
+  sigma = 2.*RooStats::PValueToSignificance(tailprob);
+  fSeparation = sigma; 
+  fSeparationE = 2.*(RooStats::PValueToSignificance(hi) - RooStats::PValueToSignificance(lo)); 
+  if (fSeparationE < 1.e-3) fSeparationE = 1.e-3; 
+
+  // -- new error on separation according to 
+  // evernote:///view/40567474/s295/local/x-coredata://B740E98C-51E1-432D-B0F3-002D230CF640/ENNote/p7145/
+  fSeparationE = 0.02;
+  if (ntoys < 2200) fSeparationE = 0.02*fSeparation; 
+  if (ntoys < 1200) fSeparationE = 0.02*fSeparation; 
+  if (ntoys < 700) fSeparationE = 0.03*fSeparation; 
+  if (ntoys < 200) fSeparationE = 0.08*fSeparation; 
+
+  ht0->Rebin(10)->Draw();
+  ht1->Rebin(10)->Draw("same");
+  
+  tl->DrawLatex(0.17, 0.85, Form("ntoys/mode: %d/%d", ntoys, mode)); 
+  tl->DrawLatex(0.17, 0.80, Form("midpoint: %4.3f", midpoint)); 
+  tl->DrawLatex(0.17, 0.75, Form("tailprob: %4.3f", tailprob)); 
+  tl->DrawLatex(0.17, 0.70, Form("Sep: %4.3f +/- %4.3f", sigma, fSeparationE)); 
+  
+  cout << "----------------------------------------------------------------------" << endl;
+  cout << "midpoint:  " << midpoint << endl;
+  cout << "sigma:     " << sigma << " +/- " << fSeparationE << endl;
+  cout << "sigma(lo): " << 2.*RooStats::PValueToSignificance(lo) << endl;
+  cout << "sigma(hi): " << 2.*RooStats::PValueToSignificance(hi) << endl;
+  cout << "----------------------------------------------------------------------" << endl;
+  
+  if (mode >= 0) c0->SaveAs(Form("hstat2d-%d-%d.pdf", mode, ntoys)); 
+  
+}
+
+
+// ----------------------------------------------------------------------
+void hstat::toy2D() {
+
+  model *m0 = genModel2(0, fSg0, fBg, fSg0Tau, fBgTau); 
+  model *m1 = genModel2(1, fSg1, fBg, fSg1Tau, fBgTau); 
+
+  RooDataSet *d0(0), *d1(0), *bgData(0), *sg0Data(0), *sg1Data(0);
+
+  bgData  = m0->bgPdf->generate(RooArgSet(*m0->m, *m0->pt), fBg); 
+  sg0Data = m0->sgPdf->generate(RooArgSet(*m0->m, *m0->pt), fSg0); 
+  sg1Data = m1->sgPdf->generate(RooArgSet(*m1->m, *m1->pt), fSg1); 
+
+  // -- model 0 plus background
+  d0 = new RooDataSet(*bgData);
+  d0->append(*sg0Data);
+  d1 = new RooDataSet(*bgData);
+  d1->append(*sg1Data);
+
+  RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING);
+  RooAbsReal *d0m0NLL = m0->modelPdf->createNLL(*d0, Extended(kTRUE), Verbose(kFALSE), NumCPU(2));
+  RooAbsReal *d0m1NLL = m1->modelPdf->createNLL(*d0, Extended(kTRUE), Verbose(kFALSE), NumCPU(2));
+  RooAbsReal *d1m0NLL = m0->modelPdf->createNLL(*d1,  Extended(kTRUE), Verbose(kFALSE), NumCPU(2));
+  RooAbsReal *d1m1NLL = m1->modelPdf->createNLL(*d1,  Extended(kTRUE), Verbose(kFALSE), NumCPU(2));
+  
+  RooProfileLL *pd0m0NLL = dynamic_cast<RooProfileLL*>(d0m0NLL->createProfile(m0->poi));
+  fD0M0 = pd0m0NLL->getVal(); 
+  RooProfileLL *pd0m1NLL = dynamic_cast<RooProfileLL*>(d0m1NLL->createProfile(m1->poi));
+  fD0M1 = pd0m1NLL->getVal(); 
+  RooProfileLL *pd1m0NLL = dynamic_cast<RooProfileLL*>(d1m0NLL->createProfile(m0->poi));
+  fD1M0 = pd1m0NLL->getVal(); 
+  RooProfileLL *pd1m1NLL = dynamic_cast<RooProfileLL*>(d1m1NLL->createProfile(m1->poi));
   fD1M1 = pd1m1NLL->getVal(); 
 
-  delete m0; 
-  delete m1;
+  delModel(m0); 
+  delModel(m1); 
+
   delete d0;
   delete d1;
   delete bgData;
@@ -351,6 +1016,11 @@ void hstat::delModel(model *m) {
   delete m->bgPdf; 
   delete m->modelPdf; 
 
+  if (m->sgPt) delete m->sgPt;
+  if (m->bgPt) delete m->bgPt;
+  if (m->sgM) delete m->sgM;
+  if (m->bgM) delete m->bgM;
+
   delete m;
 }
 
@@ -381,6 +1051,11 @@ model* hstat::genModel1(int mode, double nsg, double nbg) {
   aModel->modelPdf = new RooAddPdf(Form("m%d_model", mode), "model", 
 				   RooArgList(*aModel->sgPdf, *aModel->bgPdf), 
 				   RooArgList(*aModel->sgN, *aModel->bgN));
+
+  aModel->sgM  = 0;   	     
+  aModel->bgM  = 0; 
+  aModel->sgPt = 0;   	     
+  aModel->bgPt = 0; 
   
   // -- define POI
   aModel->poi.add(*aModel->sgN);
@@ -389,10 +1064,58 @@ model* hstat::genModel1(int mode, double nsg, double nbg) {
 }
 
 
+
 // ----------------------------------------------------------------------
-void  hstat::findMidPoint(TH1D* hq0, TH1D* hq1, double &midpoint, double &tailprob) {
+model* hstat::genModel2(int mode, double nsg, double nbg, double tsg, double tbg) {
+  
+  model *aModel = new model(); 
+  
+  // -- variables
+  aModel->m  = new RooRealVar("m", "m", MGGLO, MGGHI, "GeV"); 
+  aModel->pt = new RooRealVar("pt", "pt", 200., 1000., "GeV"); 
+
+  // -- parameters
+  aModel->massP = new RooRealVar(Form("m%d_mP", mode), "signal peak mass", fHiggsMpeak, MGGLO, MGGHI);  
+  aModel->massP->setConstant(kTRUE);
+  aModel->massS = new RooRealVar(Form("m%d_mS", mode), "signal sigma mass", fHiggsMres, 0., 15.);  
+  aModel->massS->setConstant(kTRUE); 
+  aModel->bgSlope = new RooRealVar(Form("m%d_bgSlope", mode), "coefficient #0 for bg", fBgMp1, 0., 1.); 
+
+  aModel->sgN = new RooRealVar(Form("m%d_sgN", mode), "signal events", nsg, 0., 1.e5);
+  aModel->bgN = new RooRealVar(Form("m%d_bgN", mode), "background events", nbg, 0., 1.e5);
+
+  aModel->sgTau = new RooRealVar(Form("m%d_sgTau", mode), "signal tau", tsg, -10., 10.);
+  aModel->bgTau = new RooRealVar(Form("m%d_bgTau", mode), "background tau", tbg, -10., 10.);
+
+  // -- create PDF
+  aModel->sgPt = new RooExponential(Form("m%d_sgPt", mode), "signal pT", *aModel->pt, *aModel->sgTau);   
+  aModel->bgPt = new RooExponential(Form("m%d_bgPt", mode), "background pT", *aModel->pt, *aModel->bgTau);   
+  
+  aModel->sgM = new RooGaussian(Form("m%d_sgM", mode), "signal gamma gamma mass", 
+				*aModel->m, *aModel->massP, *aModel->massS);
+  
+  aModel->bgM = new RooPolynomial(Form("m%d_bgM", mode), "background mass", 
+				  *aModel->m, RooArgList(*aModel->bgSlope)); 
+  
+  aModel->sgPdf = new RooProdPdf("sgPdf", "sgPdf", RooArgSet(*aModel->sgM, *aModel->sgPt));
+  aModel->bgPdf = new RooProdPdf("bgPdf", "bgPdf", RooArgSet(*aModel->bgM, *aModel->bgPt));
+
+  aModel->modelPdf = new RooAddPdf(Form("m%d_model", mode), "model", 
+				   RooArgList(*aModel->sgPdf, *aModel->bgPdf), 
+				   RooArgList(*aModel->sgN, *aModel->bgN));
+  
+  // -- define POI
+  aModel->poi.add(RooArgSet(*aModel->sgN, *aModel->sgTau));
+
+  return aModel; 
+}
+
+
+// ----------------------------------------------------------------------
+void  hstat::findMidPoint(TH1D* hq0, TH1D* hq1, double &midpoint, double &tailprob, double &lo, double &hi) {
+  cout << endl;
   double iq0(0), iq1(0), delta(0.); 
-  int nbinsx = hq0->GetNbinsX();
+  int nbinsx = hq0->GetNbinsX()+1;
   TH1D *nq0 = (TH1D*)hq0->Clone("nq0");
   nq0->Scale(1./nq0->GetSumOfWeights());
   TH1D *nq1 = (TH1D*)hq1->Clone("nq1");
@@ -413,16 +1136,34 @@ void  hstat::findMidPoint(TH1D* hq0, TH1D* hq1, double &midpoint, double &tailpr
     delta = iq1 - iq0; 
   }
     
-  cout << "found iq0 = " << iq0 << " iq1 = " << iq1 << " at midpoint = " << midpoint << endl;
+  // -- take the average to account a bit for binning effects
+  tailprob = 0.5*(iq0+iq1); 
+  lo = iq0; 
+  hi = iq1; 
+
+  cout << "found "
+       << Form(" iq0: %5.4f, iq1: %5.4f, diff: %5.4f", iq0, iq1, iq1-iq0)
+       << " at midpoint = " << Form("%5.4f", midpoint) 
+       << Form(" tail prob: %5.4f, lo: %5.4f, hi: %5.4f", tailprob, lo, hi)
+       << endl;
+
+
+
+  // -- printout for confirmation
   iq0 = nq0->Integral(0, nq0->FindBin(midpoint)+1); 
   iq1 = nq1->Integral(nq0->FindBin(midpoint)+1, nbinsx); 
-  cout << " next iq0 = " << iq0 << " iq1 = " << iq1 << endl;
+  cout << " next "
+       << Form(" iq0: %5.4f, iq1: %5.4f, diff: %5.4f", iq0, iq1, iq1-iq0)
+       << " at " << nq0->GetBinCenter(nq0->FindBin(midpoint)+1)
+       << endl;
+  
   iq0 = nq0->Integral(0, nq0->FindBin(midpoint)-1); 
   iq1 = nq1->Integral(nq0->FindBin(midpoint)-1, nbinsx); 
-  cout << " prev iq0 = " << iq0 << " iq1 = " << iq1 << endl;
+  cout << " prev "
+       << Form(" iq0: %5.4f, iq1: %5.4f, diff: %5.4f", iq0, iq1, iq1-iq0)
+       << " at " << nq0->GetBinCenter(nq0->FindBin(midpoint)-1)
+       << endl;
 
-  tailprob = 0.5*(iq0+iq1); 
- 
 }
 
 
@@ -432,7 +1173,6 @@ double hstat::oneSidedGaussianSigma(double prob) {
   RooRealVar x("x", "x", -10, 10) ;
   RooGaussian gx("gx", "gx", x, RooConst(0), RooConst(1));
   
-  RooAbsReal* igx(0);   
   int i(0); 
   double qold(0.),  eps(1.e-9); 
   double delta(0.1);
@@ -463,13 +1203,56 @@ double hstat::oneSidedGaussianSigma(double prob) {
   }
   
   cout << "tail probability " << prob << " with local prob = " << q
-       << " yields significance " << sigma << 0.5*TMath::Erfc(sigma/TMath::Sqrt(2)) << endl;
+       << " yields significance " << sigma << " " <<  0.5*TMath::Erfc(sigma/TMath::Sqrt(2)) << endl;
 
   //   x.setRange("signal", sigma, 10);
+  //   RooAbsReal* igx(0);   
   //   igx = gx.createIntegral(x, NormSet(x), Range("signal")) ;
   //   cout << gx.createIntegral(x, NormSet(x), Range("signal"))->getVal() << endl;
   //  cout << "with formula: " <<  << endl;
 
   return sigma;
+
+}
+
+
+// ----------------------------------------------------------------------
+void hstat::testTools(int nbins) {
+  int NBINS(nbins); 
+  int ntoys(10000); 
+  double rms(8.); 
+
+  TH1D *h0 = new TH1D("h0", "h0", NBINS, -40., 40.); h0->SetLineColor(kBlue); 
+  TH1D *h1 = new TH1D("h1", "h1", NBINS, -40., 40.); h1->SetLineColor(kRed); 
+
+  TF1 *f0 = new TF1("f0", "[0]*exp(-0.5*((x-[1])/[2])**2)", -40., 40.); 
+  f0->SetParameters(1, 10., rms); 
+
+  TF1 *f1 = new TF1("f1", "[0]*exp(-0.5*((x-[1])/[2])**2)", -40., 40.); 
+  f1->SetParameters(1, -11., rms); 
+
+  h0->FillRandom("f0", ntoys); 
+  h1->FillRandom("f1", ntoys); 
+
+  h0->Draw();
+  h1->Draw("same");
+
+  double midpoint, tailprob, sigma0, sigma1, sigma2, lo, hi;
+  findMidPoint(h0, h1, midpoint, tailprob, lo, hi); 
+  sigma0 = 2.*oneSidedGaussianSigma(tailprob);
+  // the following is also in http://agenda.nikhef.nl/getFile.py/access?sessionId=36&resId=0&materialId=0&confId=1488
+  sigma1 = 2.*ROOT::Math::gaussian_quantile_c(tailprob, 1.);
+  sigma2 = 2.*RooStats::PValueToSignificance(tailprob); 
+
+  cout << "midpoint: " << Form("%4.3f", midpoint) << endl;
+  cout << "tailprob: " << Form("%4.3f", tailprob) << endl;
+  cout << "integral(h0; -40, midpoint)* = " << h0->Integral(0, h0->FindBin(midpoint)) << endl;
+  cout << "integral(h0; midpoint, 40)   = " << h0->Integral(h0->FindBin(midpoint), h0->GetNbinsX()+1) << endl;
+  cout << "integral(h1; -40, midpoint)  = " << h1->Integral(0, h1->FindBin(midpoint)) << endl;
+  cout << "integral(h1; midpoint, 40)*  = " << h1->Integral(h1->FindBin(midpoint), h1->GetNbinsX()+1) << endl;
+  cout << "sigma0: " << sigma0 << endl;
+  cout << "sigma1: " << sigma1 << endl;
+  cout << "sigma2: " << sigma2 << endl;
+
 
 }
