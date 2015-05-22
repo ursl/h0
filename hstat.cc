@@ -1111,15 +1111,15 @@ void hstat::run2D(int ntoys, int mode) {
     fDoPlot = false; 
   } else if (101 == TMath::Abs(mode)) {
     double syst(0.17); 
-    double systTau(0.0), systMu(0.); 
     if (mode > 0) {
       syst = 1. + syst;
-      fSg0Tau = fSG0TAU + systTau;
-      fSg0Mu  = fSG0MU + systMu;
+      // evernote:///view/40567474/s295/local/x-coredata://B740E98C-51E1-432D-B0F3-002D230CF640/ENNote/p7213/
+      fSg0Tau = 2.20;
+      fSg0Mu  = 40.1;
     } else {
       syst = 1. - syst;
-      fSg0Tau = fSG0TAU - systTau;
-      fSg0Mu  = fSG0MU - systMu;
+      fSg0Tau = 2.22;
+      fSg0Mu  = 40.5;
     }
     fSg0 = fSG0*syst; 
     fSg1 = fSG1;
