@@ -1729,11 +1729,11 @@ model* hstat::genModel2(int mode, double nsg, double nbg, double tsg, double tbg
 
   // -- create PDF
 #ifdef EXPO
-  cout << "creating pT model based on EXPO, mu should be zero: " << msg << " " << mbg << endl;
+  //  cout << "creating pT model based on EXPO, mu should be zero: " << msg << " " << mbg << endl;
   aModel->sgPt = new RooExponential(Form("m%d_sgPt", mode), "signal pT", *aModel->pt, *aModel->sgTau);   
   aModel->bgPt = new RooExponential(Form("m%d_bgPt", mode), "background pT", *aModel->pt, *aModel->bgTau);   
 #else
-  cout << "creating pT model based on LOGNORMAL, mu should be non-zero: " << msg << " " << mbg << endl;
+  //  cout << "creating pT model based on LOGNORMAL, mu should be non-zero: " << msg << " " << mbg << endl;
   aModel->sgPt = new RooLognormal(Form("m%d_sgPt", mode), "signal pT", *aModel->pt, *aModel->sgMu, *aModel->sgTau);   
   aModel->bgPt = new RooLognormal(Form("m%d_bgPt", mode), "background pT", *aModel->pt, *aModel->bgMu, *aModel->bgTau);
 #endif
