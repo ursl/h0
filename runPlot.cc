@@ -32,13 +32,13 @@ using namespace std;
 /*
  run default, all systematics and LUMI sig study:
  ------------------------------------------------
- bin/runPlot -s 1 -a hstat -m 10 -n 500 >& s1m10.log & 
- bin/runPlot -s 1 -a hstat -m 11 -n 500 >& s1m11.log & 
- bin/runPlot -s 1 -a hstat -m 12 -n 500 >& s1m12.log & 
- bin/runPlot -s 1 -a hstat -m 13 -n 500 >& s1m13.log & 
- bin/runPlot -s 2 -a hstat -m 11 -n 500 >& s2m11.log & 
- bin/runPlot -s 2 -a hstat -m 12 -n 500 >& s2m12.log & 
- bin/runPlot -s 2 -a hstat -m 13 -n 500 >& s2m13.log & 
+ bin/runPlot -s 1 -a hstat -m 10 -n 1000 >& s1m10.log & 
+ bin/runPlot -s 1 -a hstat -m 11 -n 1000 >& s1m11.log & 
+ bin/runPlot -s 1 -a hstat -m 12 -n 1000 >& s1m12.log & 
+ bin/runPlot -s 1 -a hstat -m 13 -n 1000 >& s1m13.log & 
+ bin/runPlot -s 2 -a hstat -m 11 -n 1000 >& s2m11.log & 
+ bin/runPlot -s 2 -a hstat -m 12 -n 1000 >& s2m12.log & 
+ bin/runPlot -s 2 -a hstat -m 13 -n 1000 >& s2m13.log & 
 
 */
 // ----------------------------------------------------------------------
