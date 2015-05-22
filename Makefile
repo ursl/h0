@@ -68,7 +68,7 @@ prep:
 clean:
 	rm -f $(addprefix obj/,$(ANA) $(READER) $(DICTFILES)) 
 	rm -f $(DICTHEADERS) 
-	rm -f bin/runH
+	rm -f bin/runH bin/runPlot
 	rm -f lib/*
 
 # -- ensure that the environment variable DELPHES is set

@@ -57,9 +57,9 @@ void plotHpt::loadFiles(string afiles) {
 	  sname = stype.substr(stype.rfind(",") + 1);
 	  cleanupString(sname); 
 	  sdecay = "m_{t}#rightarrow#infty";
-	  ds->fColor = kBlack; 
-	  ds->fLcolor = kBlack; 
-	  ds->fFcolor = kBlack; 
+	  ds->fColor = kGreen+3; 
+	  ds->fLcolor = kGreen+3; 
+	  ds->fFcolor = kGreen+3; 
 	  ds->fSymbol = 26; 
 	  ds->fFillStyle = 3356; 
 	} 

@@ -25,6 +25,7 @@
 #include "RooExponential.h"
 #include "RooChebychev.h"
 #include "RooGaussian.h"
+#include "RooLognormal.h"
 #include "RooPoisson.h"
 #include "RooPolynomial.h"
 #include "RooHistPdf.h"
@@ -71,6 +72,13 @@ using namespace RooFit;
 using namespace RooStats; 
 
 #include "plotHpt.icc"
+
+// ----------------------------------------------------------------------
+double fctLognormal(double *x, double *par) {
+  double logm0 = TMath::Log(200.);
+  double result = par[1]*ROOT::Math::lognormal_pdf(x[0], logm0, TMath::Log(par[0]), 0.);
+  return result;
+}
 
 // ----------------------------------------------------------------------
 plotHpt::plotHpt(string dir,  string files, string setup): plotClass(dir, files, setup), fWorkspace("w") {
@@ -330,7 +338,15 @@ void plotHpt::makeAll(int bitmask) {
   cout << "makeAll with bitmask = " << bitmask << endl;
   
   if (0 == bitmask) {
-    allNumbers5(); 
+    plot1();
+    plot1("genpt");
+
+    plot2("pt");
+    plot2("m");
+
+    system("bin/runPlot -s 10 -a hstat -m 0 -n 1");
+    return;
+
   }
   if (bitmask & 0x1) {
     treeAnalysis(1, -1, "UPDATE");
@@ -373,17 +389,18 @@ void plotHpt::makeAll(int bitmask) {
 
 
 // ----------------------------------------------------------------------
-void plotHpt::plot1(string what, double xmin, double xmax) {
+void plotHpt::plot1(string what, string sel, double xmin, double xmax) {
   vector<string> v;
   readHistograms(v); 
 
   gROOT->ForceStyle(); 
 
   zone(1);
+  shrinkPad(0.15, 0.15); 
   gPad->SetLogy(1);
-  string sel("goodcand");
-  string dsx("man60x");
-  string ds5("man605");
+
+  string dsx("manx");
+  string ds5("man5");
   string dss("sherpa");
 
   string histname = what + string("_") +  dsx + string("_") + sel; 
@@ -403,15 +420,17 @@ void plotHpt::plot1(string what, double xmin, double xmax) {
   hx->SetAxisRange(xmin, xmax, "X"); 
   hx->SetMarkerSize(1.5);
   if (what == "genpt") {
-    setTitles(hx, "p_{T}(#gamma #gamma) [GeV]", "d#sigma^{eff}/dp_{T} [fb/GeV]", 0.05, 1.1, 1.5); 
+    setTitles(hx, "p_{T}^{gen} [GeV]", "d#sigma^{eff}/dp_{T} [fb/GeV]", 0.05, 1.1, 1.5); 
+    hx->SetAxisRange(200., 1000., "X"); 
     hx->SetAxisRange(5.e-7, 3.e+1, "Y"); 
   } else if (what == "pt") {
-    setTitles(hx, "p^{rec}_{T}(#gamma #gamma) [GeV]", "d#sigma^{eff}/dp_{T} [fb/GeV]", 0.05, 1.1, 1.5); 
+    setTitles(hx, "p_{T} [GeV]", "d#sigma^{eff}/dp_{T} [fb/GeV]", 0.05, 1.1, 1.5); 
+    hx->SetAxisRange(300., 1000., "X"); 
     hx->SetAxisRange(5.e-7, 3.e+1, "Y"); 
   } else {
     hx->SetMaximum(5.e+1);
   }
-  hx->SetNdivisions(-404); 
+  hx->SetNdivisions(405); 
   hx->Draw();
 
   h5->Scale(1.e3/h5->GetBinWidth(1)); 
@@ -419,6 +438,54 @@ void plotHpt::plot1(string what, double xmin, double xmax) {
 
   hs->Scale(1.e3/hs->GetBinWidth(1)); 
   hs->Draw("same");
+
+
+  if (0) {
+    if (what == "pt") {
+      RooRealVar pt("pt", "pt", 300., 1000.); 
+      RooRealVar m0("m0","m0", 200.);
+      m0.setConstant(kTRUE); 
+      RooRealVar k("k","k", 3.0, 0., 1000.) ;
+      
+      RooLognormal bgPt("bgPt", "bgPt", pt, m0, k); 
+
+      TH1D *lHx = new TH1D("lHx", "", 70, 300., 1000.); lHx->Sumw2(); 
+      TH1D *lH5 = new TH1D("lH5", "", 70, 300., 1000.); lH5->Sumw2(); 
+      TH1D *lHs = new TH1D("lHs", "", 70, 300., 1000.); lHs->Sumw2(); 
+      for (int i = 31; i <= lHx->GetNbinsX(); ++i) {
+	lHx->SetBinContent(i - 30, hx->GetBinContent(i)); 
+	lHx->SetBinError(i - 30, hx->GetBinError(i)); 
+
+	lH5->SetBinContent(i - 30, h5->GetBinContent(i)); 
+	lH5->SetBinError(i - 30, h5->GetBinError(i)); 
+
+	lHs->SetBinContent(i - 30, hs->GetBinContent(i)); 
+	lHs->SetBinError(i - 30, hs->GetBinError(i)); 
+      }
+
+      RooDataHist hdataX("hdata","hdata", pt, Import(*lHx));
+      RooFitResult *rx = bgPt.fitTo(hdataX);
+
+      RooDataHist hdata5("hdata","hdata", pt, Import(*lH5));
+      RooFitResult *r5 = bgPt.fitTo(hdata5);
+
+      RooDataHist hdataS("hdata","hdata", pt, Import(*lHs));
+      RooFitResult *rs = bgPt.fitTo(hdataS);
+
+      RooPlot *plotPt = pt.frame(Title("  "));
+      hdataX.plotOn(plotPt, DataError(RooAbsData::SumW2));
+      hdata5.plotOn(plotPt, DataError(RooAbsData::SumW2));
+      hdataS.plotOn(plotPt, DataError(RooAbsData::SumW2));
+
+      bgPt.plotOn(plotPt);
+      bgPt.paramOn(plotPt, Layout(0.5, 0.9, 0.98));
+      plotPt->Draw("");
+
+
+    }
+
+  }
+
 
   newLegend(0.3, 0.7, 0.5, 0.85); 
 //   hx->SetFillStyle(0); hx->SetFillColor(0);  
@@ -435,8 +502,172 @@ void plotHpt::plot1(string what, double xmin, double xmax) {
 
 
 // ----------------------------------------------------------------------
-void plotHpt::plot2() {
-  
+void plotHpt::plot2(string what) {
+
+  vector<string> v;
+  readHistograms(v); 
+  norm2Lumi();
+  string sel("hipt"); 
+  if (what == "pt") sel = "goodcand";
+  sel = "hipt";
+
+  TH1D *hs0 = (TH1D*)fHists[Form("%s_sherpa_%s", what.c_str(), sel.c_str())]->Clone("hs0");
+  TH1D *hs1 = (TH1D*)fHists[Form("%s_sherpa_%s", what.c_str(), sel.c_str())]->Clone("hs1");
+  TH1D *hb = (TH1D*)fHists[Form("%s_sherpa_%s", what.c_str(), sel.c_str())]->Clone("hb");
+
+  TH1D *h1 = (TH1D*)fHists[Form("%s_man5_hipt", what.c_str())]->Clone("h1");
+  hs1->Add(h1); 
+
+  TH1D *h2 = (TH1D*)fHists[Form("%s_manx_hipt", what.c_str())]->Clone("h2");
+  hs0->Add(h2); 
+  hs0->SetMarkerSize(2.);
+  hs0->SetMarkerStyle(24);
+  hs0->SetMarkerColor(kBlue);
+  hs0->SetLineColor(kBlue);
+
+  hs1->SetMarkerColor(kGreen+2);
+  hs1->SetLineColor(kGreen+2);
+  hs1->SetMarkerSize(2.);
+  hs1->SetMarkerStyle(26);
+  hs1->SetTitle(""); 
+  if (what == "m") {
+    gPad->SetLogy(0);
+
+    RooRealVar sg5N("sg5N", "sgN", 10., 0., 10000.);
+    RooRealVar bg5N("bg5N", "bgN", 10., 0., 10000.);
+
+    RooRealVar sgxN("sgxN", "sgN", 10., 0., 10000.);
+    RooRealVar bgxN("bgxN", "bgN", 10., 0., 10000.);
+    
+    RooRealVar m("m", "m", 70., 180.); 
+    RooRealVar ms("ms", "ms", 9.4); 
+    RooRealVar mp("mp", "mp", 125.); 
+    
+    RooRealVar bg5slope("bg5slope",  "bgslope", 0.07, 0., 1.); 
+    RooGaussian sg5Pdf("sg5Pdf", "sgPdf", m, mp, ms); 
+    RooPolynomial bg5Pdf("bg5Pdf", "bgPdf", m, bg5slope); 
+    RooAddPdf m5Pdf("m5Pdf", "mPdf", RooArgList(sg5Pdf, bg5Pdf), RooArgList(sg5N, bg5N)); 
+
+    RooRealVar bgxslope("bgxslope",  "bgslope", 0.07, 0., 1.); 
+    RooGaussian sgxPdf("sgxPdf", "sgPdf", m, mp, ms); 
+    RooPolynomial bgxPdf("bgxPdf", "bgPdf", m, bgxslope); 
+    RooAddPdf mxPdf("mxPdf", "mPdf", RooArgList(sgxPdf, bgxPdf), RooArgList(sgxN, bgxN)); 
+    
+
+    RooDataHist hdata5("hdata5","hdata", m, Import(*hs1));
+    RooFitResult *r5 = m5Pdf.fitTo(hdata5, Save());
+
+    RooDataHist hdataX("hdataX","hdata", m, Import(*hs0));
+    RooFitResult *rx = mxPdf.fitTo(hdataX, Save());
+
+    RooPlot *plot5 = m.frame(Title("  "));
+    setTitles(plot5, "m [GeV]", Form("Average expected events / %d GeV", static_cast<int>(hs1->GetBinWidth(1))), 0.05, 1.1, 1.3);
+    hdata5.plotOn(plot5, DataError(RooAbsData::SumW2), MarkerColor(kGreen+2), LineColor(kGreen+2), MarkerStyle(26), MarkerSize(1.5));
+    m5Pdf.plotOn(plot5, LineColor(kGreen+2));
+    plot5->Draw();
+
+    RooPlot *plotX = m.frame(Title("  "));
+    //    setTitles(plot5, "p_{T} [GeV]", Form("Average expected Events / %d GeV", static_cast<int>(lH5->GetBinWidth(1))), 0.05, 1.1, 1.3);
+    hdataX.plotOn(plotX, DataError(RooAbsData::SumW2), MarkerColor(kBlue), LineColor(kBlue), MarkerStyle(24), MarkerSize(1.5));
+    mxPdf.plotOn(plotX, LineColor(kBlue));
+    plotX->Draw("same");
+
+  }
+
+  if (what == "pt") {
+    RooRealVar sx("sx", "s x", 1., 0., 100000.); 
+    RooRealVar bx("bx", "b x", 1., 0., 100000.); 
+    RooRealVar s5("s5", "s 5", 1., 0., 100000.); 
+    RooRealVar b5("b5", "b 5", 1., 0., 100000.); 
+    RooRealVar pt("pt", "pt", 300., 1000.); 
+
+    RooRealVar bg5m("bg5m","bg m", 39., 0., 1000.);
+    RooRealVar bg5k("bg5k","bg k", 2.04, 0., 1000.) ;
+    RooRealVar bgxm("bgxm","bg m", 39., 0., 1000.);
+    RooRealVar bgxk("bgxk","bg k", 2.04, 0., 1000.) ;
+
+    RooRealVar sg5m("sg5m","sg m", 40., 0., 1000.);
+    RooRealVar sg5k("sg5k","sg k", 2.2, 0., 1000.) ;
+    RooRealVar sgxm("sgxm","sg m", 40., 0., 1000.);
+    RooRealVar sgxk("sgxk","sg k", 2.2, 0., 1000.) ;
+    
+    RooLognormal bg5Pt("bg5Pt", "bgPt", pt, bg5m, bg5k); 
+    RooLognormal sg5Pt("sg5Pt", "bgPt", pt, sg5m, sg5k); 
+    RooLognormal bgxPt("bgxPt", "bgPt", pt, bgxm, bgxk); 
+    RooLognormal sgxPt("sgxPt", "bgPt", pt, sgxm, sgxk); 
+
+    RooAddPdf ptPdfx("ptPdfx", "ptPdf", RooArgList(sgxPt, bgxPt), RooArgList(sx, bx)); 
+    RooAddPdf ptPdf5("ptPdf5", "ptPdf", RooArgList(sg5Pt, bg5Pt), RooArgList(s5, b5)); 
+    
+    TH1D *lHx(0);
+    TH1D *lH5(0);
+
+    lHx = new TH1D("lHx", "", 70, 300., 1000.); lHx->Sumw2(); 
+    lH5 = new TH1D("lH5", "", 70, 300., 1000.); lH5->Sumw2(); 
+    
+    hb->SetAxisRange(300., 1000., "X");
+    hb->SetLineColor(kRed); 
+    
+    int hbbin; 
+    for (int i = 1; i <= 71; ++i) {
+      hbbin = hb->FindBin(299.) + i;
+      lHx->SetBinContent(i, hs0->GetBinContent(hbbin)); 
+      lHx->SetBinError(i, hs0->GetBinError(hbbin)); 
+      lH5->SetBinContent(i, hs1->GetBinContent(hbbin)); 
+      lH5->SetBinError(i, hs1->GetBinError(hbbin)); 
+    }
+    
+    RooDataHist hdataX("hdata","hdata", pt, Import(*lHx));
+    RooFitResult *rx = ptPdfx.fitTo(hdataX, Save());
+    
+    RooDataHist hdata5("hdata","hdata", pt, Import(*lH5));
+    RooFitResult *r5 = ptPdf5.fitTo(hdata5, Save());
+    
+    gPad->SetLogy(1);
+
+    RooPlot *plot5 = pt.frame(Title("  "), Bins(70));
+    plot5->SetNdivisions(-405);
+    setTitles(plot5, "p_{T} [GeV]", Form("Average expected Events / %d GeV", static_cast<int>(lH5->GetBinWidth(1))), 0.05, 1.1, 1.3);
+    hdata5.plotOn(plot5, DataError(RooAbsData::SumW2), MarkerColor(kGreen+2), LineColor(kGreen+2), MarkerStyle(26), MarkerSize(1.5));
+    ptPdf5.plotOn(plot5, LineColor(kGreen+2));
+    
+    plot5->SetMinimum(0.05);
+    plot5->Draw("");
+    
+    RooPlot *plotX = pt.frame(Title("  "), Bins(70));
+    //??    plotX->SetNdivisions(-405);
+    setTitles(plotX, "p_{T} [GeV]", Form("Average expected Events / %d GeV", static_cast<int>(lH5->GetNbinsX())));
+    hdataX.plotOn(plotX, DataError(RooAbsData::SumW2), MarkerColor(kBlue), LineColor(kBlue), MarkerStyle(24), MarkerSize(1.5));
+    ptPdfx.plotOn(plotX, LineColor(kBlue));
+    
+    plotX->SetMinimum(0.05);
+    plotX->Draw("same");
+
+    //    hb->Draw("same");
+  }
+
+  tl->SetTextFont(42);
+  tl->SetNDC(kTRUE);
+  tl->SetTextSize(0.04); 
+
+  if (what == "m") {
+    newLegend(0.3, 0.2, 0.6, 0.35, "Diphoton background plus"); 
+    tl->DrawLatex(0.2, 0.82, "#sqrt{s} = 14 TeV");
+    tl->DrawLatex(0.2, 0.77, "L = 1000 fb^{-1}");
+    tl->DrawLatex(0.2, 0.72, "p_{T} > 300 GeV");
+  } else if (what == "pt") {
+    newLegend(0.17, 0.17, 0.40, 0.32, "Diphoton background plus"); 
+    tl->DrawLatex(0.5, 0.82, "#sqrt{s} = 14 TeV");
+    tl->DrawLatex(0.5, 0.77, "L = 1000 fb^{-1}");
+    tl->DrawLatex(0.5, 0.72, "70 < m_{#gamma#gamma} < 180 GeV");
+  }
+  legg->SetTextAlign(13); 
+  legg->AddEntry(hs1, "Higgs m_{top} #rightarrow #infty", "p");
+  legg->AddEntry(hs0, "Higgs m_{top} = 173.5GeV ", "p");
+  legg->Draw();
+
+  c0->SaveAs(Form("%s/plot2-%s.pdf", fDirectory.c_str(), what.c_str())); 
+
 }
 
 

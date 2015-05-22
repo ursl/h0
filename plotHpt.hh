@@ -27,8 +27,8 @@ public :
 
   // -- Main analysis methods 
   void   makeAll(int bitmask = 0);
-  void   plot1(std::string what = "pt", double xmin = 200., double xmax = 1000.); 
-  void   plot2(); 
+  void   plot1(std::string what = "pt", std::string sel = "goodcand", double xmin = 200., double xmax = 1000.); 
+  void   plot2(std::string what = "m"); 
   virtual void treeAnalysis(int mask = 1, int nevts = -1, std::string opt = "RECREATE", std::string ds = ""); 
   void   massResolution(std::string hname = "mpt_mcatnlo5_nopt");
   // -- these two are historic 

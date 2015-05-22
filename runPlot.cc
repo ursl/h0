@@ -19,6 +19,7 @@
 using namespace std;
 
 // run plotHpt:          bin/runPlot -s 1 -c "PTLO=400;PTHI=10000;G0PT=100;g1PT=40"
+// create all plots:     bin/runPlot -s m -m 0
 // run run2D vanilla:    bin/runPlot -s 10 -a hstat -m 0 -n 1000
 // run run1D vanilla:    bin/runPlot -s 0  -a hstat -m 0 -n 1000
 // Run run1D sys no top: bin/runPlot -s 0  -a hstat -m 1 -n 1000
@@ -28,6 +29,18 @@ using namespace std;
 // run sigStudies lumi:  bin/runPlot -s 2  -a hstat -m 1 -n 1000
 // run sigStudies repr:  bin/runPlot -s 2  -a hstat -m 2 -n 1000
 // run ALL systematics:  bin/runPlot -s 1  -a hstat -n 2000
+/*
+ run default, all systematics and LUMI sig study:
+ ------------------------------------------------
+ bin/runPlot -s 1 -a hstat -m 10 -n 500 >& s1m10.log & 
+ bin/runPlot -s 1 -a hstat -m 11 -n 500 >& s1m11.log & 
+ bin/runPlot -s 1 -a hstat -m 12 -n 500 >& s1m12.log & 
+ bin/runPlot -s 1 -a hstat -m 13 -n 500 >& s1m13.log & 
+ bin/runPlot -s 2 -a hstat -m 11 -n 500 >& s2m11.log & 
+ bin/runPlot -s 2 -a hstat -m 12 -n 500 >& s2m12.log & 
+ bin/runPlot -s 2 -a hstat -m 13 -n 500 >& s2m13.log & 
+
+*/
 // ----------------------------------------------------------------------
 int main(int argc, char *argv[]) {
 
@@ -74,7 +87,7 @@ int main(int argc, char *argv[]) {
       a.run1D(ntoy, mode);
     } else if ("1" == setup) {
       a.setRndmSeed(rndms); 
-      a.systematics(ntoy);
+      a.systematics(mode, ntoy);
     } else if ("2" == setup) {
       a.setRndmSeed(rndms); 
       a.sigStudies(mode, ntoy);
