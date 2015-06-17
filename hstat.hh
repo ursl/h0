@@ -67,6 +67,7 @@ public :
   void run2D(int ntoys = 1000, int mode = 0); 
   void toy2D(); 
   void plotResults(); 
+  void plotResults1(); 
   void setGraph(TGraph *, int color, int fillStyle = 1000); 
 
   void setRndmSeed(int rndms) {fRndmSeed = rndms;}
@@ -83,9 +84,14 @@ private:
   int fRndmSeed; 
 
   // -- essential analysis numbers
-  double fSG0, fSG1, fBG; //unmutable const default parameters!
-  double fSG0TAU, fSG1TAU, fBGTAU; //unmutable const default parameters!
-  double fSG0MU, fSG1MU, fBGMU; //unmutable const default parameters!
+  double fCONSTSG0, fCONSTSG1, fCONSTBG; //unmutable const default parameters!
+  double fCONSTSG0TAU, fCONSTSG1TAU, fCONSTBGTAU; //unmutable const default parameters!
+  double fCONSTSG0MU, fCONSTSG1MU, fCONSTBGMU; //unmutable const default parameters!
+
+  // -- parameters for hypothesis definition
+  double fSG0, fSG1, fBG; 
+  double fSG0TAU, fSG1TAU, fBGTAU; 
+  double fSG0MU, fSG1MU, fBGMU; 
   
   double fSg0, fSg1, fBg; 
   double fHiggsMpeak, fHiggsMres;

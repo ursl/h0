@@ -119,6 +119,28 @@ hstat::hstat(string dir,  string files, string setup)  {
   MGGLO = 70.;
   MGGHI = 180.;
 
+  // -- const unmutable setup for 1/ab
+  fCONSTSG0 =   86; 
+  fCONSTSG1 =  150;
+  fCONSTBG  = 1363; 
+
+#ifdef EXPO
+  fCONSTSG0TAU = -0.0117118; 
+  fCONSTSG1TAU = -0.00791874;
+  fCONSTBGTAU  = -0.0135662;
+#else
+  // this is "k"
+  fCONSTSG0TAU = 2.20; 
+  fCONSTSG1TAU = 2.11;
+  fCONSTBGTAU  = 2.04;
+
+  // this is "mu"
+  fCONSTSG0MU = 40.;
+  fCONSTSG1MU = 95.;
+  fCONSTBGMU  = 39.;
+#endif
+
+  // -- hypothesis setup
   fSG0 =   86; 
   fSG1 =  150;
   fBG  = 1363; 
@@ -138,6 +160,7 @@ hstat::hstat(string dir,  string files, string setup)  {
   fSG1MU = 95.;
   fBGMU  = 39.;
 #endif
+
 
   fSg0 =   86; 
   fSg1 =  150;
@@ -425,7 +448,130 @@ void hstat::sigStudies(int mode, int n) {
   fTEX << "% ----------------------------------------------------------------------" << endl;
   
   TH1D *hsig(0); 
-  if (0 == mode) {
+  if (10 == mode) {
+    // -- significance vs background numbers
+    int nBINS(9); 
+    hsig = new TH1D("hsig", "nBG = 0 .. 2000", 40, 0., 2000.); 
+    double bg[] = {fBG, 200., 500., 750., 1000., 1250., 1500., 1750., 1950.};
+    hsig->GetXaxis()->SetTitle("N_{BG}");
+      for (int i = 0; i < nBINS; ++i) {
+	fBg = bg[i];
+	fBG = bg[i];
+	fSg0 = fSG0;
+	fSg1 = fSG1; 
+	cout << "XXXXXXXXXX run " << i << "  " << fBg << " .. " << fSg0 << " .. " << fSg1 << endl;
+	run2D(n, -1); 
+	if (fSeparation < 100.) {
+	  hsig->SetBinContent(hsig->FindBin(fBg), fSeparation); 
+	  hsig->SetBinError(hsig->FindBin(fBg), fSeparationE); 
+	}
+	fTEX << "sigStudies::nbg : " << fBg << " "  << fSg0 << " " << fSg1 << " " 
+	     << fSeparation << " +/- " << fSeparationE << endl;
+      }      
+  } else if (11 == mode) {
+    // -- significance vs lumi
+    int nBINS(6); 
+    hsig = new TH1D("hsig", "lumi = 500 .. 3000", 30, 500., 3500.); 
+    hsig->GetXaxis()->SetTitle("luminosity [/fb]");
+    double scale[] = {1.0, 0.5, 1.5, 2.0, 2.5, 3.0};
+    //    double scale[] = {1.0, 2.0, 3.0};
+    for (int i = 0; i < nBINS; ++i) {
+      fBg =  scale[i]*fCONSTBG; 
+      fBG =  scale[i]*fCONSTBG; 
+      fSg0 = scale[i]*fCONSTSG0;
+      fSG0 = scale[i]*fCONSTSG0;
+      fSg1 = scale[i]*fCONSTSG1; 
+      fSG1 = scale[i]*fCONSTSG1; 
+      cout << "XXXXXXXXXX run " << i << "  " << fBg << " .. " << fSg0 << " .. " << fSg1 << endl;
+      run2D(n, -1); 
+      if (fSeparation < 100.) {
+	hsig->SetBinContent(hsig->FindBin(scale[i]*1000.), fSeparation); 
+	hsig->SetBinError(hsig->FindBin(scale[i]*1000.), fSeparationE); 
+      }
+      fTEX << "sigStudies::lumi : " << scale[i] << " " << fBg << " "  << fSg0 << " " << fSg1 
+	   << " " << fSeparation << " +/- " << fSeparationE << endl;
+    }      
+  } else  if (12 == mode) {
+    // -- significance error from repeated trials
+    int nBINS(20); 
+    hsig = new TH1D("hsig", "run = 0 .. 9 ", 400, 1., 5.); 
+    hsig->GetXaxis()->SetTitle("significance");
+    for (int i = 0; i < nBINS; ++i) {
+      fBg =  fCONSTBG; 
+      fBG =  fCONSTBG; 
+      fSg0 = fCONSTSG0;
+      fSG0 = fCONSTSG0;
+      fSg1 = fCONSTSG1; 
+      fSG1 = fCONSTSG1; 
+      cout << "XXXXXXXXXX run " << i << "  " << fBg << " .. " << fSg0 << " .. " << fSg1 << endl;
+
+      run2D(n, -1); 
+      if (fSeparation < 100.) {
+	hsig->Fill(fSeparation); 
+      }
+      fTEX << "sigStudies::repeat : " << i << " " << fBg << " "  << fSg0 << " " << fSg1 
+	   << " " << fSeparation << " +/- " << fSeparationE << endl;
+    }      
+  } else  if (13 == mode) {
+    // -- significance vs signal error
+    int nBINS(4); 
+    TH1D *hLo = new TH1D("hLo", "error", 25, 1., 25.); 
+    TH1D *hHi = new TH1D("hHi", "error", 25, 1., 25.); 
+    double error[] = {3., 5., 10., 20.};
+    for (int i = 0; i < nBINS; ++i) {
+      fBg  = fCONSTBG; 
+      fBG  = fCONSTBG; 
+      fSg0 = fCONSTSG0 * (1. + 0.01*error[i]);
+      fSG0 = fCONSTSG0 * (1. + 0.01*error[i]);
+      fSg1 = fCONSTSG1 * (1. + 0.01*error[i]);
+      fSG1 = fCONSTSG1 * (1. + 0.01*error[i]);
+      cout << "XXXXXXXXXX run " << i << "  " << fBg << " .. " << fSg0 << " .. " << fSg1 << endl;
+      run2D(n, -1); 
+      if (fSeparation < 100.) {
+	hHi->SetBinContent(hHi->FindBin(error[i]), fSeparation); 
+      }
+
+      fTEX << "sigStudies::sigError : +" << error[i] << " " << fBg << " "  << fSg0 << " " << fSg1 
+	   << " " << fSeparation << " +/- " << fSeparationE << endl;
+
+      fBg  = fBG; 
+      fBG  = fBG; 
+      fSg0 = fSG0 * (1. - 0.01*error[i]);
+      fSG0 = fSG0 * (1. - 0.01*error[i]);
+      fSg1 = fSG1 * (1. - 0.01*error[i]);
+      fSG1 = fSG1 * (1. - 0.01*error[i]);
+      cout << "XXXXXXXXXX run " << i << "  " << fBg << " .. " << fSg0 << " .. " << fSg1 << endl;
+      run2D(n, -1); 
+      if (fSeparation < 100.) {
+	hLo->SetBinContent(hLo->FindBin(error[i]), fSeparation); 
+      }
+      fTEX << "sigStudies::sigError : -" << error[i] << " " << fBg << " "  << fSg0 << " " << fSg1 
+	   << " " << fSeparation << " +/- " << fSeparationE << endl;
+    }      
+    
+    TCanvas *c0 = (TCanvas*)gROOT->FindObject("c0"); 
+    if (!c0) c0 = new TCanvas("c0","--c0--",0,0,656,700);
+    c0->Clear();
+    gPad->SetLogy(0); 
+    hHi->SetMarkerStyle(20); 
+    hHi->Draw("p][");
+    hLo->SetMarkerStyle(21); 
+    hLo->Draw("p][same");
+    
+    c0->SaveAs(Form("hstat-sigStudies-%d-%d.pdf", mode, n)); 
+    fTEX.close();
+    
+    fHistFile = TFile::Open(Form("hstat-sigStudies-%d-%d.root", mode, n), "RECREATE"); 
+    hHi->SetDirectory(fHistFile); 
+    hHi->Write();
+    hLo->SetDirectory(fHistFile); 
+    hLo->Write();
+    fHistFile->Close();
+    fHistFile = 0; 
+    
+    return;
+    
+  } else if (0 == mode) {
     // -- significance vs background numbers
     int nBINS(9); 
     hsig = new TH1D("hsig", "nBG = 0 .. 2000", 40, 0., 2000.); 
@@ -444,7 +590,7 @@ void hstat::sigStudies(int mode, int n) {
       fTEX << "sigStudies::nbg : " << fBg << " "  << fSg0 << " " << fSg1 << " " 
 	   << fSeparation << " +/- " << fSeparationE << endl;
     }
-  } else  if (1 == mode) {
+  } else if (1 == mode) {
     // -- significance vs lumi
     int nBINS(6); 
     hsig = new TH1D("hsig", "lumi = 500 .. 3000", 30, 500., 3500.); 
@@ -463,7 +609,7 @@ void hstat::sigStudies(int mode, int n) {
       fTEX << "sigStudies::lumi : " << scale[i] << " " << fBg << " "  << fSg0 << " " << fSg1 
 	   << " " << fSeparation << " +/- " << fSeparationE << endl;
     }      
-  } else  if (2 == mode) {
+  } else if (2 == mode) {
     // -- significance error from repeated trials
     int nBINS(20); 
     hsig = new TH1D("hsig", "run = 0 .. 9 ", 400, 1., 5.); 
@@ -481,120 +627,8 @@ void hstat::sigStudies(int mode, int n) {
       fTEX << "sigStudies::repeat : " << i << " " << fBg << " "  << fSg0 << " " << fSg1 
 	   << " " << fSeparation << " +/- " << fSeparationE << endl;
     }      
-  } else if (10 == mode) {
-    // -- significance vs background numbers
-    int nBINS(9); 
-    hsig = new TH1D("hsig", "nBG = 0 .. 2000", 40, 0., 2000.); 
-    double bg[] = {fBG, 200., 500., 750., 1000., 1250., 1500., 1750., 1950.};
-    hsig->GetXaxis()->SetTitle("N_{BG}");
-      for (int i = 0; i < nBINS; ++i) {
-	fBg = bg[i];
-	fSg0 = fSG0;
-	fSg1 = fSG1; 
-	cout << "XXXXXXXXXX run " << i << "  " << fBg << " .. " << fSg0 << " .. " << fSg1 << endl;
-	run2D(n, -1); 
-	if (fSeparation < 100.) {
-	  hsig->SetBinContent(hsig->FindBin(fBg), fSeparation); 
-	  hsig->SetBinError(hsig->FindBin(fBg), fSeparationE); 
-	}
-	fTEX << "sigStudies::nbg : " << fBg << " "  << fSg0 << " " << fSg1 << " " 
-	     << fSeparation << " +/- " << fSeparationE << endl;
-      }      
-  } else  if (11 == mode) {
-    // -- significance vs lumi
-    int nBINS(6); 
-    hsig = new TH1D("hsig", "lumi = 500 .. 3000", 30, 500., 3500.); 
-    hsig->GetXaxis()->SetTitle("luminosity [/fb]");
-    double scale[] = {1.0, 0.5, 1.5, 2.0, 2.5, 3.0};
-    for (int i = 0; i < nBINS; ++i) {
-      fBg =  scale[i]*fBG; 
-      fSg0 = scale[i]*fSG0;
-      fSg1 = scale[i]*fSG1; 
-      cout << "XXXXXXXXXX run " << i << "  " << fBg << " .. " << fSg0 << " .. " << fSg1 << endl;
-      run2D(n, -1); 
-      if (fSeparation < 100.) {
-	hsig->SetBinContent(hsig->FindBin(scale[i]*1000.), fSeparation); 
-	hsig->SetBinError(hsig->FindBin(scale[i]*1000.), fSeparationE); 
-      }
-      fTEX << "sigStudies::lumi : " << scale[i] << " " << fBg << " "  << fSg0 << " " << fSg1 
-	   << " " << fSeparation << " +/- " << fSeparationE << endl;
-    }      
-  } else  if (12 == mode) {
-    // -- significance error from repeated trials
-    int nBINS(20); 
-    hsig = new TH1D("hsig", "run = 0 .. 9 ", 400, 1., 5.); 
-    hsig->GetXaxis()->SetTitle("significance");
-    for (int i = 0; i < nBINS; ++i) {
-      fBg =  fBG; 
-      fSg0 = fSG0;
-      fSg1 = fSG1; 
-      cout << "XXXXXXXXXX run " << i << "  " << fBg << " .. " << fSg0 << " .. " << fSg1 << endl;
-
-      run2D(n, -1); 
-      if (fSeparation < 100.) {
-	hsig->Fill(fSeparation); 
-      }
-      fTEX << "sigStudies::repeat : " << i << " " << fBg << " "  << fSg0 << " " << fSg1 
-	   << " " << fSeparation << " +/- " << fSeparationE << endl;
-    }      
-  } else  if (13 == mode) {
-    // -- significance vs signal error
-    int nBINS(4); 
-    TH1D *hLo = new TH1D("hLo", "error", 25, 1., 25.); 
-    TH1D *hHi = new TH1D("hHi", "error", 25, 1., 25.); 
-    double error[] = {3., 5., 10., 20.};
-    for (int i = 0; i < nBINS; ++i) {
-      fBg  = fBG; 
-      fSg0 = fSG0 * (1. + 0.01*error[i]);
-      fSg1 = fSG1 * (1. + 0.01*error[i]);
-      cout << "XXXXXXXXXX run " << i << "  " << fBg << " .. " << fSg0 << " .. " << fSg1 << endl;
-      run2D(n, -1); 
-      if (fSeparation < 100.) {
-	hHi->SetBinContent(hHi->FindBin(error[i]), fSeparation); 
-      }
-
-      fTEX << "sigStudies::sigError : +" << error[i] << " " << fBg << " "  << fSg0 << " " << fSg1 
-	   << " " << fSeparation << " +/- " << fSeparationE << endl;
-
-      fBg  = fBG; 
-      fSg0 = fSG0 * (1. - 0.01*error[i]);
-      fSg1 = fSG1 * (1. - 0.01*error[i]);
-      cout << "XXXXXXXXXX run " << i << "  " << fBg << " .. " << fSg0 << " .. " << fSg1 << endl;
-      run2D(n, -1); 
-      if (fSeparation < 100.) {
-	hLo->SetBinContent(hLo->FindBin(error[i]), fSeparation); 
-      }
-      fTEX << "sigStudies::sigError : -" << error[i] << " " << fBg << " "  << fSg0 << " " << fSg1 
-	   << " " << fSeparation << " +/- " << fSeparationE << endl;
-
-    }      
-    
-    
-    TCanvas *c0 = (TCanvas*)gROOT->FindObject("c0"); 
-    if (!c0) c0 = new TCanvas("c0","--c0--",0,0,656,700);
-    c0->Clear();
-    hHi->SetMarkerStyle(20); 
-    hHi->Draw("p][");
-    hLo->SetMarkerStyle(21); 
-    hLo->Draw("p][same");
-    
-    c0->SaveAs(Form("hstat-sigStudies-%d-%d.pdf", mode, n)); 
-    fTEX.close();
-    
-    fHistFile = TFile::Open(Form("hstat-sigStudies-%d-%d.root", mode, n), "RECREATE"); 
-    hHi->SetDirectory(fHistFile); 
-    hHi->Write();
-    hLo->SetDirectory(fHistFile); 
-    hLo->Write();
-    fHistFile->Close();
-    fHistFile = 0; 
-    
-    return;
-
-  } else {
-    return;
   }
-
+    
   TCanvas *c0 = (TCanvas*)gROOT->FindObject("c0"); 
   if (!c0) c0 = new TCanvas("c0","--c0--",0,0,656,700);
   c0->Clear();
@@ -1066,9 +1100,6 @@ void hstat::run2D(int ntoys, int mode) {
   if ((0 == mode || -1 == mode)) {
     //     fSg1Tau = fSg0Tau; 
     //     fBgTau = fSg0Tau; 
-    fSg0    = fSG0;
-    fSg1    = fSG1;
-    fBg     = fBG;
     fSg0Tau = fSG0TAU;
     fSg1Tau = fSG1TAU;
     fBgTau  = fBGTAU;
@@ -1077,16 +1108,16 @@ void hstat::run2D(int ntoys, int mode) {
     fBgMu   = fBGMU;
     cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
     cout << "No systematics: " << RooRandom::randomGenerator()->GetSeed() << endl;
-    cout << "Input: sg0N = " << fSg0 << endl;
-    cout << "Input: sg1N = " << fSg1 << endl;
-    cout << "Input: bgN  = " << fBg << endl;
-    cout << "Input: sg0T = " << fSg0Tau << endl;
-    cout << "Input: sg0M = " << fSg0Mu << endl;
-    cout << "Input: sg1T = " << fSg1Tau << endl;
-    cout << "Input: sg1M = " << fSg1Mu << endl;
-    cout << "Input: bgT  = " << fBgTau << endl;
-    cout << "Input: bgM  = " << fBgMu << endl; 
-   cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    cout << "Input: sg0N = " << fSg0 << " SG0N = " << fSG0 << endl;
+    cout << "Input: sg1N = " << fSg1 << " SG1N = " << fSG1 << endl;
+    cout << "Input: bgN  = " << fBg << " BGN = " << fBG << endl;
+    cout << "Input: sg0T = " << fSg0Tau << " SG0T = " << fSG0TAU << endl;
+    cout << "Input: sg0M = " << fSg0Mu << " SG0MU = " << fSG0MU << endl;
+    cout << "Input: sg1T = " << fSg1Tau << " SG1T = " << fSG1TAU << endl;
+    cout << "Input: sg1M = " << fSg1Mu << " SG1MU = " << fSG1MU << endl;
+    cout << "Input: bgT  = " << fBgTau << " BGT = " << fBGTAU << endl;
+    cout << "Input: bgM  = " << fBgMu << " BGMU = " << fBGMU << endl; 
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
     for (int i = 0; i < ntoys; ++i) {
       hsg0->Fill(fSg0); 
       hsg1->Fill(fSg1); 
@@ -1103,12 +1134,14 @@ void hstat::run2D(int ntoys, int mode) {
       ht1->Fill(2.*(fD1M1 - fD1M0));
     }
     // -- make plot
+    int bacSeed = RooRandom::randomGenerator()->GetSeed();
     cout << "create plot" << endl;
     RooRandom::randomGenerator()->SetSeed(1234);
     fDoPlot = true; 
     fDoPlotName = Form("2dfit-%d", mode); 
     toy2D();
     fDoPlot = false; 
+    RooRandom::randomGenerator()->SetSeed(bacSeed);
   } else if (101 == TMath::Abs(mode)) {
     double syst(0.17); 
     if (mode > 0) {
@@ -1153,22 +1186,24 @@ void hstat::run2D(int ntoys, int mode) {
     }
     // -- make plot
     cout << "create plot" << endl;
+    int bacSeed = RooRandom::randomGenerator()->GetSeed();
     RooRandom::randomGenerator()->SetSeed(1234);
     fDoPlot = true; 
     fDoPlotName = Form("2dfit-%d", mode); 
     toy2D();
     fDoPlot = false; 
+    RooRandom::randomGenerator()->SetSeed(bacSeed);
   } else if (102 == TMath::Abs(mode)) {
     double syst(0.4); 
     double systTau(0.0), systMu(0); 
     if (mode > 0) {
       syst = 1. + syst;
       fBgTau = fBGTAU + systTau;
-      fBgMu  = fBGTAU + systMu;
+      fBgMu  = fBGMU + systMu;
     } else {
       syst = 1. - syst;
       fBgTau = fBGTAU - systTau;
-      fBgMu  = fBGTAU - systMu;
+      fBgMu  = fBGMU - systMu;
     }
     fSg0    = fSG0;
     fSg1    = fSG1;
@@ -1197,11 +1232,21 @@ void hstat::run2D(int ntoys, int mode) {
       hsg0->Fill(fSg0); 
       hsg1->Fill(fSg1); 
       hrat->Fill(fSg1/fSg0); 
+      fDoPlot = false; 
       toy2D();
       
       ht0->Fill(2.*(fD0M1 - fD0M0));    
       ht1->Fill(2.*(fD1M1 - fD1M0));
     }
+    // -- make plot
+    cout << "create plot" << endl;
+    int bacSeed = RooRandom::randomGenerator()->GetSeed();
+    RooRandom::randomGenerator()->SetSeed(1234);
+    fDoPlot = true; 
+    fDoPlotName = Form("2dfit-%d", mode); 
+    toy2D();
+    fDoPlot = false; 
+    RooRandom::randomGenerator()->SetSeed(bacSeed);
   } else if (103 == TMath::Abs(mode)) {
     double syst(0.2); 
     double systTau(0.0), systMu(0.0); 
@@ -1249,10 +1294,12 @@ void hstat::run2D(int ntoys, int mode) {
       ht0->Fill(2.*(fD0M1 - fD0M0));    
       ht1->Fill(2.*(fD1M1 - fD1M0));
     }
+    int bacSeed = RooRandom::randomGenerator()->GetSeed();
     RooRandom::randomGenerator()->SetSeed(1234);
     fDoPlot = true; 
     fDoPlotName = Form("2dfit-%d", mode); 
     toy2D();
+    RooRandom::randomGenerator()->SetSeed(bacSeed);
   } else if (1 == mode) {
     double syst(0.17); 
     cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
@@ -1964,7 +2011,98 @@ void hstat::setGraph(TGraph *g, int color, int fillStyle) {
 }
 
 // ----------------------------------------------------------------------
+// This is the LOGNORMAL version
 void hstat::plotResults() {
+
+  TCanvas *c0 = (TCanvas*)gROOT->FindObject("c0"); 
+  if (!c0) c0 = new TCanvas("c0","--c0--",0,0,656,700);
+  c0->Clear();
+
+  double sig0 = 2.98593;
+
+  // -- various signficance ranges for index
+  //    0: background uncertainty (12 == mode)
+  //    1: scale uncertainty (13 == mode)
+  //    2: missing top calculations (11 == mode)
+
+  const double sig0Lo[] = {3.60458, 3.41723, 3.66894};
+  const double sig0Hi[] = {4.81397, 4.62856, 4.5463};
+
+  double errLo[] = {sig0 - sig0Lo[0], sig0 - sig0Lo[1], sig0 - sig0Lo[2]};
+  double errHi[] = {sig0Hi[0] - sig0, sig0Hi[1] - sig0, sig0Hi[2] - sig0};
+
+  double erelLo[] = {errLo[0]/sig0, errLo[1]/sig0,  errLo[2]/sig0};
+  double erelHi[] = {errHi[0]/sig0, errHi[1]/sig0,  errHi[2]/sig0};
+
+  // -- Significances: 
+  double x[] =   {500.,    1000.,   1500.,   2000.,   2500.,   3000.};
+  double sig[] = {2.13119, 2.98593, 3.39139, 3.71484, 3.74889, 3.98193};
+  double eBare[] = {0., 0., 0., 0., 0., 0.};
+  double e0Lo[6], e0Hi[6];
+  double e1Lo[6], e1Hi[6];
+  double e2Lo[6], e2Hi[6];
+  double eALo[6], eAHi[6];
+
+  for (int i = 0; i < 6; ++i) {
+    e0Lo[i] = sig[i]*erelLo[0];
+    e0Hi[i] = sig[i]*erelHi[0];
+
+    e1Lo[i] = sig[i]*TMath::Sqrt(erelLo[0]*erelLo[0] + erelLo[1]*erelLo[1]);
+    e1Hi[i] = sig[i]*TMath::Sqrt(erelHi[0]*erelHi[0] + erelHi[1]*erelHi[1]);
+
+    eALo[i] = sig[i]*TMath::Sqrt(erelLo[0]*erelLo[0] + erelLo[1]*erelLo[1] + erelLo[2]*erelLo[2]);
+    eAHi[i] = sig[i]*TMath::Sqrt(erelHi[0]*erelHi[0] + erelHi[1]*erelHi[1] + erelHi[2]*erelHi[2]);
+  }
+  
+  TGraphAsymmErrors *gBare = new TGraphAsymmErrors(6, x, sig, eBare, eBare, eBare, eBare); 
+  setGraph(gBare, kBlack, 1000); 
+
+  TGraphAsymmErrors *g0 = new TGraphAsymmErrors(6, x, sig, eBare, eBare, e0Lo, e0Hi); 
+  setGraph(g0, kCyan+2, 1000); 
+
+  TGraphAsymmErrors *g1 = new TGraphAsymmErrors(6, x, sig, eBare, eBare, e1Lo, e1Hi); 
+  setGraph(g1, kCyan+1, 1000); 
+
+  TGraphAsymmErrors *gA = new TGraphAsymmErrors(6, x, sig, eBare, eBare, eALo, eAHi); 
+  setGraph(gA, kYellow-3, 1000); 
+
+  gA->SetMinimum(0.);
+  
+  //  zone(2,2);
+  gA->Draw("a3");
+  g1->Draw("3");
+  g0->Draw("3");
+  gBare->Draw("c");
+
+  TLatex *tl = new TLatex(); 
+  tl->SetNDC(kTRUE);
+  tl->SetTextFont(42);
+  tl->DrawLatex(0.2, 0.8, "#sqrt{s} = 14 TeV");
+
+  TLegend *legg = new TLegend(0.3, 0.2, 0.8, 0.4); 
+  legg->SetFillStyle(0); 
+  legg->SetBorderSize(0); 
+  legg->SetTextSize(0.04);  
+  legg->SetFillColor(0); 
+  legg->SetTextFont(42); 
+
+  legg->AddEntry(gBare, "central expectation", "l"); 
+  legg->AddEntry(g0, "background uncertainty", "f"); 
+  legg->AddEntry(g1, "scale uncertainty", "f"); 
+  legg->AddEntry(gA, "missing top calculations", "f"); 
+  
+  legg->Draw();
+
+  c0->SaveAs(Form("%s/result-lumi.pdf", fDirectory.c_str())); 
+
+}
+
+
+
+
+// ----------------------------------------------------------------------
+// this is with the EXPO paramtrization
+void hstat::plotResults1() {
 
   TCanvas *c0 = (TCanvas*)gROOT->FindObject("c0"); 
   if (!c0) c0 = new TCanvas("c0","--c0--",0,0,656,700);
