@@ -2012,6 +2012,7 @@ void hstat::setGraph(TGraph *g, int color, int fillStyle) {
 
 // ----------------------------------------------------------------------
 // This is the LOGNORMAL version
+// show experimental and theoretical errors separately
 void hstat::plotResults() {
 
   TCanvas *c0 = (TCanvas*)gROOT->FindObject("c0"); 
@@ -2021,56 +2022,104 @@ void hstat::plotResults() {
   double sig0 = 2.98593;
 
   // -- various signficance ranges for index
-  //    0: background uncertainty (12 == mode)
-  //    1: scale uncertainty (13 == mode)
-  //    2: missing top calculations (11 == mode)
+  //    0: sampling error
+  //    1: background uncertainty (12 == mode)
+  //    2: scale uncertainty (13 == mode)
+  //    3: missing top calculations (11 == mode)
 
-  const double sig0Lo[] = {3.60458, 3.41723, 3.66894};
-  const double sig0Hi[] = {4.81397, 4.62856, 4.5463};
+  const int nexp(2), nthy(2); 
+  const int nerr(nexp+nthy);
+  const double sig0Lo[nerr] = {2.90817, 2.56711, 2.47062, 2.51942};
+  const double sig0Hi[nerr] = {3.06369, 3.11513, 3.45626, 3.16759};
 
-  double errLo[] = {sig0 - sig0Lo[0], sig0 - sig0Lo[1], sig0 - sig0Lo[2]};
-  double errHi[] = {sig0Hi[0] - sig0, sig0Hi[1] - sig0, sig0Hi[2] - sig0};
+  double errLo[nerr]; 
+  double errHi[nerr];
 
-  double erelLo[] = {errLo[0]/sig0, errLo[1]/sig0,  errLo[2]/sig0};
-  double erelHi[] = {errHi[0]/sig0, errHi[1]/sig0,  errHi[2]/sig0};
+  for (int i = 0; i < nerr; ++i) {
+    errLo[i] = (sig0 - sig0Lo[i])/sig0;
+    errHi[i] = (sig0Hi[i] - sig0)/sig0;
 
-  // -- Significances: 
-  double x[] =   {500.,    1000.,   1500.,   2000.,   2500.,   3000.};
-  double sig[] = {2.13119, 2.98593, 3.39139, 3.71484, 3.74889, 3.98193};
-  double eBare[] = {0., 0., 0., 0., 0., 0.};
-  double e0Lo[6], e0Hi[6];
-  double e1Lo[6], e1Hi[6];
-  double e2Lo[6], e2Hi[6];
-  double eALo[6], eAHi[6];
+    cout << "rel error " << i << ": " << errLo[i] << " .. " << errHi[i] << endl;
+  }
 
-  for (int i = 0; i < 6; ++i) {
-    e0Lo[i] = sig[i]*erelLo[0];
-    e0Hi[i] = sig[i]*erelHi[0];
+  // -- Significances vs lumi: 
+  const int nlumi(6);
+  double x[nlumi] =   {500.,    1000.,   1500.,   2000.,   2500.,   3000.};
+  //  double sig[] = {2.13119, 2.98593, 3.39139, 3.71484, 3.74889, 3.98193};
+  double sig[nlumi] = {1.99009, 2.99744, 3.34701, 3.63724, 3.73092, 4.02801};
 
-    e1Lo[i] = sig[i]*TMath::Sqrt(erelLo[0]*erelLo[0] + erelLo[1]*erelLo[1]);
-    e1Hi[i] = sig[i]*TMath::Sqrt(erelHi[0]*erelHi[0] + erelHi[1]*erelHi[1]);
+  double eBare[nlumi] = {0., 0., 0., 0., 0., 0.};
 
-    eALo[i] = sig[i]*TMath::Sqrt(erelLo[0]*erelLo[0] + erelLo[1]*erelLo[1] + erelLo[2]*erelLo[2]);
-    eAHi[i] = sig[i]*TMath::Sqrt(erelHi[0]*erelHi[0] + erelHi[1]*erelHi[1] + erelHi[2]*erelHi[2]);
+  double e0Lo[nlumi], e0Hi[nlumi];
+  double e1Lo[nlumi], e1Hi[nlumi];
+  double e2Lo[nlumi], e2Hi[nlumi];
+  double eALo[nlumi], eAHi[nlumi];
+
+  double eSysLo[nexp][nlumi], eSysHi[nexp][nlumi];
+  double eThyLo[nthy][nlumi], eThyHi[nthy][nlumi];
+  
+  for (int i = 0; i < nlumi; ++i) {
+
+    // -- running quadratic sum
+    for (int j = 0; j < nexp; ++j) {
+      if (0 == j) {
+	eSysLo[j][i] = errLo[j]*errLo[j];
+	eSysHi[j][i] = errHi[j]*errHi[j];
+      } else {
+	eSysLo[j][i] = eSysLo[j-1][i] + errLo[j]*errLo[j];
+	eSysHi[j][i] = eSysHi[j-1][i] + errHi[j]*errHi[j];
+      }
+      cout << "a lumi " << i << " eSysLo[" << j << "][" << i << "] = " << eSysLo[j][i] 
+	   << " (" << TMath::Sqrt(eSysLo[j][i]) << ") " 
+	   << " eSysHi[" << j << "][" << i << "] = " << eSysHi[j][i] 
+	   << endl;
+    }
+    
+    for (int j = nexp; j < nerr; ++j) {
+      if (nexp == j) {
+	eThyLo[j][i] = errLo[j]*errLo[j];
+	eThyHi[j][i] = errHi[j]*errHi[j];
+      } else {
+	eThyLo[j][i] = eThyLo[j-1][i] + errLo[j]*errLo[j];
+	eThyHi[j][i] = eThyHi[j-1][i] + errHi[j]*errHi[j];
+      }
+    }
+
+    // -- sqrt
+    for (int j = 0; j < nexp; ++j) {
+      eSysLo[j][i] = sig[i]*TMath::Sqrt(eSysLo[j][i]); 
+      eSysHi[j][i] = sig[i]*TMath::Sqrt(eSysHi[j][i]); 
+      cout << "c lumi " << i << " eSysLo[" << j << "][" << i << "] = " << eSysLo[j][i] 
+	   << " (" << TMath::Sqrt(eSysLo[j][i]) << ") "
+	   << " eSysHi[" << j << "][" << i << "] = " << eSysHi[j][i] 
+	   << " (" << TMath::Sqrt(eSysHi[j][i]) << ") "
+	   << endl;
+    }
+
+    for (int j = nexp; j < nerr; ++j) {
+      eThyLo[j][i] = sig[i]*TMath::Sqrt(eThyLo[j][i]); 
+      eThyHi[j][i] = sig[i]*TMath::Sqrt(eThyHi[j][i]); 
+    }
+
   }
   
   TGraphAsymmErrors *gBare = new TGraphAsymmErrors(6, x, sig, eBare, eBare, eBare, eBare); 
   setGraph(gBare, kBlack, 1000); 
 
-  TGraphAsymmErrors *g0 = new TGraphAsymmErrors(6, x, sig, eBare, eBare, e0Lo, e0Hi); 
+  //  TGraphAsymmErrors *g0 = new TGraphAsymmErrors(6, x, sig, eBare, eBare, e0Lo, e0Hi); 
+  double errGrLo[nlumi], errGrHi[nlumi];
+  for (int i = 0; i < nlumi; ++i) {
+    errGrLo[i] = eSysLo[0][i];
+    errGrHi[i] = eSysHi[0][i];
+  }
+  TGraphAsymmErrors *g0 = new TGraphAsymmErrors(6, x, sig, eBare, eBare, errGrLo, errGrHi); 
   setGraph(g0, kCyan+2, 1000); 
 
-  TGraphAsymmErrors *g1 = new TGraphAsymmErrors(6, x, sig, eBare, eBare, e1Lo, e1Hi); 
+  TGraphAsymmErrors *g1 = new TGraphAsymmErrors(6, x, sig, eBare, eBare, eSysLo[1], eSysHi[1]); 
   setGraph(g1, kCyan+1, 1000); 
 
-  TGraphAsymmErrors *gA = new TGraphAsymmErrors(6, x, sig, eBare, eBare, eALo, eAHi); 
-  setGraph(gA, kYellow-3, 1000); 
-
-  gA->SetMinimum(0.);
-  
   //  zone(2,2);
-  gA->Draw("a3");
-  g1->Draw("3");
+  g1->Draw("a3");
   g0->Draw("3");
   gBare->Draw("c");
 
@@ -2087,9 +2136,8 @@ void hstat::plotResults() {
   legg->SetTextFont(42); 
 
   legg->AddEntry(gBare, "central expectation", "l"); 
-  legg->AddEntry(g0, "background uncertainty", "f"); 
-  legg->AddEntry(g1, "scale uncertainty", "f"); 
-  legg->AddEntry(gA, "missing top calculations", "f"); 
+  legg->AddEntry(g0, "sampling uncertainty", "f"); 
+  legg->AddEntry(g1, "background uncertainty", "f"); 
   
   legg->Draw();
 
