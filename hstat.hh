@@ -47,7 +47,7 @@ class TGraph;
 class hstat: public TObject {
 
 public :
-  hstat(std::string dir = "hpt0", std::string files = "plotHpt.files", std::string setup = "m");
+  hstat(double lumi = 1., std::string dir = "hpt0", std::string files = "plotHpt.files", std::string setup = "m");
   virtual        ~hstat();
 
   model* genModel1(int mode, double nsg, double nbg);
@@ -71,6 +71,7 @@ public :
   void setGraph(TGraph *, int color, int fillStyle = 1000); 
 
   void setRndmSeed(int rndms) {fRndmSeed = rndms;}
+  void setLumi(double lumi) {fLumi = lumi;}
 
   void testTools(int nbins = 400); 
   void findMidPoint(TH1D* hq0, TH1D* hq1, double &midpoint, double &tailprob, double &lo, double &hi);
@@ -81,6 +82,7 @@ private:
   int NBINS;
   double MGGLO, MGGHI; 
 
+  double fLumi; 
   int fRndmSeed; 
 
   // -- essential analysis numbers

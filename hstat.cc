@@ -94,8 +94,10 @@ double gaussBifurcated(double *x, double *par) {
 
 
 // ----------------------------------------------------------------------
-hstat::hstat(string dir,  string files, string setup)  {
+hstat::hstat(double lumi, string dir,  string files, string setup)  {
 
+  fLumi = lumi; 
+  fDoPlotName = Form("2dfit-lumi-%2.1f-setup-%s", fLumi, setup.c_str()); 
   fNtoy = 1000; 
   fSetup = setup;
 
@@ -141,9 +143,9 @@ hstat::hstat(string dir,  string files, string setup)  {
 #endif
 
   // -- hypothesis setup
-  fSG0 =   86; 
-  fSG1 =  150;
-  fBG  = 1363; 
+  fSG0 =  fLumi*fCONSTSG0; 
+  fSG1 =  fLumi*fCONSTSG1;
+  fBG  =  fLumi*fCONSTBG; 
 
 #ifdef EXPO
   fSG0TAU = -0.0117118; 
@@ -161,10 +163,9 @@ hstat::hstat(string dir,  string files, string setup)  {
   fBGMU  = 39.;
 #endif
 
-
-  fSg0 =   86; 
-  fSg1 =  150;
-  fBg  = 1363; 
+  fSg0 = fSG0; 
+  fSg1 = fSG1;
+  fBg  = fBG; 
 
   fHiggsMpeak = 125.0; 
   fHiggsMres  =   9.4;
@@ -328,6 +329,8 @@ void hstat::systematics(int mode, int n) {
 
   int ntoys(n); 
 
+  fDoPlotName = Form("2dfit-syst-lumi-%2.1f-setup-%s-mode-%d-n-%d", fLumi, fSetup.c_str(), mode, n); 
+
   // -- no systematics 2D
   if (10 == mode) {
     RooRandom::randomGenerator()->SetSeed(fRndmSeed);
@@ -443,6 +446,8 @@ void hstat::systematics(int mode, int n) {
 
 // ----------------------------------------------------------------------
 void hstat::sigStudies(int mode, int n) {
+
+  fDoPlotName = Form("2dfit-sigStudies-lumi-%2.1f-setup-%s-mode-%d-n-%d", fLumi, fSetup.c_str(), mode, n); 
 
   fTEX.open(fTexFileName.c_str(), ios::app);
   fTEX << "% ----------------------------------------------------------------------" << endl;
@@ -1072,9 +1077,9 @@ void hstat::toy1D() {
 // ----------------------------------------------------------------------
 void hstat::run2D(int ntoys, int mode) {
 
-  TH1D *ht0 = new TH1D("ht0", "prof t = -2ln(lambda), lambda = L(t, v^^)/L(t^, v^)", 1000, -40., 40.); 
+  TH1D *ht0 = new TH1D("ht0", "prof t = -2ln(lambda), lambda = L(t, v^^)/L(t^, v^)", 2000, -80., 80.); 
   ht0->SetLineColor(kBlue); 
-  TH1D *ht1 = new TH1D("ht1", "prof t = -2ln(lambda), lambda = L(t, v^^)/L(t^, v^)", 1000, -40., 40.); 
+  TH1D *ht1 = new TH1D("ht1", "prof t = -2ln(lambda), lambda = L(t, v^^)/L(t^, v^)", 2000, -80., 80.); 
   ht1->SetLineColor(kRed); 
 
   TH1D *hsg0 = (TH1D*)gROOT->Get("hsg0"); 
@@ -1138,7 +1143,6 @@ void hstat::run2D(int ntoys, int mode) {
     cout << "create plot" << endl;
     RooRandom::randomGenerator()->SetSeed(1234);
     fDoPlot = true; 
-    fDoPlotName = Form("2dfit-%d", mode); 
     toy2D();
     fDoPlot = false; 
     RooRandom::randomGenerator()->SetSeed(bacSeed);
@@ -1189,7 +1193,6 @@ void hstat::run2D(int ntoys, int mode) {
     int bacSeed = RooRandom::randomGenerator()->GetSeed();
     RooRandom::randomGenerator()->SetSeed(1234);
     fDoPlot = true; 
-    fDoPlotName = Form("2dfit-%d", mode); 
     toy2D();
     fDoPlot = false; 
     RooRandom::randomGenerator()->SetSeed(bacSeed);
@@ -1243,7 +1246,6 @@ void hstat::run2D(int ntoys, int mode) {
     int bacSeed = RooRandom::randomGenerator()->GetSeed();
     RooRandom::randomGenerator()->SetSeed(1234);
     fDoPlot = true; 
-    fDoPlotName = Form("2dfit-%d", mode); 
     toy2D();
     fDoPlot = false; 
     RooRandom::randomGenerator()->SetSeed(bacSeed);
@@ -1297,7 +1299,6 @@ void hstat::run2D(int ntoys, int mode) {
     int bacSeed = RooRandom::randomGenerator()->GetSeed();
     RooRandom::randomGenerator()->SetSeed(1234);
     fDoPlot = true; 
-    fDoPlotName = Form("2dfit-%d", mode); 
     toy2D();
     RooRandom::randomGenerator()->SetSeed(bacSeed);
   } else if (1 == mode) {
@@ -1815,19 +1816,21 @@ void  hstat::findMidPoint(TH1D* hq0, TH1D* hq1, double &midpoint, double &tailpr
   double iq0(0), iq1(0), delta(0.); 
   int nbinsx = hq0->GetNbinsX()+1;
   TH1D *nq0 = (TH1D*)hq0->Clone("nq0");
-  nq0->Scale(1./nq0->GetSumOfWeights());
+  //  nq0->Scale(1./nq0->GetSumOfWeights());
+  nq0->Scale(1./nq0->Integral());
   TH1D *nq1 = (TH1D*)hq1->Clone("nq1");
-  nq1->Scale(1./nq1->GetSumOfWeights());
+  //  nq1->Scale(1./nq1->GetSumOfWeights());
+  nq1->Scale(1./nq1->Integral());
   for (int i = 0; i < nbinsx; ++i) {
     iq0 = nq0->Integral(0, i); 
-    iq1 = nq1->Integral(i, nbinsx); 
+    iq1 = nq1->Integral(i, nbinsx+1); 
     if (iq0 > iq1) {
       midpoint = nq0->GetBinCenter(i); 
       if ((iq0 - iq1) > delta) {
 	cout << "taking previous, delta = " << delta << " while this one has iq0 = " << iq0 << " and iq1 = " << iq1 << endl;
 	midpoint = nq0->GetBinCenter(i-1); 
 	iq0 = nq0->Integral(0, i-1); 
-	iq1 = nq1->Integral(i-1, nbinsx); 
+	iq1 = nq1->Integral(i-1, nbinsx+1); 
       }
       break;
     }
@@ -1849,7 +1852,7 @@ void  hstat::findMidPoint(TH1D* hq0, TH1D* hq1, double &midpoint, double &tailpr
 
   // -- printout for confirmation
   iq0 = nq0->Integral(0, nq0->FindBin(midpoint)+1); 
-  iq1 = nq1->Integral(nq0->FindBin(midpoint)+1, nbinsx); 
+  iq1 = nq1->Integral(nq0->FindBin(midpoint)+1, nbinsx+1); 
   cout << " next "
        << Form(" iq0: %5.4f, iq1: %5.4f, diff: %5.4f", iq0, iq1, iq1-iq0)
        << " at " << nq0->GetBinCenter(nq0->FindBin(midpoint)+1)
@@ -2039,8 +2042,14 @@ void hstat::plotResults() {
     errLo[i] = (sig0 - sig0Lo[i])/sig0;
     errHi[i] = (sig0Hi[i] - sig0)/sig0;
 
-    cout << "rel error " << i << ": " << errLo[i] << " .. " << errHi[i] << endl;
-  }
+  // -- Significances: 
+  double x[] =   {500.,    1000.,   1500.,   2000.,   2500.,   3000.};
+  double sig[] = {1.99009, 2.99744, 3.34701, 3.63724, 3.73092, 4.02801};
+  double eBare[] = {0., 0., 0., 0., 0., 0.};
+  double e0Lo[6], e0Hi[6];
+  double e1Lo[6], e1Hi[6];
+  double e2Lo[6], e2Hi[6];
+  double eALo[6], eAHi[6];
 
   // -- Significances vs lumi: 
   const int nlumi(6);

@@ -31,6 +31,9 @@ using namespace std;
 /*
  run default, all systematics and LUMI sig study:
  ------------------------------------------------
+ bin/runPlot -s 10 -a hstat -m 0 -n 1000 -l 1 >& s10m10-1.log &
+ bin/runPlot -s 10 -a hstat -m 0 -n 1000 -l 2 >& s10m10-2.log &
+ bin/runPlot -s 10 -a hstat -m 0 -n 1000 -l 3 >& s10m10-3.log &
  bin/runPlot -s 1 -a hstat -m 10 -n 1000 >& s1m10.log & 
  bin/runPlot -s 1 -a hstat -m 11 -n 1000 >& s1m11.log & 
  bin/runPlot -s 1 -a hstat -m 12 -n 1000 >& s1m12.log & 
@@ -51,12 +54,14 @@ int main(int argc, char *argv[]) {
     ana("plotHpt");
   
   int mode(-1), ntoy(2000), rndms(111); 
+  double lumi(1.); 
   // -- command line arguments
   for (int i = 0; i < argc; i++){
     if (!strcmp(argv[i], "-a"))  {ana    = string(argv[++i]);}
     if (!strcmp(argv[i], "-c"))  {cuts   = string(argv[++i]);}
     if (!strcmp(argv[i], "-d"))  {dir    = string(argv[++i]);}
     if (!strcmp(argv[i], "-f"))  {ifiles = string(argv[++i]);}
+    if (!strcmp(argv[i], "-l"))  {lumi   = static_cast<double>(atof(argv[++i]));}
     if (!strcmp(argv[i], "-m"))  {mode   = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-n"))  {ntoy   = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-r"))  {rndms  = atoi(argv[++i]);}
@@ -80,7 +85,7 @@ int main(int argc, char *argv[]) {
       a.makeAll(1); 
     } 
   } else if (ana == "hstat") {
-    hstat a; 
+    hstat a(lumi); 
     if ("0" == setup) {
       a.setRndmSeed(rndms); 
       a.run1D(ntoy, mode);
