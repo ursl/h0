@@ -2022,7 +2022,7 @@ void hstat::plotResults() {
   if (!c0) c0 = new TCanvas("c0","--c0--",0,0,656,700);
   c0->Clear();
 
-  double sig0 = 2.98593;
+  double sig0 = 2.99744;
 
   // -- various signficance ranges for index
   //    0: sampling error
@@ -2034,42 +2034,26 @@ void hstat::plotResults() {
   const int nerr(nexp+nthy);
   const double sig0Lo[nerr] = {2.90817, 2.56711, 2.47062, 2.51942};
   const double sig0Hi[nerr] = {3.06369, 3.11513, 3.45626, 3.16759};
-
+  
   double errLo[nerr]; 
   double errHi[nerr];
 
   for (int i = 0; i < nerr; ++i) {
     errLo[i] = (sig0 - sig0Lo[i])/sig0;
     errHi[i] = (sig0Hi[i] - sig0)/sig0;
+  }
 
-  // -- Significances: 
-  double x[] =   {500.,    1000.,   1500.,   2000.,   2500.,   3000.};
-  double sig[] = {1.99009, 2.99744, 3.34701, 3.63724, 3.73092, 4.02801};
-  double eBare[] = {0., 0., 0., 0., 0., 0.};
-  double e0Lo[6], e0Hi[6];
-  double e1Lo[6], e1Hi[6];
-  double e2Lo[6], e2Hi[6];
-  double eALo[6], eAHi[6];
-
-  // -- Significances vs lumi: 
+  // -- Significances vs lumi:  grep sigma: s10m10-*.log
   const int nlumi(6);
   double x[nlumi] =   {500.,    1000.,   1500.,   2000.,   2500.,   3000.};
-  //  double sig[] = {2.13119, 2.98593, 3.39139, 3.71484, 3.74889, 3.98193};
   double sig[nlumi] = {1.99009, 2.99744, 3.34701, 3.63724, 3.73092, 4.02801};
 
   double eBare[nlumi] = {0., 0., 0., 0., 0., 0.};
 
-  double e0Lo[nlumi], e0Hi[nlumi];
-  double e1Lo[nlumi], e1Hi[nlumi];
-  double e2Lo[nlumi], e2Hi[nlumi];
-  double eALo[nlumi], eAHi[nlumi];
-
-  double eSysLo[nexp][nlumi], eSysHi[nexp][nlumi];
-  double eThyLo[nthy][nlumi], eThyHi[nthy][nlumi];
+  double eSysLo[nerr][nlumi], eSysHi[nerr][nlumi];
   
+  // -- running quadratic sum for experimental systematic errors
   for (int i = 0; i < nlumi; ++i) {
-
-    // -- running quadratic sum
     for (int j = 0; j < nexp; ++j) {
       if (0 == j) {
 	eSysLo[j][i] = errLo[j]*errLo[j];
@@ -2078,59 +2062,84 @@ void hstat::plotResults() {
 	eSysLo[j][i] = eSysLo[j-1][i] + errLo[j]*errLo[j];
 	eSysHi[j][i] = eSysHi[j-1][i] + errHi[j]*errHi[j];
       }
-      cout << "a lumi " << i << " eSysLo[" << j << "][" << i << "] = " << eSysLo[j][i] 
-	   << " (" << TMath::Sqrt(eSysLo[j][i]) << ") " 
+      if (0) cout << "a lumi " << i << "/" << j << " eSysLo[" << j << "][" << i << "] = " << eSysLo[j][i] 
+	   << " sqrt = (" << TMath::Sqrt(eSysLo[j][i]) << ") " 
 	   << " eSysHi[" << j << "][" << i << "] = " << eSysHi[j][i] 
+	   << " sqrt = (" << TMath::Sqrt(eSysHi[j][i]) << ") " 
 	   << endl;
     }
-    
-    for (int j = nexp; j < nerr; ++j) {
-      if (nexp == j) {
-	eThyLo[j][i] = errLo[j]*errLo[j];
-	eThyHi[j][i] = errHi[j]*errHi[j];
-      } else {
-	eThyLo[j][i] = eThyLo[j-1][i] + errLo[j]*errLo[j];
-	eThyHi[j][i] = eThyHi[j-1][i] + errHi[j]*errHi[j];
-      }
-    }
+  }    
 
-    // -- sqrt
+  // -- running linear sum for theory errors
+  for (int i = 0; i < nlumi; ++i) {
+    for (int j = nexp; j < nerr; ++j) {
+      if (j == nexp) {
+	eSysLo[j][i] = errLo[j];
+	eSysHi[j][i] = errHi[j];
+      } else {
+	eSysLo[j][i] = eSysLo[j-1][i] + errLo[j];
+	eSysHi[j][i] = eSysHi[j-1][i] + errHi[j];
+      }
+      if (0) cout << "b lumi " << i << "/" << j << " eSysLo[" << j << "][" << i << "] = " << eSysLo[j][i] 
+	   << " sqrt = (" << TMath::Sqrt(eSysLo[j][i]) << ") " 
+	   << " eSysHi[" << j << "][" << i << "] = " << eSysHi[j][i] 
+	   << " sqrt = (" << TMath::Sqrt(eSysHi[j][i]) << ") " 
+	   << endl;
+    }
+  }
+
+  // -- sqrt for systematic errors
+  for (int i = 0; i < nlumi; ++i) {
     for (int j = 0; j < nexp; ++j) {
       eSysLo[j][i] = sig[i]*TMath::Sqrt(eSysLo[j][i]); 
       eSysHi[j][i] = sig[i]*TMath::Sqrt(eSysHi[j][i]); 
-      cout << "c lumi " << i << " eSysLo[" << j << "][" << i << "] = " << eSysLo[j][i] 
+      if (0) cout << "c lumi " << i << " eSysLo[" << j << "][" << i << "] = " << eSysLo[j][i] 
 	   << " (" << TMath::Sqrt(eSysLo[j][i]) << ") "
 	   << " eSysHi[" << j << "][" << i << "] = " << eSysHi[j][i] 
 	   << " (" << TMath::Sqrt(eSysHi[j][i]) << ") "
 	   << endl;
     }
-
-    for (int j = nexp; j < nerr; ++j) {
-      eThyLo[j][i] = sig[i]*TMath::Sqrt(eThyLo[j][i]); 
-      eThyHi[j][i] = sig[i]*TMath::Sqrt(eThyHi[j][i]); 
-    }
-
   }
-  
-  TGraphAsymmErrors *gBare = new TGraphAsymmErrors(6, x, sig, eBare, eBare, eBare, eBare); 
+
+  // -- no sqrt for theory errors
+  for (int i = 0; i < nlumi; ++i) {
+    for (int j = nexp; j < nerr; ++j) {
+      eSysLo[j][i] = sig[i]*eSysLo[j][i]; 
+      eSysHi[j][i] = sig[i]*eSysHi[j][i]; 
+      if (0) cout << "c lumi " << i << " eSysLo[" << j << "][" << i << "] = " << eSysLo[j][i] 
+	   << " (" << TMath::Sqrt(eSysLo[j][i]) << ") "
+	   << " eSysHi[" << j << "][" << i << "] = " << eSysHi[j][i] 
+	   << " (" << TMath::Sqrt(eSysHi[j][i]) << ") "
+	   << endl;
+    }
+  }
+
+
+  // -- display systematic errors
+  TGraphAsymmErrors *gBare = new TGraphAsymmErrors(nlumi, x, sig, eBare, eBare, eBare, eBare); 
   setGraph(gBare, kBlack, 1000); 
 
-  //  TGraphAsymmErrors *g0 = new TGraphAsymmErrors(6, x, sig, eBare, eBare, e0Lo, e0Hi); 
   double errGrLo[nlumi], errGrHi[nlumi];
   for (int i = 0; i < nlumi; ++i) {
     errGrLo[i] = eSysLo[0][i];
     errGrHi[i] = eSysHi[0][i];
   }
-  TGraphAsymmErrors *g0 = new TGraphAsymmErrors(6, x, sig, eBare, eBare, errGrLo, errGrHi); 
-  setGraph(g0, kCyan+2, 1000); 
+  TGraphAsymmErrors *gSys0 = new TGraphAsymmErrors(nlumi, x, sig, eBare, eBare, errGrLo, errGrHi); 
+  setGraph(gSys0, kCyan+2, 1000); 
 
-  TGraphAsymmErrors *g1 = new TGraphAsymmErrors(6, x, sig, eBare, eBare, eSysLo[1], eSysHi[1]); 
-  setGraph(g1, kCyan+1, 1000); 
+  for (int i = 0; i < nlumi; ++i) {
+    errGrLo[i] = eSysLo[1][i];
+    errGrHi[i] = eSysHi[1][i];
+  }
+  TGraphAsymmErrors *gSys1 = new TGraphAsymmErrors(nlumi, x, sig, eBare, eBare, errGrLo, errGrHi); 
+  setGraph(gSys1, kCyan+1, 1000); 
 
-  //  zone(2,2);
-  g1->Draw("a3");
-  g0->Draw("3");
-  gBare->Draw("c");
+  double YMAX(5.2);
+  gSys1->SetMaximum(YMAX);
+
+  gSys1->Draw("a3");
+  gSys0->Draw("3");
+  gBare->Draw("l");
 
   TLatex *tl = new TLatex(); 
   tl->SetNDC(kTRUE);
@@ -2145,12 +2154,56 @@ void hstat::plotResults() {
   legg->SetTextFont(42); 
 
   legg->AddEntry(gBare, "central expectation", "l"); 
-  legg->AddEntry(g0, "sampling uncertainty", "f"); 
-  legg->AddEntry(g1, "background uncertainty", "f"); 
+  legg->AddEntry(gSys0, "sampling uncertainty", "f"); 
+  legg->AddEntry(gSys1, "background uncertainty", "f"); 
   
   legg->Draw();
 
-  c0->SaveAs(Form("%s/result-lumi.pdf", fDirectory.c_str())); 
+  c0->SaveAs(Form("%s/result-sys-lumi.pdf", fDirectory.c_str())); 
+
+
+
+  // -- display theory errors
+  for (int i = 0; i < nlumi; ++i) {
+    errGrLo[i] = eSysLo[2][i];
+    errGrHi[i] = eSysHi[2][i];
+  }
+  TGraphAsymmErrors *gThy0 = new TGraphAsymmErrors(nlumi, x, sig, eBare, eBare, errGrLo, errGrHi); 
+  setGraph(gThy0, kGreen-1, 1000); 
+
+  for (int i = 0; i < nlumi; ++i) {
+    errGrLo[i] = eSysLo[3][i];
+    errGrHi[i] = eSysHi[3][i];
+  }
+  TGraphAsymmErrors *gThy1 = new TGraphAsymmErrors(nlumi, x, sig, eBare, eBare, errGrLo, errGrHi); 
+  setGraph(gThy1, kGreen-2, 1000); 
+
+
+  gThy1->SetMaximum(YMAX);
+  gThy1->Draw("a3");
+  gThy0->Draw("3");
+  gBare->Draw("l");
+
+  tl->SetNDC(kTRUE);
+  tl->SetTextFont(42);
+  tl->DrawLatex(0.2, 0.8, "#sqrt{s} = 14 TeV");
+
+  legg = new TLegend(0.3, 0.2, 0.8, 0.4); 
+  legg->SetFillStyle(0); 
+  legg->SetBorderSize(0); 
+  legg->SetTextSize(0.04);  
+  legg->SetFillColor(0); 
+  legg->SetTextFont(42); 
+
+  legg->AddEntry(gBare, "central expectation", "l"); 
+  legg->AddEntry(gThy0, "scale uncertainties", "f"); 
+  legg->AddEntry(gThy1, "missing top mass effects", "f"); 
+  
+  legg->Draw();
+
+  c0->SaveAs(Form("%s/result-thy-lumi.pdf", fDirectory.c_str())); 
+
+
 
 }
 
