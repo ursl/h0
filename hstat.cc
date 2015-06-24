@@ -1314,7 +1314,7 @@ void hstat::run2D(int ntoys, int mode) {
     toy2D();
     RooRandom::randomGenerator()->SetSeed(bacSeed);
   } else if (104 == TMath::Abs(mode)) {
-    double syst(0.10); 
+    double syst(0.20); 
     fSg0Tau = fSG0TAU;
     fSg1Tau = fSG1TAU;
     fBgTau  = fBGTAU;
@@ -2089,14 +2089,15 @@ void hstat::plotResults() {
 
   // -- various signficance ranges for index
   //    0: sampling error
-  //    1: background uncertainty (12 == mode)
-  //    2: scale uncertainty (13 == mode)
-  //    3: missing top calculations (11 == mode)
+  //    1: efficiency uncertainty (14 == mode)
+  //    2: background uncertainty (12 == mode)
+  //    3: scale uncertainty (13 == mode)
+  //    4: missing top calculations (11 == mode)
 
-  const int nexp(2), nthy(2); 
+  const int nexp(3), nthy(2); 
   const int nerr(nexp+nthy);
-  const double sig0Lo[nerr] = {2.90817, 2.56711, 2.47062, 2.51942};
-  const double sig0Hi[nerr] = {3.06369, 3.11513, 3.45626, 3.16759};
+  const double sig0Lo[nerr] = {2.90817, 2.70   , 2.56711, 2.47062, 2.51942};
+  const double sig0Hi[nerr] = {3.06369, 3.28   , 3.11513, 3.45626, 3.16759};
   
   double errLo[nerr]; 
   double errHi[nerr];
@@ -2188,19 +2189,27 @@ void hstat::plotResults() {
     errGrHi[i] = eSysHi[0][i];
   }
   TGraphAsymmErrors *gSys0 = new TGraphAsymmErrors(nlumi, x, sig, eBare, eBare, errGrLo, errGrHi); 
-  setGraph(gSys0, kCyan+2, 1000); 
+  setGraph(gSys0, kCyan+3, 1000); 
 
   for (int i = 0; i < nlumi; ++i) {
     errGrLo[i] = eSysLo[1][i];
     errGrHi[i] = eSysHi[1][i];
   }
   TGraphAsymmErrors *gSys1 = new TGraphAsymmErrors(nlumi, x, sig, eBare, eBare, errGrLo, errGrHi); 
-  setGraph(gSys1, kCyan+1, 1000); 
+  setGraph(gSys1, kCyan+2, 1000); 
+
+  for (int i = 0; i < nlumi; ++i) {
+    errGrLo[i] = eSysLo[2][i];
+    errGrHi[i] = eSysHi[2][i];
+  }
+  TGraphAsymmErrors *gSys2 = new TGraphAsymmErrors(nlumi, x, sig, eBare, eBare, errGrLo, errGrHi); 
+  setGraph(gSys2, kCyan+1, 1000); 
 
   double YMAX(5.2);
   gSys1->SetMaximum(YMAX);
 
-  gSys1->Draw("a3");
+  gSys2->Draw("a3");
+  gSys1->Draw("3");
   gSys0->Draw("3");
   gBare->Draw("l");
 
@@ -2218,7 +2227,8 @@ void hstat::plotResults() {
 
   legg->AddEntry(gBare, "central expectation", "l"); 
   legg->AddEntry(gSys0, "sampling uncertainty", "f"); 
-  legg->AddEntry(gSys1, "background uncertainty", "f"); 
+  legg->AddEntry(gSys1, "efficiency uncertainty", "f"); 
+  legg->AddEntry(gSys2, "background uncertainty", "f"); 
   
   legg->Draw();
 
@@ -2228,15 +2238,15 @@ void hstat::plotResults() {
 
   // -- display theory errors
   for (int i = 0; i < nlumi; ++i) {
-    errGrLo[i] = eSysLo[2][i];
-    errGrHi[i] = eSysHi[2][i];
+    errGrLo[i] = eSysLo[nexp][i];
+    errGrHi[i] = eSysHi[nexp][i];
   }
   TGraphAsymmErrors *gThy0 = new TGraphAsymmErrors(nlumi, x, sig, eBare, eBare, errGrLo, errGrHi); 
   setGraph(gThy0, kGreen-1, 1000); 
 
   for (int i = 0; i < nlumi; ++i) {
-    errGrLo[i] = eSysLo[3][i];
-    errGrHi[i] = eSysHi[3][i];
+    errGrLo[i] = eSysLo[nexp+1][i];
+    errGrHi[i] = eSysHi[nexp+1][i];
   }
   TGraphAsymmErrors *gThy1 = new TGraphAsymmErrors(nlumi, x, sig, eBare, eBare, errGrLo, errGrHi); 
   setGraph(gThy1, kGreen-2, 1000); 
