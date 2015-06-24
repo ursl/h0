@@ -374,6 +374,18 @@ void hstat::systematics(int mode, int n) {
     cout << "2d sScale: " << Form("%4.3f .. %4.3f", sScaleLo, sScaleHi) << endl;
   }
 
+  // -- signal efficiency
+  if (14 == mode) {
+    RooRandom::randomGenerator()->SetSeed(fRndmSeed);
+    run2D(ntoys, 104); 
+    double sEffLo = fSeparation; 
+    RooRandom::randomGenerator()->SetSeed(fRndmSeed);
+    run2D(ntoys, -104); 
+    double sEffHi = fSeparation; 
+    fTEX << "2d sEff: " << Form("%4.3f .. %4.3f", sEffLo, sEffHi) << endl;
+    cout << "2d sEff: " << Form("%4.3f .. %4.3f", sEffLo, sEffHi) << endl;
+  }
+
 
 
   // -- no systematics
@@ -1301,6 +1313,57 @@ void hstat::run2D(int ntoys, int mode) {
     fDoPlot = true; 
     toy2D();
     RooRandom::randomGenerator()->SetSeed(bacSeed);
+  } else if (104 == TMath::Abs(mode)) {
+    double syst(0.10); 
+    fSg0Tau = fSG0TAU;
+    fSg1Tau = fSG1TAU;
+    fBgTau  = fBGTAU;
+    fSg0Mu  = fSG0MU;
+    fSg1Mu  = fSG1MU;
+    fBgMu   = fBGMU;
+    if (mode > 0) {
+      syst = 1. + syst;
+    } else {
+      syst = 1. - syst;
+    }
+    fSg0 = fSG0*syst; 
+    fSg1 = fSG1*syst;
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    cout << "systematics from efficiency systematics, syst = " << syst 
+	 << ", " << RooRandom::randomGenerator()->GetSeed() << endl;
+    cout << "Input: sg0N = " << fSg0 << endl;
+    cout << "Input: sg1N = " << fSg1 << endl;
+    cout << "Input: bgN  = " << fBg << endl;
+    cout << "Input: sg0T = " << fSg0Tau << endl;
+    cout << "Input: sg0M = " << fSg0Mu << endl;
+    cout << "Input: sg1T = " << fSg1Tau << endl;
+    cout << "Input: sg1M = " << fSg1Mu << endl;
+    cout << "Input: bgT  = " << fBgTau << endl;
+    cout << "Input: bgM  = " << fBgMu << endl;
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    for (int i = 0; i < ntoys; ++i) {
+      cout << "XXXXXX run " << i << ", fSg0 = " << fSg0 << ", fSg1 = " << fSg1 << ", fSg1/fSg0 = " << fSg1/fSg0 
+	   << ", fBg = " << fBg 
+	   << ", fSg0/Sg1/BgTau = " << fSg0Tau << "/" << fSg0Tau << "/" << fBgTau
+	   << ", fSg0/Sg1/BgMu = " << fSg0Mu << "/" << fSg0Mu << "/" << fBgMu
+	   << endl;
+      hsg0->Fill(fSg0); 
+      hsg1->Fill(fSg1); 
+      hrat->Fill(fSg1/fSg0); 
+      fDoPlot = false; 
+      toy2D();
+      
+      ht0->Fill(2.*(fD0M1 - fD0M0));    
+      ht1->Fill(2.*(fD1M1 - fD1M0));
+    }
+    // -- make plot
+    cout << "create plot" << endl;
+    int bacSeed = RooRandom::randomGenerator()->GetSeed();
+    RooRandom::randomGenerator()->SetSeed(1234);
+    fDoPlot = true; 
+    toy2D();
+    fDoPlot = false; 
+    RooRandom::randomGenerator()->SetSeed(bacSeed);
   } else if (1 == mode) {
     double syst(0.17); 
     cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
@@ -1415,7 +1478,7 @@ void hstat::run2D(int ntoys, int mode) {
   cout << "sigma(hi): " << 2.*RooStats::PValueToSignificance(hi) << endl;
   cout << "----------------------------------------------------------------------" << endl;
   
-  if (mode != -1) c0->SaveAs(Form("hstat2d-%d-%d.pdf", mode, ntoys)); 
+  if (mode != -1) c0->SaveAs(Form("hstat2d-%s-%d-%d.pdf", fSetup.c_str(), mode, ntoys)); 
   
 }
 

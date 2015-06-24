@@ -38,6 +38,7 @@ using namespace std;
  bin/runPlot -s 1 -a hstat -m 11 -n 1000 >& s1m11.log & 
  bin/runPlot -s 1 -a hstat -m 12 -n 1000 >& s1m12.log & 
  bin/runPlot -s 1 -a hstat -m 13 -n 1000 >& s1m13.log & 
+ bin/runPlot -s 1 -a hstat -m 14 -n 1000 >& s1m14.log & 
  bin/runPlot -s 2 -a hstat -m 11 -n 1000 >& s2m11.log & 
  bin/runPlot -s 2 -a hstat -m 12 -n 1000 >& s2m12.log & 
  bin/runPlot -s 2 -a hstat -m 13 -n 1000 >& s2m13.log & 
