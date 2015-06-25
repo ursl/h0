@@ -2069,7 +2069,10 @@ void hstat::setGraph(TGraph *g, int color, int fillStyle) {
   g->SetFillStyle(fillStyle); 
 
   g->GetXaxis()->SetTitle("Luminosity #kern[-0.3]{[}fb^{-1}#kern[0.3]{]}");
-  g->GetYaxis()->SetTitle("expected separation [#sigma]");
+  g->GetYaxis()->SetTitle("expected separation #kern[-0.3]{[}#sigma#kern[0.3]{]}");
+
+  g->GetXaxis()->SetNdivisions(505);
+  g->GetXaxis()->SetLimits(500., 3000.);
 
   g->SetLineColor(color); 
   g->SetMarkerColor(color); 
@@ -2096,8 +2099,8 @@ void hstat::plotResults() {
 
   const int nexp(3), nthy(2); 
   const int nerr(nexp+nthy);
-  const double sig0Lo[nerr] = {2.90817, 2.70   , 2.56711, 2.47062, 2.51942};
-  const double sig0Hi[nerr] = {3.06369, 3.28   , 3.11513, 3.45626, 3.16759};
+  const double sig0Lo[nerr] = {2.90817, 2.52298, 2.56711, 2.47062, 2.51942};
+  const double sig0Hi[nerr] = {3.06369, 3.17784, 3.11513, 3.45626, 3.16759};
   
   double errLo[nerr]; 
   double errHi[nerr];
@@ -2206,12 +2209,13 @@ void hstat::plotResults() {
   setGraph(gSys2, kCyan+1, 1000); 
 
   double YMAX(5.2);
-  gSys1->SetMaximum(YMAX);
-
+  gSys2->SetMaximum(YMAX);
+  gSys2->SetMinimum(0.01);
   gSys2->Draw("a3");
   gSys1->Draw("3");
   gSys0->Draw("3");
   gBare->Draw("l");
+  gPad->RedrawAxis();
 
   TLatex *tl = new TLatex(); 
   tl->SetNDC(kTRUE);
@@ -2253,9 +2257,11 @@ void hstat::plotResults() {
 
 
   gThy1->SetMaximum(YMAX);
+  gThy1->SetMinimum(0.01);
   gThy1->Draw("a3");
   gThy0->Draw("3");
   gBare->Draw("l");
+  gPad->RedrawAxis();
 
   tl->SetNDC(kTRUE);
   tl->SetTextFont(42);
