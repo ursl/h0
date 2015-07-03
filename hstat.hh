@@ -66,7 +66,7 @@ public :
   // -- 2D 
   void run2D(int ntoys = 1000, int mode = 0); 
   void toy2D(); 
-  void plotResults(); 
+  void plotResults(int fitOption = 0); 
   void plotResults1(); 
   void setGraph(TGraph *, int color, int fillStyle = 1000); 
 

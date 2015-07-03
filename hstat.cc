@@ -2082,13 +2082,11 @@ void hstat::setGraph(TGraph *g, int color, int fillStyle) {
 // ----------------------------------------------------------------------
 // This is the LOGNORMAL version
 // show experimental and theoretical errors separately
-void hstat::plotResults() {
+void hstat::plotResults(int fitOption) {
 
   TCanvas *c0 = (TCanvas*)gROOT->FindObject("c0"); 
   if (!c0) c0 = new TCanvas("c0","--c0--",0,0,656,700);
   c0->Clear();
-
-  double sig0 = 2.99744;
 
   // -- various signficance ranges for index
   //    0: sampling error
@@ -2099,6 +2097,7 @@ void hstat::plotResults() {
 
   const int nexp(3), nthy(2); 
   const int nerr(nexp+nthy);
+  double sig0 = 2.99744;
   const double sig0Lo[nerr] = {2.90817, 2.52298, 2.56711, 2.47062, 2.51942};
   const double sig0Hi[nerr] = {3.06369, 3.17784, 3.11513, 3.45626, 3.16759};
   
@@ -2111,10 +2110,61 @@ void hstat::plotResults() {
   }
 
   // -- Significances vs lumi:  grep sigma: s10m10-*.log
+  //  const int nlumi(6);
+  //  double x[nlumi] =   {500.,    1000.,   1500.,   2000.,   2500.,   3000.};
+  //  double sig[nlumi] = {1.99009, 2.99744, 3.34701, 3.63724, 3.73092, 4.02801};
+
+  // -- Significances vs lumi:  grep sigma: s10m10-*5k.log
+  // t3ui16>grep sigma: s10m10*5k.log
+  // s10m10-0.5-5k.log:sigma:     2.10302 +/- 0.02
+  // s10m10-1.0-5k.log:sigma:     2.96496 +/- 0.02
+  // s10m10-1.5-5k.log:sigma:     3.45203 +/- 0.02
+  // s10m10-2.0-5k.log:sigma:     3.6893 +/- 0.02
+  // s10m10-2.5-5k.log:sigma:     3.9558 +/- 0.02
+  // s10m10-3.0-5k.log:sigma:     4.16115 +/- 0.02
+  
+  // -- and now for 10k: 
+  // t3ui16>grep sigma: s10m10-*-10k.log
+  // s10m10-0.5-10k.log:sigma:     2.06194 +/- 0.02
+  // s10m10-1.0-10k.log:sigma:     2.94444 +/- 0.02
+  // s10m10-1.5-10k.log:sigma:     3.47835 +/- 0.02
+  // s10m10-2.0-10k.log:sigma:     3.72295 +/- 0.02
+  // s10m10-2.5-10k.log:sigma:     3.92423 +/- 0.02
+  // s10m10-3.0-10k.log:sigma:     4.1281 +/- 0.02
+
+
   const int nlumi(6);
   double x[nlumi] =   {500.,    1000.,   1500.,   2000.,   2500.,   3000.};
-  double sig[nlumi] = {1.99009, 2.99744, 3.34701, 3.63724, 3.73092, 4.02801};
+  double sig[nlumi] = {2.06194, 2.94444, 3.47835, 3.72295, 3.92423, 4.1281};
 
+  // -- fit significances
+  if (1 == fitOption) {
+    TGraphAsymmErrors *gFit = new TGraphAsymmErrors(nlumi, x, sig); 
+    gFit->SetMaximum(5.2);
+    gFit->SetMinimum(0.01);
+    TF1 *f1 = new TF1("f1", "[0]*TMath::Power(x-[1], [2])", 500., 3000.); 
+    f1->SetParameters(0.07, -500., 0.5); 
+    //    f1->FixParameter(2, 0.5);
+    gFit->Fit(f1, "");
+    gFit->Draw("a*");
+    f1->SetLineWidth(2); 
+    f1->SetLineColor(kBlue); 
+    f1->Draw("csame");
+
+    TLatex *tl = new TLatex(); 
+    tl->SetNDC(kTRUE);
+    tl->SetTextSize(0.04);
+    
+    for (int i = 0; i < nlumi; ++i) {
+      string text = Form("l = %4.0f: %4.3f -> %4.3f", x[i], sig[i], f1->Eval(x[i])); 
+      tl->DrawLatex(0.4, 0.5-i*0.04, text.c_str()); 
+      sig[i] = f1->Eval(x[i]); 
+    }
+
+    c0->SaveAs(Form("%s/result-fit-lumi.pdf", fDirectory.c_str())); 
+
+  }
+  
   double eBare[nlumi] = {0., 0., 0., 0., 0., 0.};
 
   double eSysLo[nerr][nlumi], eSysHi[nerr][nlumi];
@@ -2214,7 +2264,11 @@ void hstat::plotResults() {
   gSys2->Draw("a3");
   gSys1->Draw("3");
   gSys0->Draw("3");
-  gBare->Draw("l");
+  if (1 == fitOption) {
+    gBare->Draw("l");
+  } else {
+    gBare->Draw("l");
+  }
   gPad->RedrawAxis();
 
   TLatex *tl = new TLatex(); 
@@ -2260,7 +2314,11 @@ void hstat::plotResults() {
   gThy1->SetMinimum(0.01);
   gThy1->Draw("a3");
   gThy0->Draw("3");
-  gBare->Draw("l");
+  if (1 == fitOption) {
+    gBare->Draw("l");
+  } else {
+    gBare->Draw("l");
+  }
   gPad->RedrawAxis();
 
   tl->SetNDC(kTRUE);
