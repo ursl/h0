@@ -1654,7 +1654,7 @@ void hstat::toy2D() {
     setTitles(fM0, "m [GeV]", Form("Events / %d GeV", static_cast<int>((MGGHI-MGGLO)/nbinsM)));
     fM0->Draw();
     tl->SetTextFont(42);
-    tl->DrawLatex(0.15, 0.93, "Background plus Higgs m_{top} = 173.5 GeV");
+    tl->DrawLatex(0.15, 0.93, "Background plus Higgs (loop-induced)");
     tl->DrawLatex(0.2, 0.82, "#sqrt{s} = 14 TeV");
     tl->DrawLatex(0.2, 0.77, "L = 1000 fb^{-1}");
     c0->SaveAs(Form("%s/fit0-m-%s.pdf", fDirectory.c_str(), fDoPlotName.c_str())); 
@@ -1675,7 +1675,7 @@ void hstat::toy2D() {
     fPt0->SetNdivisions(405);
     fPt0->Draw();
     tl->SetTextFont(42);
-    tl->DrawLatex(0.15, 0.93, "Background plus Higgs m_{top} = 173.5 GeV");
+    tl->DrawLatex(0.15, 0.93, "Background plus Higgs (loop-induced)");
     tl->DrawLatex(0.5, 0.82, "#sqrt{s} = 14 TeV");
     tl->DrawLatex(0.5, 0.77, "L = 1000 fb^{-1}");
     c0->SaveAs(Form("%s/fit0-pt-%s.pdf", fDirectory.c_str(), fDoPlotName.c_str())); 
@@ -1692,7 +1692,7 @@ void hstat::toy2D() {
     setTitles(fM1, "m [GeV]", Form("Events / %d GeV", static_cast<int>((MGGHI-MGGLO)/nbinsM)));
     fM1->Draw();
     tl->SetTextFont(42);
-    tl->DrawLatex(0.15, 0.93, "Background plus Higgs m_{top} #rightarrow #infty");
+    tl->DrawLatex(0.15, 0.93, "Background plus Higgs (point-like)");
     tl->DrawLatex(0.2, 0.82, "#sqrt{s} = 14 TeV");
     tl->DrawLatex(0.2, 0.77, "L = 1000 fb^{-1}");
     c0->SaveAs(Form("%s/fit1-m-%s.pdf", fDirectory.c_str(), fDoPlotName.c_str())); 
@@ -1712,7 +1712,7 @@ void hstat::toy2D() {
     fPt1->SetNdivisions(405);
     fPt1->Draw();
     tl->SetTextFont(42);
-    tl->DrawLatex(0.15, 0.93, "Background plus Higgs m_{top} #rightarrow #infty");
+    tl->DrawLatex(0.15, 0.93, "Background plus Higgs (point-like)");
     tl->DrawLatex(0.5, 0.82, "#sqrt{s} = 14 TeV");
     tl->DrawLatex(0.5, 0.77, "L = 1000 fb^{-1}");
     c0->SaveAs(Form("%s/fit1-pt-%s.pdf", fDirectory.c_str(), fDoPlotName.c_str())); 

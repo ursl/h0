@@ -99,6 +99,8 @@ int main(int argc, char *argv[]) {
     } else if ("10" == setup) {
       a.setRndmSeed(rndms); 
       a.run2D(ntoy, mode);
+    } else if ("20" == setup) {
+      a.plotResults();
     }
   }
 }

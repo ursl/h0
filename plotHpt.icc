@@ -38,7 +38,7 @@ void plotHpt::loadFiles(string afiles) {
 	if (stype.substr(stype.length()-1) == "0") {
 	  sname = stype.substr(stype.rfind(",") + 1);
 	  cleanupString(sname); 
-	  sdecay = "m_{t}=173.5GeV";
+	  sdecay = "H #rightarrow #gamma #gamma (loop-induced)";
 	  ds->fColor = kBlue; 
 	  ds->fLcolor = kBlue; 
 	  ds->fFcolor = kBlue; 
@@ -56,7 +56,7 @@ void plotHpt::loadFiles(string afiles) {
 	} else if (stype.substr(stype.length()-1) == "5") {
 	  sname = stype.substr(stype.rfind(",") + 1);
 	  cleanupString(sname); 
-	  sdecay = "m_{t}#rightarrow#infty";
+	  sdecay = "H #rightarrow #gamma #gamma  (point-like)";
 	  ds->fColor = kGreen+3; 
 	  ds->fLcolor = kGreen+3; 
 	  ds->fFcolor = kGreen+3; 

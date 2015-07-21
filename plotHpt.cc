@@ -345,6 +345,7 @@ void plotHpt::makeAll(int bitmask) {
     plot2("m");
 
     system("bin/runPlot -s 10 -a hstat -m 0 -n 1");
+    system("bin/runPlot -s 20 -a hstat ");
     return;
 
   }
@@ -487,12 +488,12 @@ void plotHpt::plot1(string what, string sel, double xmin, double xmax) {
   }
 
 
-  newLegend(0.3, 0.7, 0.5, 0.85); 
+  newLegend(0.25, 0.75, 0.5, 0.89); 
 //   hx->SetFillStyle(0); hx->SetFillColor(0);  
 //   h5->SetFillStyle(0); h5->SetFillColor(0); 
 //   hs->SetFillStyle(0); hs->SetFillColor(0); 
-  legg->AddEntry(hx, fDS[dsx]->fName.c_str(), "p");
   legg->AddEntry(h5, fDS[ds5]->fName.c_str(), "p");
+  legg->AddEntry(hx, fDS[dsx]->fName.c_str(), "p");
   legg->AddEntry(hs, fDS[dss]->fName.c_str(), "p");
   legg->Draw();
 
@@ -662,8 +663,8 @@ void plotHpt::plot2(string what) {
     tl->DrawLatex(0.5, 0.72, "70 < m_{#gamma#gamma} < 180 GeV");
   }
   legg->SetTextAlign(13); 
-  legg->AddEntry(hs1, "Higgs m_{top} #rightarrow #infty", "p");
-  legg->AddEntry(hs0, "Higgs m_{top} = 173.5GeV ", "p");
+  legg->AddEntry(hs1, "H #rightarrow #gamma #gamma (point-like)", "p");
+  legg->AddEntry(hs0, "H #rightarrow #gamma #gamma (loop-induced)", "p");
   legg->Draw();
 
   c0->SaveAs(Form("%s/plot2-%s.pdf", fDirectory.c_str(), what.c_str())); 
