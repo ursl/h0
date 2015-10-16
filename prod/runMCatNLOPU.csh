@@ -135,6 +135,19 @@ foreach f ($FILES)
   lcg-ls -b -D srmv2 -l "$STORAGE1/mcatnlo/npu/$f"
 end
 
+gzip $JOB*.hepmc
+set FILES=`ls $JOB*.hepmc.gz`
+echo "Found the following output hepmc files: $FILES"
+foreach f ($FILES)
+  echo lcg-del  "$STORAGE1/mcatnlo/hepmc/$f"
+  lcg-del -b -D srmv2 -l "$STORAGE1/mcatnlo/hepmc/$f"
+  echo lcg-cp    file:///`pwd`/$f "$STORAGE1/mcatnlo/hepmc/$f"
+  lcg-cp -b -D srmv2  file:///`pwd`/$f "$STORAGE1/mcatnlo/hepmc/$f"
+  echo lcg-ls     "$STORAGE1/mcatnlo/hepmc/$f"
+  lcg-ls -b -D srmv2 -l "$STORAGE1/mcatnlo/hepmc/$f"
+end
+
+
 date
 
 # BATCH END
